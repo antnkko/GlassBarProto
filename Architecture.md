@@ -1,0 +1,193 @@
+# GlassBarProto — як ми зробили нативний Liquid Glass таб-бар у React Native
+
+Це док про одне питання: **чи можна зробити 1:1 нативний Liquid Glass морф чисто в React Native?**
+
+Спойлер: ні. І це не «ми не змогли», це дизайн платформи — Apple віддала matched-geometry морф скла тільки SwiftUI. Тому в нас гібрид: сам бар — маленький нативний SwiftUI-компонент, а все інше — звичайний RN. Нижче — як ми до цього дійшли і як воно влаштоване.
+
+*(Рісьорч — липень 2026, все перевірено по першоджерелах: Apple docs, сорси бібліотек, GitHub issues. Лінки в кінці.)*
+
+---
+
+## 1. Історія пошуку: чотири варіанти
+
+### Варіант A: «може, стандартний таб-бар потягне?» — ні ❌
+
+Перше, що перевірили: react-navigation native tabs, react-native-bottom-tabs від Callstack, Expo NativeTabs і сам UIKit `UITabBarController`.
+
+Все впирається в одне: **жодна з цих обгорток не пускає кастомні в'юхи всередину бара.** Кастомізація — іконки, лейбли, бейджі, і все. А на рівні UIKit: той красивий морф search-таба з Apple Music — це системна поведінка search-ролі (`UISearchTab`), вона розгортається тільки в пошуковий філд і більше ні в що. Єдиний паблік-кноб — `automaticallyActivatesSearch`. API «таб розгортається в бабл з трьома кастомними під-табами» просто не існує.
+
+Тобто наша інтеракція через `UITabBarController` не виражається в принципі. Потрібен повністю кастомний бар.
+
+### Варіант B: «ок, кастомний бар чисто в RN — glass-бібліотеки + Reanimated» — теж ні ❌
+
+Є дві пристойні лібки: `@callstack/liquid-glass` і `expo-glass-effect`. Обидві обгортають один і той самий UIKit-примітив: `UIVisualEffectView` + `UIGlassEffect`, а контейнер — `UIGlassContainerEffect`, у якого рівно один параметр: `spacing`.
+
+Що вони вміють: **proximity-merge** — шейпи, які зближуються ближче ніж spacing, красиво зливаються. Це працює й анімується (у Callstack є офіційне демо з драгом кружечка).
+
+Чого вони НЕ вміють — і це вбивця: **ID-matched морфа немає.** `glassEffectID` + `@Namespace` + `.glassEffectTransition(.matchedGeometry)` — це SwiftUI-only API. Ми перевірили по Apple docs: UIKit-овий `UIGlassEffect` має рівно три члени — `init(style:)`, `isInteractive`, `tintColor`. Все. В UIKit «морф» = вручну анімувати фрейми, поки не злипнуться, а вставка/зникнення елемента (наша кнопка «+») стрибає, а не морфиться.
+
+Бонусом — задокументовані міни: анімація opacity до ~0 **назавжди** вбиває глас-рендер (callstack #27/#33, expo #41024 — закритий як "Upstream: iOS"), флікер на маунті, нестабільність у Release. І жодного публічного демо морфа width/height на 120Hz ніхто не показав.
+
+Вердикт: fidelity ~2.5/5 і високий ризик тупика — якщо frame-driven злипання виглядає «гумово», в цих API немає плану Б.
+
+### Варіант C: @expo/ui/swift-ui — майже, але ні ❌
+
+Цікавий звір: дає справжні SwiftUI-примітиви (`GlassEffectContainer`, `Namespace`, `glassEffectId`) прямо з JS. Але: бета, максимум 3 статичні namespace (динамічні — «hacky», це слова самих авторів PR), задокументовані production-регресії хостинг-шару (прозорий перший кадр, мертві тачі в модалках), і воно тягне бета-пакет у bare-проєкт — погано для порта в Numo.
+
+### Варіант D: свій SwiftUI-компонент, вбудований у RN — так ✅
+
+Морф-fidelity 5/5, бо це буквально ті самі API, якими Apple робить свої морфи. Спрінги, шимер, стретч на дотик — нативні, без бридж-латентності. А тюнінг параметрів з JS зберігається через пропси.
+
+Єдине «але» на старті: публічних прикладів «RN-driven glassEffectID tab bar» не існувало — ми були перші. Прототип цей ризик зняв: усе працює.
+
+---
+
+## 2. Як влаштовано: три поверхи
+
+```
+┌─────────────────────────────── React Native ───────────────────────────────┐
+│ екрани / навігація контенту / бізнес-стейт / дебаг-панель / персист конфігу │
+│        tabState reducer (seq/lastSeq)          config (JSON-об'єкт)         │
+└───────────────┬───────────────────────────────────────────▲────────────────┘
+        events ↑│ onTabPress / onSubTabPress / onExpandChange│↓ props
+                │  {tab, seq}                                │ expanded, activeTab,
+                │                                            │ lastSeq, config
+┌───────────────▼────────────────────────────────────────────┴────────────────┐
+│                     Міст (у прототипі: Expo Modules)                         │
+│  GlassTabBarModule.swift → View(GlassTabBarExpoView.self)                    │
+│  GlassTabBarExpoView: ExpoSwiftUI.View + ExpoSwiftUI.WithHostingView         │
+│  props: @Field expanded/activeTab/lastSeq/config(Record) + EventDispatcher×3 │
+└───────────────┬──────────────────────────────────────────────────────────────┘
+                │ чисті Swift-типи (Config struct + closures)
+┌───────────────▼──────────────────────────────────────────────────────────────┐
+│              SwiftUI-ядро (wrapper-agnostic, НУЛЬ expo-імпортів)              │
+│  Core/GlassTabBarView.swift   — морф, стани, анімації, пін appearance         │
+│  Core/GlassTabBarConfig.swift — plain struct усіх тюнабельних параметрів      │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+Головний принцип: **`Core/` не знає ні про Expo, ні про RN.** Це просто SwiftUI-в'юха з Config-структурою і колбеками. Обгортка (зараз Expo Modules, у Numo може бути чистий Fabric) — замінна деталь.
+
+---
+
+## 3. Морф: як зроблено і на чому він тримається
+
+```
+GlassEffectContainer(spacing: config.containerSpacing)   // ОДИН контейнер на обидва стани
+└─ HStack
+   ├─ HomePill
+   │    контент (хайлайт + іконка) ← ВСЕРЕДИНІ glass-в'юхи, це важливо
+   │    .glassEffect(..., in: Capsule())
+   │    .glassEffectID("home", in: glassNS)       // id стабільний в обох станах
+   ├─ if !expanded:
+   │    PlusButton  .glassEffectID("plus")  .glassEffectTransition(.matchedGeometry)
+   │    RightPill   .glassEffectID("bubble", in: glassNS)    // ← джерело морфа
+   └─ else:
+        ExpandedBubble .glassEffectID("bubble", in: glassNS) // ← ціль морфа (ТОЙ САМИЙ id)
+        └─ 3 × SubTab; активний хайлайт = Capsule().fill(...)
+             .matchedGeometryEffect(id:"highlight", in: highlightNS)  // ковзає, не кросфейдить
+```
+
+Правила, за порушення яких платиш флікером або кросфейдом замість морфа:
+
+1. Обидві гілки стану живуть в **одному** `GlassEffectContainer`.
+2. Порядок модифікаторів: layout → `glassEffect` → `glassEffectID`.
+3. id `"home"` і `"bubble"` ніколи не змінюються між станами; тільки `"plus"` входить/виходить.
+4. Всі переходи — `withAnimation(.spring(duration:bounce:))`. Рідні спрінги, 120Hz з коробки.
+5. Ніколи не анімувати opacity на гласі чи його предках (та сама міна, що і в RN-лібках — це обмеження iOS).
+
+### Урок, оплачений кров'ю: контент мусить жити ВСЕРЕДИНІ скла
+
+Ми один раз винесли контент (іконки + хайлайт) окремим шаром **над** контейнером — хотіли захистити кольори від vibrancy (глас трохи підфарбовує свій контент під фон). Кольори стали ідеальні. А ще стало мертве все живе:
+
+- прес перестав тягнути кнопку (interactive-стретч розтягує glass-в'юху разом з її контентом — а контент був уже не її);
+- морф втратив «липкість з блюром» — бо блюрить/рефрактить система саме контент всередині скла;
+- і сюрприз: контейнер малює об'єднаний скляний шар **поверх** усього не-скляного всередині себе — іконки почали рефрактитись, як за матовим склом.
+
+Другий підхід — молочний шар-капсула поверх скла — сховав крайову рефракцію і шимер. Теж відкат.
+
+**Фінальна формула:** контент всередині glass-в'юхи (як у Apple), «молочність» — не окремим шаром, а **тінтом у самому матеріалі**: `Glass.regular.tint(.white.opacity(milk))`. Тоді краї, стретч, шимер і морф-блюр живі, а білий тінт ще й глушить vibrancy-шифт кольорів. Це чесний трейдофф: ідеально стабільні кольори і живі анімації одночасно не даються — анімації важливіші.
+
+І ще: `containerSpacing` — це і є «липкість» злипання. Поставиш 0 — gooey-ефект вимкнеться. Наш дефолт: 24.
+
+---
+
+## 4. Стейт: оптимістичний натив + seq/lastSeq
+
+Проблема: якщо чекати роундтрип «тап → JS → проп → анімація», морф стартує із затримкою, а controlled-пропси з RN можуть «побити» вже запущену анімацію.
+
+Рішення — натив головний, RN наздоганяє:
+
+1. Натив морфить **негайно** по тапу (внутрішній `@State`), інкрементує лічильник `seq` і шле подію вгору: `onTabPress {tab, seq}`, `onExpandChange {expanded, seq}`.
+2. RN-reducer оновлює стейт (перемикає екран) і ехоїть `lastSeq` назад пропсом.
+3. Натив застосовує controlled-пропси тільки якщо `props.lastSeq >= localSeq` **і** значення реально відрізняється.
+
+Наслідки: нормальний потік — no-op (без подвійної анімації); застаріле ехо при швидких тапах ігнорується; імперативний контроль з RN (deep link, панель) працює, бо після спокою `lastSeq == localSeq` і відмінне значення перемагає. `config` застосовується завжди, без гейтів.
+
+---
+
+## 5. Конфіг матеріалу
+
+Всі тюнабельні параметри їдуть одним об'єктом: TS-тип (`src/debug/configSchema.ts`, там же дефолти і мапа тем) → Expo `Record` (`GlassConfigRecord`) → plain `GlassTabBarConfig` struct. Поле-в-поле дзеркало, конвертація в одному місці (`toConfig()`).
+
+Зміна будь-якого поля з JS ре-рендерить SwiftUI без ремаунта — тому дебаг-панель тюнить матеріал наживо. Зараз там: молочність (`milkOpacity`, тінт у матеріалі), тема (accent/light/mid з палет Numo), appearance (light/dark), липкість (`containerSpacing`), спрінги (duration/bounce), скрім. Точний актуальний список полів — **дивись `GlassTabBarConfig.swift`, код — джерело правди** (список мінявся кожну ітерацію панелі, док за ним не бігає).
+
+Окрема міна, яку ми вже знешкодили: light/dark для гласа **не** перемикається через SwiftUI `.environment(\.colorScheme)` — глас читає UIKit `traitCollection` хостячої в'юхи. Робочий фікс зашитий у Core: невидимий `UIViewRepresentable` знаходить HostingView по superview-ланцюгу і ставить `overrideUserInterfaceStyle`, а `.id("scheme-…")` пересоздає глас (без цього ефект не пере-рендериться після зміни трейта).
+
+---
+
+## 6. Хостинг у прототипі (Expo Modules у bare RN)
+
+- `npx install-expo-modules` офіційно підтримує bare RN; локальний модуль у `./modules` автолінкується (`use_expo_modules!` у Podfile).
+- SwiftUI-в'юха для standalone-маунта у Fabric мусить конформити `ExpoSwiftUI.WithHostingView` — інакше червоний dev-екран «SwiftUI view mounted inside a standard UIView».
+- Події: `EventDispatcher`-проперті у ViewProps вайряться автоматично (reflection).
+- Сайзинг: RN-стиль авторитетний — даємо контейнеру явну висоту (62pt бар + headroom під шимер), SwiftUI вирівнюється по низу.
+
+---
+
+## 7. Порт у Numo
+
+Два шляхи, обидва **не чіпають `Core/`**:
+
+1. **Через expo-modules-core** (install-expo-modules на bare-проєкт) — найдешевше, модуль з прототипу майже copy-paste.
+2. **Чистий Fabric-компонент**: codegen-спека + `RCTViewComponentView`, всередині `UIHostingController(rootView: GlassTabBarView(...))`, пропси мапляться в Config, події — через Fabric event emitter. Більше бойлерплейту, нуль нових залежностей. Референси: RN WG «Fabric Native Components» + Callstack «Exposing SwiftUI Views to React Native».
+
+Вимоги в обох випадках: RN 0.80+ (New Architecture), Xcode 26+, iOS 26 SDK. Якщо min target Numo < 26 — гейтити рантаймом (`if #available(iOS 26, *)`) і мати фолбек-бар (звичайний blur/solid) для старіших iOS.
+
+---
+
+## 8. Граблі, які вже зібрані (не наступати повторно)
+
+| Грабля | Симптом | Фікс |
+|---|---|---|
+| Контент бара поза glass-в'юхою | Зникають стретч на дотик, морф-блюр, липкість; іконки рефрактяться контейнером | Контент — всередині glass-в'юхи; «молоко» — тінтом у матеріалі, не шаром (див. §3) |
+| `containerSpacing = 0` | Морф є, але «липкість» злипання зникла | Це і є параметр gooey; тримати > 0 (наш дефолт 24) |
+| expo-modules-core 57 на Swift 6.2 (Xcode 26.3+) | `sending 'emitter' risks causing data races` в EventEmitter.swift | У Podfile post_install: `SWIFT_VERSION = 5.0` для таргета ExpoModulesCore; свій podspec теж `swift_version = '5.0'` |
+| Prebuilt RN core (0.86) + сторонній codegen | Лінкер: `typeinfo for facebook::react::Props… symbol(s) not found` після додавання нативних лібок | У Podfile: `ENV['RCT_USE_RN_DEP']='0'`, `ENV['RCT_USE_PREBUILT_RNCORE']='0'` (збірка core з сирців) |
+| SwiftUI-в'юха без хостинг-обгортки | Червоний екран «mounted inside a standard UIView… wrap with `<Host>`» | Конформити `ExpoSwiftUI.WithHostingView` — core сам загорне, `@expo/ui` не потрібен |
+| `.environment(\.colorScheme)` на глас | Dark mode «не працює» | `overrideUserInterfaceStyle` на HostingView + `.id()` для пересоздання гласа (див. §5) |
+| Пробіл у шляху проєкту | Падають CP-User script phases (`bash: /Users/…/Empty: No such file`) | Тримати проєкт на шляху без пробілів; після переносу чистити `node_modules/**/.DerivedData` |
+| Системний ruby 2.6 | CocoaPods/Expo-скрипти сипляться (`filter_map`, Unicode) | `LANG=en_US.UTF-8 /opt/homebrew/bin/pod install`, не `bundle exec` |
+| opacity на glass-елементах | Глас назавжди перестає рендеритись | Тільки transform/вбудовані переходи; фейди — через `glassEffectTransition` |
+| DDI mount fail на девайсі | `ddiServicesAvailable: false`, «developer disk image could not be mounted» | Найчастіше телефон просто заблокований; розблокувати і повторити |
+| Debug-збірка: «No script URL provided» | Червоний екран на старті | Це Metro, не бар. Feel-check робити тільки в Release (JS вшитий, 120Hz чесний) |
+| Видалив Swift-файл з модуля | `Build input file cannot be found` | Перезапустити pod install (файл-ліст генерується там) |
+
+---
+
+## 9. Першоджерела
+
+- SwiftUI: `glassEffect(_:in:)`, `GlassEffectContainer`, `glassEffectID(_:in:)`, `glassEffectTransition`, `glassEffectUnion` — developer.apple.com/documentation/swiftui
+- UIKit: `UIGlassEffect` (лише `init(style:)`/`isInteractive`/`tintColor`), `UIGlassContainerEffect` (лише `spacing`), `UISearchTab`, `UITabAccessory`, `tabBarMinimizeBehavior` — developer.apple.com/documentation/uikit
+- github.com/callstack/liquid-glass — README + issues #27, #33, #41, #42
+- expo-glass-effect docs + expo/expo issues #41024, #41025; @expo/ui glass PR: expo/expo#39070
+- react-navigation native bottom tabs / Expo NativeTabs — задокументовані обмеження кастомізації
+- Expo Modules: docs.expo.dev/modules (bare install, autolinking), сорси ExpoSwiftUI в expo-modules-core
+- Fabric + SwiftUI: react-native-new-architecture/docs/fabric-native-components.md, Callstack «Exposing SwiftUI Views to React Native»
+- Тон-адаптація гласа (чому кольори «пливуть» і чому це by design): WWDC25 session 219 «Meet Liquid Glass», Apple DTS у forums thread 814005
+
+---
+
+## TL;DR для дева
+
+100% нативний Liquid Glass морф у чистому RN недосяжний за дизайном платформи — matched-geometry морф Apple віддала тільки SwiftUI. Робоча форма (перевірена прототипом на девайсі): тонкий нативний SwiftUI-компонент бара з оптимістичним стейтом і seq-реконсиляцією, решта застосунку — RN. Контент живе всередині скла (інакше вмирають стретч і морф-блюр), молочність — тінтом у матеріалі, spacing > 0. Ядро wrapper-agnostic — у Numo заїжджає через expo-modules-core або чистий Fabric без переписування.

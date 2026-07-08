@@ -1,97 +1,54 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# GlassBarProto — Liquid Glass morphing tab bar
 
-# Getting Started
+Standalone prototype of Numo's custom iOS 26 **Liquid Glass** tab bar, to validate
+the native feel of the morph interaction before porting it into the main app.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## The interaction
+- **Default:** home pill · center **+** button · right pill (squad), each its own glass shape.
+- **Tap the right pill →** it morphs into one glass **bubble** with 3 sub-tabs (Squad / Chat / Play);
+  home compacts to inactive, the **+** button disappears. Real matched-geometry glass morph.
+- **Tap home →** collapse back. Sub-tab taps slide the active highlight (matched geometry).
 
-## Step 1: Start Metro
+## Why native SwiftUI (not a pure-RN glass lib)
+The pill→bubble morph needs SwiftUI `glassEffectID` + `@Namespace` matched-geometry inside a
+`GlassEffectContainer`. UIKit (and therefore every RN glass wrapper — `@callstack/liquid-glass`,
+`expo-glass-effect`) exposes only `UIGlassContainerEffect.spacing` proximity-merge, which can't
+express this morph. So the **bar chrome is native SwiftUI**; RN owns screens, state and the debug panel.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- Native module: `modules/glass-tab-bar/`
+  - `ios/Core/` — wrapper-agnostic SwiftUI (zero Expo imports): `GlassTabBarView.swift`,
+    `GlassTabBarConfig.swift`, `Haptics.swift`. **This is what ports into Numo** (re-wrap in Fabric).
+  - `ios/GlassTabBar{Module,ExpoView}.swift` — the Expo Modules host wrapper (`ExpoSwiftUI.View`
+    + `WithHostingView`, `@Field` props, `EventDispatcher`).
+- Optimistic state: native morphs instantly on tap and reports events up; RN echoes back via
+  `lastSeq` so controlled props never fight the animation (see `src/state/tabState.ts`).
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## Requirements
+- Xcode 26+, iOS 26 target. RN 0.86 + expo-modules-core 57 (New Architecture).
+- CocoaPods: use Homebrew's `pod` with a UTF-8 locale — the system Ruby 2.6 breaks Expo's scripts:
+  `cd ios && LANG=en_US.UTF-8 /opt/homebrew/bin/pod install`
 
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+## Run
+```bash
+npm install
+cd ios && LANG=en_US.UTF-8 /opt/homebrew/bin/pod install && cd ..
+npx react-native start                       # Metro
+# Simulator (layout/logic):
+npx react-native run-ios --simulator "iPhone 17 Pro"
+# Device — REQUIRED for the real material + haptics + 120Hz:
+#   1. open ios/GlassBarProto.xcworkspace, select your Team under Signing & Capabilities
+#   2. npx react-native run-ios --device "antnkko"
+#   3. feel-check MUST be a Release build (Debug lags at 120Hz):
+#      npx react-native run-ios --mode Release --device "antnkko"
 ```
 
-## Step 2: Build and run your app
+## Tuning the material (no code edits)
+Tap the **⚙︎** (top-right) → live sliders/segments for: glass variant, tint + opacity per element,
+coalescence spacing, spring duration/bounce, plus-button transition (matchedGeometry vs materialize),
+haptics, all sizes, scrim, color scheme. **Copy JSON** exports the current config; settings persist
+(AsyncStorage). Defaults live in `src/debug/configSchema.ts` and mirror the Swift `GlassConfigRecord`.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## Notes
+- Liquid Glass renders subtly on the **Simulator** — refraction/blur and haptics only fully appear on device.
+- Dev-only helpers in `App.tsx`: `DEV_AUTOPLAY` (cycles states for headless recording) and a
+  `glassbar://expand|collapse|sub/<tab>` deep link. Both off/no-op in normal use.

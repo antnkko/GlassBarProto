@@ -1,3 +1,6 @@
+# Expo modules autolinking (local modules in ./modules + expo packages)
+require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
+
 # Resolve react_native_pods.rb with node to allow for hoisting
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
@@ -5,7 +8,13 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-platform :ios, min_ios_version_supported
+# Build React core from source: the prebuilt RN 0.86 core hides base Props
+# typeinfo symbols that third-party codegen (slider/segmented) links against.
+ENV['RCT_USE_RN_DEP'] ||= '0'
+ENV['RCT_USE_PREBUILT_RNCORE'] ||= '0'
+
+# Prototype targets iOS 26 only (Liquid Glass APIs, no availability guards)
+platform :ios, '26.0'
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
@@ -15,6 +24,7 @@ if linkage != nil
 end
 
 target 'GlassBarProto' do
+  use_expo_modules!
   config = use_native_modules!
 
   use_react_native!(
@@ -30,5 +40,16 @@ target 'GlassBarProto' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Xcode 26.3 (Swift 6.2.4) promotes new region-isolation diagnostics to errors
+    # in Swift 6 language mode; EventEmitter.swift in expo-modules-core 57.0.2 trips
+    # them. Compile that pod in Swift 5 mode where they are warnings.
+    installer.pods_project.targets.each do |target|
+      if target.name == 'ExpoModulesCore'
+        target.build_configurations.each do |config|
+          config.build_settings['SWIFT_VERSION'] = '5.0'
+        end
+      end
+    end
   end
 end
