@@ -23,7 +23,12 @@ interface Props {
   tab: string;
   title: string;
   dark?: boolean;
-  /** Extra top content padding while the glass toolbar overlays the screen. */
+  /**
+   * Toolbar height fed into the scroll view's contentInset (nav-bar style).
+   * Going through the inset — not content padding — grows the adjusted-inset
+   * region, so the native top edge blur gets taller and covers the toolbar
+   * zone, exactly like under a real navigation bar.
+   */
   topExtra?: number;
   /** Instagram-style bar minimize: fires true on scroll down, false on scroll up / near top. */
   onCollapseChange?: (collapsed: boolean) => void;
@@ -45,7 +50,11 @@ export default function DemoScreen({tab, title, dark = false, topExtra = 0, onCo
         // region zero-height — the system then has nowhere to draw the top
         // pocket. "automatic" restores the native safe-area context.
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.content, topExtra > 0 && {paddingTop: 20 + topExtra}]}
+        contentInset={{top: topExtra}}
+        // Manual insets aren't offset-compensated by UIKit at mount the way
+        // safe-area insets are — start the offset at the inset minimum.
+        contentOffset={{x: 0, y: -topExtra}}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={e => {
