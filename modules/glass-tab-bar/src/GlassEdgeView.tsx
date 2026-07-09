@@ -6,6 +6,14 @@ import NativeGlassEdge from './GlassEdgeNativeComponent';
 export interface GlassEdgeProps extends ViewProps {
   edge: 'top' | 'bottom';
   appearance: 'light' | 'dark';
+  /** Blur strength. */
+  material: 'ultraThin' | 'thin' | 'regular' | 'thick';
+  /** 0..0.8 — portion of the strip that stays fully blurred before fading. */
+  fadeStart: number;
+  /** Falloff gamma: 1 = linear fade, higher = steeper drop. */
+  curve: number;
+  /** 0..1 global multiplier. */
+  intensity: number;
 }
 
 // Progressive edge blur strip (our own Material + gradient mask — see

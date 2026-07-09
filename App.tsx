@@ -142,8 +142,12 @@ function AppContent() {
         <GlassEdgeView
           edge="bottom"
           appearance={appearance}
+          material={config.edgeMaterial}
+          fadeStart={config.edgeFadeStart}
+          curve={config.edgeCurve}
+          intensity={config.edgeIntensity}
           pointerEvents="none"
-          style={[styles.bottomBlur, {height: insets.bottom + 96}]}
+          style={[styles.bottomBlur, {height: insets.bottom + config.edgeBottomHeight}]}
         />
       )}
 
@@ -167,6 +171,10 @@ function AppContent() {
         <GlassEdgeView
           edge="top"
           appearance={appearance}
+          material={config.edgeMaterial}
+          fadeStart={config.edgeFadeStart}
+          curve={config.edgeCurve}
+          intensity={config.edgeIntensity}
           pointerEvents="none"
           style={[styles.topBlur, {height: insets.top + config.toolbarEdgeHeight}]}
         />

@@ -41,7 +41,19 @@ export interface AppConfig {
 
   /** Height of the top progressive blur strip below the safe area. */
   toolbarEdgeHeight: number;
+  /** Height of the bottom progressive blur strip above the home indicator. */
+  edgeBottomHeight: number;
+  /** Blur strength of the edge strips. */
+  edgeMaterial: EdgeMaterial;
+  /** 0..0.8 — portion of the strip that stays fully blurred before fading. */
+  edgeFadeStart: number;
+  /** Falloff gamma: 1 = linear fade, higher = steeper drop. */
+  edgeCurve: number;
+  /** 0..1 global multiplier on the strips. */
+  edgeIntensity: number;
 }
+
+export type EdgeMaterial = 'ultraThin' | 'thin' | 'regular' | 'thick';
 
 export const defaultConfig: AppConfig = {
   theme: 'blazeOrange',
@@ -60,6 +72,11 @@ export const defaultConfig: AppConfig = {
 
   toolbarOption: 2,
   toolbarEdgeHeight: 80,
+  edgeBottomHeight: 96,
+  edgeMaterial: 'ultraThin',
+  edgeFadeStart: 0.35,
+  edgeCurve: 1.4,
+  edgeIntensity: 1,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */

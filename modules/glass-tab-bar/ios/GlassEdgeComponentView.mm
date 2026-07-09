@@ -38,7 +38,11 @@ using namespace facebook::react;
   const auto &newProps = *std::static_pointer_cast<const GlassEdgeProps>(props);
 
   [_hostView updateWithEdge:RCTNSStringFromString(newProps.edge)
-                 appearance:RCTNSStringFromString(newProps.appearance)];
+                 appearance:RCTNSStringFromString(newProps.appearance)
+                   material:RCTNSStringFromString(newProps.material)
+                  fadeStart:newProps.fadeStart
+                      curve:newProps.curve
+                  intensity:newProps.intensity];
 
   [super updateProps:props oldProps:oldProps];
 }
