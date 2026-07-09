@@ -1,4 +1,3 @@
-import {useScrollEdgeEffectRef} from '@bsky.app/expo-scroll-edge-effect';
 import React, {useRef} from 'react';
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 
@@ -23,30 +22,24 @@ interface Props {
   tab: string;
   title: string;
   dark?: boolean;
+  /** Extra top content padding while the glass toolbar overlays the screen. */
+  topExtra?: number;
   /** Instagram-style bar minimize: fires true on scroll down, false on scroll up / near top. */
   onCollapseChange?: (collapsed: boolean) => void;
 }
 
-// The toolbar's inset (and the taller blur region) comes from the native
-// side: the toolbar grows the root VC's additionalSafeAreaInsets, and
-// contentInsetAdjustmentBehavior="automatic" picks it up here for free.
-export default function DemoScreen({tab, title, dark = false, onCollapseChange}: Props) {
+export default function DemoScreen({tab, title, dark = false, topExtra = 0, onCollapseChange}: Props) {
   const palettes = dark ? CARD_PALETTES_DARK : CARD_PALETTES;
   const palette = palettes[tab] ?? palettes.home;
-  // Lets the native scroll-edge effects (progressive blur) attach to this scroll view.
-  const scrollEdgeRef = useScrollEdgeEffectRef();
   const lastY = useRef(0);
   const collapsed = useRef(false);
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
       <ScrollView
-        ref={scrollEdgeRef}
-        // The native scroll edge effects render inside the scroll view's
-        // adjusted-inset region. RN defaults to "never", which leaves that
-        // region zero-height — the system then has nowhere to draw the top
-        // pocket. "automatic" restores the native safe-area context.
+        // "automatic" keeps the native safe-area inset on the scroll view, so
+        // content rests below the status bar and the offset math stays sane.
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, topExtra > 0 && {paddingTop: 20 + topExtra}]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={e => {

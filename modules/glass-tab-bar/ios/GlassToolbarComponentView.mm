@@ -80,7 +80,6 @@ static NSDictionary *GlassToolbarConfigDict(const GlassToolbarConfigStruct &c)
   const auto &newProps = *std::static_pointer_cast<const GlassToolbarProps>(props);
 
   [_hostView updateWithOption:newProps.option config:GlassToolbarConfigDict(newProps.config)];
-  [_hostView setEdgeExtension:newProps.edgeExtension];
 
   [super updateProps:props oldProps:oldProps];
 }

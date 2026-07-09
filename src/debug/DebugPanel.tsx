@@ -128,10 +128,10 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               />
             </View>
             <SliderRow
-              label="Toolbar edge height"
+              label="Top blur height"
               value={config.toolbarEdgeHeight}
               min={44}
-              max={160}
+              max={220}
               step={2}
               accent={accent}
               pal={pal}

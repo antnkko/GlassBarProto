@@ -22,11 +22,6 @@ export interface ToolbarPressEvent {
 
 export interface GlassToolbarNativeProps extends ViewProps {
   option: ToolbarOption;
-  /**
-   * Extra top safe-area the toolbar contributes natively — this is the height
-   * of the real top edge blur region (and the scroll content offset).
-   */
-  edgeExtension: number;
   /** Shares the bar's material/theme/motion config so both stay consistent. */
   config: GlassConfig;
   onToolbarPress?: (event: {nativeEvent: ToolbarPressEvent}) => void;

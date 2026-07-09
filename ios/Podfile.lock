@@ -115,8 +115,6 @@ PODS:
   - ExpoModulesWorklets (57.0.2):
     - ExpoModulesCore
     - ExpoModulesJSI
-  - ExpoScrollEdgeEffect (0.1.4):
-    - ExpoModulesCore
   - fast_float (8.0.0)
   - FBLazyVector (0.86.0)
   - fmt (12.1.0)
@@ -2814,7 +2812,6 @@ DEPENDENCIES:
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
   - ExpoModulesJSI (from `../node_modules/expo-modules-jsi/apple`)
   - ExpoModulesWorklets (from `../node_modules/expo-modules-core`)
-  - "ExpoScrollEdgeEffect (from `../node_modules/@bsky.app/expo-scroll-edge-effect/ios`)"
   - fast_float (from `../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
@@ -2936,8 +2933,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-modules-jsi/apple"
   ExpoModulesWorklets:
     :path: "../node_modules/expo-modules-core"
-  ExpoScrollEdgeEffect:
-    :path: "../node_modules/@bsky.app/expo-scroll-edge-effect/ios"
   fast_float:
     :podspec: "../node_modules/react-native/third-party-podspecs/fast_float.podspec"
   FBLazyVector:
@@ -3119,7 +3114,6 @@ SPEC CHECKSUMS:
   ExpoModulesCore: 2b7e9d8923f014ff481f65089f069b7a9c8adcad
   ExpoModulesJSI: ef7f197a8e7eeb245557f560ade794bfc1abdc79
   ExpoModulesWorklets: 0340ed9a30017f8597b90a1ef9aa210c43e44c4b
-  ExpoScrollEdgeEffect: 07d93370dd662d2feb5bb1bb7bcec8aa1e231248
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 688bade2cc6ee3de2ba9a411c85c21fd908af3bc
   fmt: 530618a01105dae0fa3a2f27c81ae11fa8f67eac

@@ -1,4 +1,3 @@
-import {ScrollEdgeEffect, ScrollEdgeEffectProvider} from '@bsky.app/expo-scroll-edge-effect';
 import React, {useCallback, useEffect, useReducer, useState} from 'react';
 import {Linking, LogBox, Pressable, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -6,7 +5,7 @@ import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-contex
 // Prototype: silence the dev warning toast so it doesn't cover the bottom bar.
 LogBox.ignoreAllLogs(true);
 
-import {GlassTabBarView, GlassToolbarView} from './modules/glass-tab-bar';
+import {GlassEdgeView, GlassTabBarView, GlassToolbarView} from './modules/glass-tab-bar';
 import DebugPanel from './src/debug/DebugPanel';
 import {defaultConfig, toNativeConfig, type AppConfig} from './src/debug/configSchema';
 import {loadConfig, saveConfigDebounced} from './src/debug/persist';
@@ -122,12 +121,7 @@ function AppContent() {
 
   const dark = config.appearance === 'dark';
   const toolbarShown = config.toolbarOption > 0;
-  // The toolbar natively grows the root VC's additionalSafeAreaInsets by
-  // edgeExtension (that is what stretches the real top blur region), so the
-  // insets from safe-area-context already include it — subtract to get the
-  // system safe area the toolbar itself should sit at.
-  const edgeH = toolbarShown ? config.toolbarEdgeHeight : 0;
-  const sysTop = Math.max(0, insets.top - edgeH);
+  const appearance = dark ? 'dark' : 'light';
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
@@ -137,13 +131,23 @@ function AppContent() {
         tab={state.activeTab}
         title={SCREEN_TITLES[state.activeTab] ?? state.activeTab}
         dark={dark}
+        topExtra={toolbarShown ? TOOLBAR_HEIGHT : 0}
         onCollapseChange={setBarCollapsed}
       />
 
-      <ScrollEdgeEffect
-        edge="bottom"
-        effect={config.edgeBlur ? 'soft' : 'hidden'}
-        style={[styles.bar, {bottom: insets.bottom + bar.bottomInsetExtra}]}>
+      {/* Our own progressive blur strips (Material + gradient mask in the
+          native module) — the system scroll edge effect's region proved
+          uncontrollable from RN, so the edges are ours now. */}
+      {config.edgeBlur && (
+        <GlassEdgeView
+          edge="bottom"
+          appearance={appearance}
+          pointerEvents="none"
+          style={[styles.bottomBlur, {height: insets.bottom + 96}]}
+        />
+      )}
+
+      <View style={[styles.bar, {bottom: insets.bottom + bar.bottomInsetExtra}]}>
         <GlassTabBarView
           style={styles.barFill}
           expanded={state.expanded}
@@ -157,40 +161,39 @@ function AppContent() {
             dispatch({type: 'expandChange', expanded: e.nativeEvent.expanded, seq: e.nativeEvent.seq})
           }
         />
-      </ScrollEdgeEffect>
+      </View>
 
-      {/* Top scroll edge: the same native progressive blur pocket that nav
-          bars get — appears once content scrolls under the top edge. The
-          toolbar is the real overlay the pocket shapes around (v2.9 lesson:
-          no invisible shapers). */}
-      <ScrollEdgeEffect
-        edge="top"
-        effect={config.edgeBlur ? 'soft' : 'hidden'}
-        pointerEvents="box-none"
-        style={[styles.topEdge, {height: sysTop + (toolbarShown ? edgeH + 56 : 56)}]}>
-        {toolbarShown && (
-          <GlassToolbarView
-            style={[styles.toolbar, {top: sysTop}]}
-            option={config.toolbarOption}
-            edgeExtension={edgeH}
-            config={toNativeConfig(config)}
-            onToolbarPress={e => handleToolbarPress(e.nativeEvent.element)}
-          />
-        )}
-        {/* The gear moves below the toolbar when one is shown. */}
-        {!panelOpen && (
-          <Pressable
-            style={[
-              styles.gear,
-              dark && styles.gearDark,
-              {top: sysTop + (toolbarShown ? TOOLBAR_HEIGHT + 16 : 8)},
-            ]}
-            onPress={() => setPanelOpen(true)}
-            hitSlop={8}>
-            <Text style={[styles.gearTxt, dark && styles.gearTxtDark]}>⚙︎</Text>
-          </Pressable>
-        )}
-      </ScrollEdgeEffect>
+      {config.edgeBlur && (
+        <GlassEdgeView
+          edge="top"
+          appearance={appearance}
+          pointerEvents="none"
+          style={[styles.topBlur, {height: insets.top + config.toolbarEdgeHeight}]}
+        />
+      )}
+
+      {toolbarShown && (
+        <GlassToolbarView
+          style={[styles.toolbar, {top: insets.top}]}
+          option={config.toolbarOption}
+          config={toNativeConfig(config)}
+          onToolbarPress={e => handleToolbarPress(e.nativeEvent.element)}
+        />
+      )}
+
+      {/* The gear moves below the toolbar when one is shown. */}
+      {!panelOpen && (
+        <Pressable
+          style={[
+            styles.gear,
+            dark && styles.gearDark,
+            {top: insets.top + (toolbarShown ? TOOLBAR_HEIGHT + 16 : 8)},
+          ]}
+          onPress={() => setPanelOpen(true)}
+          hitSlop={8}>
+          <Text style={[styles.gearTxt, dark && styles.gearTxtDark]}>⚙︎</Text>
+        </Pressable>
+      )}
 
       {panelOpen && (
         <DebugPanel config={config} dark={dark} onChange={patchConfig} onClose={() => setPanelOpen(false)} />
@@ -208,9 +211,7 @@ function AppContent() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ScrollEdgeEffectProvider>
-        <AppContent />
-      </ScrollEdgeEffectProvider>
+      <AppContent />
     </SafeAreaProvider>
   );
 }
@@ -218,7 +219,8 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: '#FFFFFF'},
   rootDark: {backgroundColor: '#121316'},
-  topEdge: {position: 'absolute', top: 0, left: 0, right: 0},
+  topBlur: {position: 'absolute', top: 0, left: 0, right: 0},
+  bottomBlur: {position: 'absolute', bottom: 0, left: 0, right: 0},
   toolbar: {
     position: 'absolute',
     left: 0,

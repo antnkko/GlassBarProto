@@ -39,10 +39,7 @@ export interface AppConfig {
   /** Figma toolbar dev-spec configuration (1–8), 0 = no toolbar. */
   toolbarOption: ToolbarOption;
 
-  /**
-   * Height of the toolbar's safe-area contribution — the region the native
-   * top edge blur actually covers (fed to the native edgeExtension prop).
-   */
+  /** Height of the top progressive blur strip below the safe area. */
   toolbarEdgeHeight: number;
 }
 
@@ -62,7 +59,7 @@ export const defaultConfig: AppConfig = {
   edgeBlur: true,
 
   toolbarOption: 2,
-  toolbarEdgeHeight: 64,
+  toolbarEdgeHeight: 80,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
