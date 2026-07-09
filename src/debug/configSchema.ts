@@ -53,8 +53,7 @@ export interface AppConfig {
   edgeIntensity: number;
 }
 
-/** 'apple' = the real variableBlur (private API); the rest are Material fallbacks. */
-export type EdgeMaterial = 'apple' | 'ultraThin' | 'thin' | 'regular' | 'thick';
+export type EdgeMaterial = 'ultraThin' | 'thin' | 'regular' | 'thick';
 
 export const defaultConfig: AppConfig = {
   theme: 'blazeOrange',
@@ -72,13 +71,11 @@ export const defaultConfig: AppConfig = {
   edgeBlur: true,
 
   toolbarOption: 2,
-  // Researched defaults (iOS 26.3 runtime): bar zone + ~24pt gaussian falloff
-  // tail; linear radius ramp is the community-verified match for variableBlur.
-  toolbarEdgeHeight: 100,
-  edgeBottomHeight: 100,
-  edgeMaterial: 'apple',
-  edgeFadeStart: 0.3,
-  edgeCurve: 1,
+  toolbarEdgeHeight: 80,
+  edgeBottomHeight: 96,
+  edgeMaterial: 'ultraThin',
+  edgeFadeStart: 0.35,
+  edgeCurve: 1.4,
   edgeIntensity: 1,
 };
 

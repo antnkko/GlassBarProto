@@ -24,44 +24,13 @@ struct GlassEdgeBlurView: View {
   var intensity: Double = 1.0
 
   var body: some View {
-    Group {
-      if material == "apple" {
-        // The real system mechanic: private variableBlur, radius ramps along
-        // the strip while content stays opaque. No frost wash.
-        VariableBlurRepresentable(
-          edge: edge,
-          fadeStart: fadeStart,
-          curve: curve,
-          intensity: intensity
-        )
-      } else {
-        // Legal fallback: uniform Material faded by an opacity mask.
-        Rectangle()
-          .fill(resolvedMaterial)
-          .mask(maskGradient)
-      }
-    }
-    .id("scheme-\(appearance)")
-    .background(InterfaceStylePinner(style: appearance == "dark" ? .dark : .light))
-    .allowsHitTesting(false)
-    .ignoresSafeArea()
-  }
-
-  fileprivate struct VariableBlurRepresentable: UIViewRepresentable {
-    let edge: String
-    let fadeStart: Double
-    let curve: Double
-    let intensity: Double
-
-    func makeUIView(context: Context) -> VariableBlurUIView {
-      let view = VariableBlurUIView()
-      view.update(edge: edge, fadeStart: fadeStart, curve: curve, intensity: intensity)
-      return view
-    }
-
-    func updateUIView(_ view: VariableBlurUIView, context: Context) {
-      view.update(edge: edge, fadeStart: fadeStart, curve: curve, intensity: intensity)
-    }
+    Rectangle()
+      .fill(resolvedMaterial)
+      .mask(maskGradient)
+      .id("scheme-\(appearance)")
+      .background(InterfaceStylePinner(style: appearance == "dark" ? .dark : .light))
+      .allowsHitTesting(false)
+      .ignoresSafeArea()
   }
 
   private var resolvedMaterial: Material {

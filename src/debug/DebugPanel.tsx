@@ -16,8 +16,8 @@ interface Props {
 const THEME_ORDER: ThemeName[] = ['blazeOrange', 'blueRibbon', 'jade', 'slack'];
 // Figma dev-spec toolbar rows; index === ToolbarOption, 0 = off.
 const TOOLBAR_LABELS = ['Off', '1', '2', '3', '4', '5', '6', '7', '8'];
-const EDGE_MATERIAL_ORDER: EdgeMaterial[] = ['apple', 'ultraThin', 'thin', 'regular', 'thick'];
-const EDGE_MATERIAL_LABELS = ['Apple', 'Ultra', 'Thin', 'Reg', 'Thick'];
+const EDGE_MATERIAL_ORDER: EdgeMaterial[] = ['ultraThin', 'thin', 'regular', 'thick'];
+const EDGE_MATERIAL_LABELS = ['Ultra', 'Thin', 'Regular', 'Thick'];
 
 interface Palette {
   bg: string;
