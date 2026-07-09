@@ -18,6 +18,13 @@ type ToolbarPressEvent = Readonly<{
 export interface NativeProps extends ViewProps {
   /** Toolbar configuration 1...8, 0 = hidden. */
   option: Int32;
+  /**
+   * Extra top safe-area the toolbar contributes (additionalSafeAreaInsets on
+   * the root view controller). The scroll edge blur region follows the safe
+   * area, so this is what makes the native top blur actually cover the
+   * toolbar zone — and it pushes scroll content down for free.
+   */
+  edgeExtension: Double;
   config: Readonly<{
     milkOpacity: Double;
     accentHex: string;

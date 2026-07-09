@@ -23,18 +23,14 @@ interface Props {
   tab: string;
   title: string;
   dark?: boolean;
-  /**
-   * Toolbar height fed into the scroll view's contentInset (nav-bar style).
-   * Going through the inset — not content padding — grows the adjusted-inset
-   * region, so the native top edge blur gets taller and covers the toolbar
-   * zone, exactly like under a real navigation bar.
-   */
-  topExtra?: number;
   /** Instagram-style bar minimize: fires true on scroll down, false on scroll up / near top. */
   onCollapseChange?: (collapsed: boolean) => void;
 }
 
-export default function DemoScreen({tab, title, dark = false, topExtra = 0, onCollapseChange}: Props) {
+// The toolbar's inset (and the taller blur region) comes from the native
+// side: the toolbar grows the root VC's additionalSafeAreaInsets, and
+// contentInsetAdjustmentBehavior="automatic" picks it up here for free.
+export default function DemoScreen({tab, title, dark = false, onCollapseChange}: Props) {
   const palettes = dark ? CARD_PALETTES_DARK : CARD_PALETTES;
   const palette = palettes[tab] ?? palettes.home;
   // Lets the native scroll-edge effects (progressive blur) attach to this scroll view.
@@ -50,10 +46,6 @@ export default function DemoScreen({tab, title, dark = false, topExtra = 0, onCo
         // region zero-height — the system then has nowhere to draw the top
         // pocket. "automatic" restores the native safe-area context.
         contentInsetAdjustmentBehavior="automatic"
-        contentInset={{top: topExtra}}
-        // Manual insets aren't offset-compensated by UIKit at mount the way
-        // safe-area insets are — start the offset at the inset minimum.
-        contentOffset={{x: 0, y: -topExtra}}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}

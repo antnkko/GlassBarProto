@@ -4,7 +4,7 @@ import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Switch, Text, View} from 'react-native';
 
 import type {ToolbarOption} from '../../modules/glass-tab-bar';
-import {MILK_PRESETS, THEMES, type AppConfig, type MilkPreset, type ThemeName} from './configSchema';
+import {THEMES, type AppConfig, type ThemeName} from './configSchema';
 
 interface Props {
   config: AppConfig;
@@ -16,8 +16,6 @@ interface Props {
 const THEME_ORDER: ThemeName[] = ['blazeOrange', 'blueRibbon', 'jade', 'slack'];
 // Figma dev-spec toolbar rows; index === ToolbarOption, 0 = off.
 const TOOLBAR_LABELS = ['Off', '1', '2', '3', '4', '5', '6', '7', '8'];
-const MILK_ORDER: MilkPreset[] = ['glass', 'milky', 'dense'];
-const MILK_LABELS = ['Glass', 'Milky', 'Dense'];
 
 interface Palette {
   bg: string;
@@ -32,9 +30,6 @@ const DARK_PALETTE: Palette = {bg: '#1B1D21', text: '#F5F5F7', sub: '#8A8D93', c
 export default function DebugPanel({config, dark = false, onChange, onClose}: Props) {
   const accent = THEMES[config.theme].accent;
   const pal = dark ? DARK_PALETTE : LIGHT_PALETTE;
-  const milkPresetIndex = MILK_ORDER.findIndex(
-    preset => Math.abs(MILK_PRESETS[preset] - config.milkOpacity) < 0.011,
-  );
 
   return (
     <>
@@ -77,29 +72,6 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               }
             />
             <Text style={[s.hint, {color: pal.sub}]}>{toolbarHint(config.toolbarOption)}</Text>
-          </Section>
-
-          <Section pal={pal} title="Матеріал">
-            <SegmentedControl
-              values={MILK_LABELS}
-              selectedIndex={milkPresetIndex}
-              onChange={e => {
-                const preset = MILK_ORDER[e.nativeEvent.selectedSegmentIndex];
-                if (preset) {
-                  onChange({milkOpacity: MILK_PRESETS[preset]});
-                }
-              }}
-            />
-            <SliderRow
-              label="Milk opacity"
-              value={config.milkOpacity}
-              min={0}
-              max={0.95}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({milkOpacity: v})}
-            />
           </Section>
 
           <Section pal={pal} title="Appearance">
@@ -155,6 +127,16 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
                 trackColor={{true: accent}}
               />
             </View>
+            <SliderRow
+              label="Toolbar edge height"
+              value={config.toolbarEdgeHeight}
+              min={44}
+              max={160}
+              step={2}
+              accent={accent}
+              pal={pal}
+              onChange={v => onChange({toolbarEdgeHeight: v})}
+            />
           </Section>
         </ScrollView>
       </View>

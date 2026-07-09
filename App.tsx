@@ -122,6 +122,12 @@ function AppContent() {
 
   const dark = config.appearance === 'dark';
   const toolbarShown = config.toolbarOption > 0;
+  // The toolbar natively grows the root VC's additionalSafeAreaInsets by
+  // edgeExtension (that is what stretches the real top blur region), so the
+  // insets from safe-area-context already include it — subtract to get the
+  // system safe area the toolbar itself should sit at.
+  const edgeH = toolbarShown ? config.toolbarEdgeHeight : 0;
+  const sysTop = Math.max(0, insets.top - edgeH);
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
@@ -131,7 +137,6 @@ function AppContent() {
         tab={state.activeTab}
         title={SCREEN_TITLES[state.activeTab] ?? state.activeTab}
         dark={dark}
-        topExtra={toolbarShown ? TOOLBAR_HEIGHT : 0}
         onCollapseChange={setBarCollapsed}
       />
 
@@ -162,11 +167,12 @@ function AppContent() {
         edge="top"
         effect={config.edgeBlur ? 'soft' : 'hidden'}
         pointerEvents="box-none"
-        style={[styles.topEdge, {height: insets.top + (toolbarShown ? 120 : 56)}]}>
+        style={[styles.topEdge, {height: sysTop + (toolbarShown ? edgeH + 56 : 56)}]}>
         {toolbarShown && (
           <GlassToolbarView
-            style={[styles.toolbar, {top: insets.top}]}
+            style={[styles.toolbar, {top: sysTop}]}
             option={config.toolbarOption}
+            edgeExtension={edgeH}
             config={toNativeConfig(config)}
             onToolbarPress={e => handleToolbarPress(e.nativeEvent.element)}
           />
@@ -177,7 +183,7 @@ function AppContent() {
             style={[
               styles.gear,
               dark && styles.gearDark,
-              {top: insets.top + (toolbarShown ? TOOLBAR_HEIGHT + 16 : 8)},
+              {top: sysTop + (toolbarShown ? TOOLBAR_HEIGHT + 16 : 8)},
             ]}
             onPress={() => setPanelOpen(true)}
             hitSlop={8}>

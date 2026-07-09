@@ -21,14 +21,6 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
   slack: {accent: '#7636A2', light: '#F8F3FD', darkLight: '#2A1C3E', mid: '#8B898E'},
 };
 
-export const MILK_PRESETS = {
-  glass: 0.35,
-  milky: 0.55,
-  dense: 0.75,
-} as const;
-
-export type MilkPreset = keyof typeof MILK_PRESETS;
-
 /** Panel state: theme + material + motion + scrim. Layout values are frozen. */
 export interface AppConfig {
   theme: ThemeName;
@@ -46,11 +38,17 @@ export interface AppConfig {
 
   /** Figma toolbar dev-spec configuration (1–8), 0 = no toolbar. */
   toolbarOption: ToolbarOption;
+
+  /**
+   * Height of the toolbar's safe-area contribution — the region the native
+   * top edge blur actually covers (fed to the native edgeExtension prop).
+   */
+  toolbarEdgeHeight: number;
 }
 
 export const defaultConfig: AppConfig = {
   theme: 'blazeOrange',
-  milkOpacity: MILK_PRESETS.milky,
+  milkOpacity: 0.95,
   // Figma: the active highlight is mix-blend-multiply, not a flat fill.
   highlightBlend: 'multiply',
   highlightOpacity: 1,
@@ -64,6 +62,7 @@ export const defaultConfig: AppConfig = {
   edgeBlur: true,
 
   toolbarOption: 2,
+  toolbarEdgeHeight: 64,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
