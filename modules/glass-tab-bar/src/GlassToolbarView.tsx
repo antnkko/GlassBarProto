@@ -1,12 +1,9 @@
-import {requireNativeView} from 'expo';
 import * as React from 'react';
 
+import NativeGlassToolbar from './GlassToolbarNativeComponent';
 import type {GlassToolbarNativeProps} from './GlassToolbarView.types';
 
-// Second (named) view of the GlassTabBar module — SwiftUI views register
-// under their Swift class name.
-const NativeView = requireNativeView<GlassToolbarNativeProps>('GlassTabBar', 'GlassToolbarExpoView');
-
+// Bare Fabric component (codegen spec in GlassToolbarNativeComponent.ts).
 export default function GlassToolbarView(props: GlassToolbarNativeProps) {
-  return <NativeView {...props} />;
+  return <NativeGlassToolbar {...(props as React.ComponentProps<typeof NativeGlassToolbar>)} />;
 }

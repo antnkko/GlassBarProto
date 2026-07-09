@@ -121,7 +121,33 @@ PODS:
   - FBLazyVector (0.86.0)
   - fmt (12.1.0)
   - GlassTabBar (1.0.0):
-    - ExpoModulesCore
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - glog (0.3.5)
   - hermes-engine (250829098.0.14):
     - hermes-engine/Pre-built (= 250829098.0.14)
@@ -2792,7 +2818,7 @@ DEPENDENCIES:
   - fast_float (from `../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
-  - GlassTabBar (from `../modules/glass-tab-bar/ios`)
+  - GlassTabBar (from `../modules/glass-tab-bar`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
@@ -2919,7 +2945,7 @@ EXTERNAL SOURCES:
   fmt:
     :podspec: "../node_modules/react-native/third-party-podspecs/fmt.podspec"
   GlassTabBar:
-    :path: "../modules/glass-tab-bar/ios"
+    :path: "../modules/glass-tab-bar"
   glog:
     :podspec: "../node_modules/react-native/third-party-podspecs/glog.podspec"
   hermes-engine:
@@ -3097,7 +3123,7 @@ SPEC CHECKSUMS:
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 688bade2cc6ee3de2ba9a411c85c21fd908af3bc
   fmt: 530618a01105dae0fa3a2f27c81ae11fa8f67eac
-  GlassTabBar: 9928cc0596ccf609519dcbc97a41d8cf71598ceb
+  GlassTabBar: 7a9ebc40de461bfc34eb1ad5117d74899cdcd7ac
   glog: e56ede4028c4b7418e6b1195a36b1656bb35e225
   hermes-engine: 5a53fb6aceaa24f22aefcfea93a0aa8d2dafc3e6
   RCT-Folly: 36c4f904fb6cd0219dcb76b94e9502d2a72fab0b

@@ -1,0 +1,17 @@
+{
+  "name": "glass-tab-bar",
+  "version": "1.0.0",
+  "description": "Liquid Glass morphing tab bar + toolbar (iOS 26, Fabric native component)",
+  "main": "index.ts",
+  "codegenConfig": {
+    "name": "GlassBarSpec",
+    "type": "components",
+    "jsSrcsDir": "src",
+    "ios": {
+      "componentProvider": {
+        "GlassTabBar": "GlassTabBarComponentView",
+        "GlassToolbar": "GlassToolbarComponentView"
+      }
+    }
+  }
+}
