@@ -6,7 +6,7 @@ import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-contex
 // Prototype: silence the dev warning toast so it doesn't cover the bottom bar.
 LogBox.ignoreAllLogs(true);
 
-import {GlassTabBarView} from './modules/glass-tab-bar';
+import {GlassTabBarView, GlassToolbarView} from './modules/glass-tab-bar';
 import DebugPanel from './src/debug/DebugPanel';
 import {defaultConfig, toNativeConfig, type AppConfig} from './src/debug/configSchema';
 import {loadConfig, saveConfigDebounced} from './src/debug/persist';
@@ -20,6 +20,10 @@ const SCREEN_TITLES: Record<string, string> = {
   chat: 'Chat',
   play: 'Play',
 };
+
+// Native strip height for the toolbar overlay: tall enough for the CTA pill
+// (60pt) in configuration 8, elements center vertically inside.
+const TOOLBAR_HEIGHT = 64;
 
 // Dev-only: cycle the bar states on a timer so the morph can be recorded
 // headlessly (no tapping / no openurl confirm dialog). Keep false otherwise.
@@ -43,8 +47,20 @@ function AppContent() {
     loadConfig().then(setConfig);
   }, []);
 
+  const patchConfig = useCallback((patch: Partial<AppConfig>) => {
+    setConfig(prev => {
+      if (!prev) {
+        return prev;
+      }
+      const next = {...prev, ...patch};
+      saveConfigDebounced(next);
+      return next;
+    });
+  }, []);
+
   // Dev hook: drive the bar from outside for scripted testing —
-  //   xcrun simctl openurl booted "glassbar://expand" | "glassbar://collapse" | "glassbar://sub/chat"
+  //   xcrun simctl openurl booted "glassbar://expand" | "glassbar://collapse" |
+  //   "glassbar://sub/chat" | "glassbar://toolbar/5"
   // Exercises the RN-controlled-props path (native applies them once lastSeq catches up).
   useEffect(() => {
     const handleUrl = ({url}: {url: string}) => {
@@ -57,39 +73,47 @@ function AppContent() {
         if (tab === 'squad' || tab === 'chat' || tab === 'play') {
           dispatch({type: 'forceSubTab', tab});
         }
+      } else if (url.includes('toolbar/')) {
+        const option = Number(url.split('toolbar/')[1]?.replace(/\D/g, ''));
+        if (option >= 0 && option <= 8) {
+          patchConfig({toolbarOption: option as AppConfig['toolbarOption']});
+        }
       }
     };
     const sub = Linking.addEventListener('url', handleUrl);
     return () => sub.remove();
-  }, []);
+  }, [patchConfig]);
 
   useEffect(() => {
     if (!DEV_AUTOPLAY) {
       return;
     }
-    const script: Array<() => void> = [
-      () => dispatch({type: 'forceExpand'}),
-      () => dispatch({type: 'forceSubTab', tab: 'chat'}),
-      () => dispatch({type: 'forceSubTab', tab: 'play'}),
-      () => dispatch({type: 'forceCollapse'}),
-    ];
-    let i = 0;
+    // Cycle the bar states and toolbar options so morphs can be recorded
+    // headlessly (simctl openurl pops a confirm dialog on this sim).
+    let step = 0;
     const id = setInterval(() => {
-      script[i % script.length]();
-      i += 1;
-    }, 1400);
+      const barScript = [
+        () => dispatch({type: 'forceExpand'}),
+        () => dispatch({type: 'forceSubTab', tab: 'chat'}),
+        () => dispatch({type: 'forceSubTab', tab: 'play'}),
+        () => dispatch({type: 'forceCollapse'}),
+      ] as const;
+      barScript[step % barScript.length]();
+      patchConfig({toolbarOption: ((step + 1) % 9) as AppConfig['toolbarOption']});
+      step += 1;
+    }, 1600);
     return () => clearInterval(id);
-  }, []);
+  }, [patchConfig]);
 
-  const patchConfig = useCallback((patch: Partial<AppConfig>) => {
-    setConfig(prev => {
-      if (!prev) {
-        return prev;
-      }
-      const next = {...prev, ...patch};
-      saveConfigDebounced(next);
-      return next;
-    });
+  // Toolbar taps: settings opens the dev panel, back folds the expanded bar
+  // (the natural "leave this screen" reflex); the rest just log to Metro.
+  const handleToolbarPress = useCallback((element: string) => {
+    console.log(`[toolbar] ${element}`);
+    if (element === 'settings') {
+      setPanelOpen(true);
+    } else if (element === 'back') {
+      dispatch({type: 'forceCollapse'});
+    }
   }, []);
 
   if (!config) {
@@ -97,6 +121,7 @@ function AppContent() {
   }
 
   const dark = config.appearance === 'dark';
+  const toolbarShown = config.toolbarOption > 0;
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
@@ -106,6 +131,7 @@ function AppContent() {
         tab={state.activeTab}
         title={SCREEN_TITLES[state.activeTab] ?? state.activeTab}
         dark={dark}
+        topExtra={toolbarShown ? TOOLBAR_HEIGHT : 0}
         onCollapseChange={setBarCollapsed}
       />
 
@@ -129,19 +155,30 @@ function AppContent() {
       </ScrollEdgeEffect>
 
       {/* Top scroll edge: the same native progressive blur pocket that nav
-          bars get — appears once content scrolls under the top edge. */}
+          bars get — appears once content scrolls under the top edge. The
+          toolbar is the real overlay the pocket shapes around (v2.9 lesson:
+          no invisible shapers). */}
       <ScrollEdgeEffect
         edge="top"
         effect={config.edgeBlur ? 'soft' : 'hidden'}
         pointerEvents="box-none"
-        style={[styles.topEdge, {height: insets.top + 56}]}>
-        {/* The gear is the real overlay element the top blur pocket shapes
-            around — a full-width invisible shaper produced a ghost container
-            instead. The diffuse under-status-bar blur comes from the scroll
-            view's own soft top edge effect (automatic content insets). */}
+        style={[styles.topEdge, {height: insets.top + (toolbarShown ? 120 : 56)}]}>
+        {toolbarShown && (
+          <GlassToolbarView
+            style={[styles.toolbar, {top: insets.top}]}
+            option={config.toolbarOption}
+            config={toNativeConfig(config)}
+            onToolbarPress={e => handleToolbarPress(e.nativeEvent.element)}
+          />
+        )}
+        {/* The gear moves below the toolbar when one is shown. */}
         {!panelOpen && (
           <Pressable
-            style={[styles.gear, dark && styles.gearDark, {top: insets.top + 8}]}
+            style={[
+              styles.gear,
+              dark && styles.gearDark,
+              {top: insets.top + (toolbarShown ? TOOLBAR_HEIGHT + 16 : 8)},
+            ]}
             onPress={() => setPanelOpen(true)}
             hitSlop={8}>
             <Text style={[styles.gearTxt, dark && styles.gearTxtDark]}>⚙︎</Text>
@@ -151,6 +188,12 @@ function AppContent() {
 
       {panelOpen && (
         <DebugPanel config={config} dark={dark} onChange={patchConfig} onClose={() => setPanelOpen(false)} />
+      )}
+
+      {DEV_AUTOPLAY && (
+        <View style={styles.optBadge} pointerEvents="none">
+          <Text style={styles.optBadgeTxt}>{config.toolbarOption}</Text>
+        </View>
       )}
     </View>
   );
@@ -170,6 +213,12 @@ const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: '#FFFFFF'},
   rootDark: {backgroundColor: '#121316'},
   topEdge: {position: 'absolute', top: 0, left: 0, right: 0},
+  toolbar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: TOOLBAR_HEIGHT,
+  },
   bar: {
     position: 'absolute',
     left: 0,
@@ -192,6 +241,18 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
   },
   gearTxt: {color: '#FFF', fontSize: 20},
+  optBadge: {
+    position: 'absolute',
+    left: 8,
+    bottom: 120,
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: '#1B1D21',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optBadgeTxt: {color: '#FFF', fontSize: 16, fontWeight: '700'},
   gearDark: {backgroundColor: 'rgba(245,245,247,0.9)'},
   gearTxtDark: {color: '#1B1D21'},
 });

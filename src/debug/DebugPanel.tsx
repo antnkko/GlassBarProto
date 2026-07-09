@@ -3,6 +3,7 @@ import Slider from '@react-native-community/slider';
 import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Switch, Text, View} from 'react-native';
 
+import type {ToolbarOption} from '../../modules/glass-tab-bar';
 import {MILK_PRESETS, THEMES, type AppConfig, type MilkPreset, type ThemeName} from './configSchema';
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
 }
 
 const THEME_ORDER: ThemeName[] = ['blazeOrange', 'blueRibbon', 'jade', 'slack'];
+// Figma dev-spec toolbar rows; index === ToolbarOption, 0 = off.
+const TOOLBAR_LABELS = ['Off', '1', '2', '3', '4', '5', '6', '7', '8'];
 const MILK_ORDER: MilkPreset[] = ['glass', 'milky', 'dense'];
 const MILK_LABELS = ['Glass', 'Milky', 'Dense'];
 
@@ -63,6 +66,17 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
                 );
               })}
             </View>
+          </Section>
+
+          <Section pal={pal} title="Тулбар">
+            <SegmentedControl
+              values={TOOLBAR_LABELS}
+              selectedIndex={config.toolbarOption}
+              onChange={e =>
+                onChange({toolbarOption: e.nativeEvent.selectedSegmentIndex as ToolbarOption})
+              }
+            />
+            <Text style={[s.hint, {color: pal.sub}]}>{toolbarHint(config.toolbarOption)}</Text>
           </Section>
 
           <Section pal={pal} title="Матеріал">
@@ -146,6 +160,21 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
       </View>
     </>
   );
+}
+
+function toolbarHint(option: ToolbarOption): string {
+  const hints = [
+    'Без тулбара',
+    'Аватар',
+    'Back · тайтл + сабтайтл · аватар',
+    'Back · тайтл + акцент-сабтайтл · translate',
+    'Тільки back',
+    'Settings · close',
+    'Back · група Aa | ⋯',
+    'Back · прогрес',
+    'Back · CTA-кнопка',
+  ];
+  return hints[option] ?? '';
 }
 
 // ---- primitives ----
@@ -287,4 +316,5 @@ const s = StyleSheet.create({
   },
   swatch: {width: 32, height: 32, borderRadius: 16},
   swatchLabel: {fontSize: 11, color: '#9A9CA1'},
+  hint: {fontSize: 12, color: '#9A9CA1', textAlign: 'center'},
 });

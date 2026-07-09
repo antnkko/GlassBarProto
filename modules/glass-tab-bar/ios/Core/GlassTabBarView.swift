@@ -266,7 +266,8 @@ struct GlassTabBarView: View {
 // overrideUserInterfaceStyle. Paired with .id("scheme-…") above, which
 // forces the glass to be recreated after the trait change (a trait change
 // alone does not re-render an applied glass effect).
-private struct InterfaceStylePinner: UIViewRepresentable {
+// Internal: the toolbar (GlassToolbarView) pins its own hosting view too.
+struct InterfaceStylePinner: UIViewRepresentable {
   let style: UIUserInterfaceStyle
 
   func makeUIView(context: Context) -> PinnerView {

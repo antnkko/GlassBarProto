@@ -23,11 +23,13 @@ interface Props {
   tab: string;
   title: string;
   dark?: boolean;
+  /** Extra top content padding while the glass toolbar overlays the screen. */
+  topExtra?: number;
   /** Instagram-style bar minimize: fires true on scroll down, false on scroll up / near top. */
   onCollapseChange?: (collapsed: boolean) => void;
 }
 
-export default function DemoScreen({tab, title, dark = false, onCollapseChange}: Props) {
+export default function DemoScreen({tab, title, dark = false, topExtra = 0, onCollapseChange}: Props) {
   const palettes = dark ? CARD_PALETTES_DARK : CARD_PALETTES;
   const palette = palettes[tab] ?? palettes.home;
   // Lets the native scroll-edge effects (progressive blur) attach to this scroll view.
@@ -43,7 +45,7 @@ export default function DemoScreen({tab, title, dark = false, onCollapseChange}:
         // region zero-height — the system then has nowhere to draw the top
         // pocket. "automatic" restores the native safe-area context.
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, topExtra > 0 && {paddingTop: 20 + topExtra}]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={e => {

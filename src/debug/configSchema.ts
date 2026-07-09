@@ -1,4 +1,4 @@
-import type {BarAppearance, GlassConfig, HighlightBlend} from '../../modules/glass-tab-bar';
+import type {BarAppearance, GlassConfig, HighlightBlend, ToolbarOption} from '../../modules/glass-tab-bar';
 
 export type ThemeName = 'blazeOrange' | 'blueRibbon' | 'jade' | 'slack';
 
@@ -43,6 +43,9 @@ export interface AppConfig {
   springBounce: number;
 
   edgeBlur: boolean;
+
+  /** Figma toolbar dev-spec configuration (1–8), 0 = no toolbar. */
+  toolbarOption: ToolbarOption;
 }
 
 export const defaultConfig: AppConfig = {
@@ -59,6 +62,8 @@ export const defaultConfig: AppConfig = {
   springBounce: 0.22,
 
   edgeBlur: true,
+
+  toolbarOption: 2,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
