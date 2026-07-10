@@ -124,7 +124,8 @@ extension View {
   func glassDecoration<S: InsettableShape>(
     _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig
   ) -> some View {
-    if config.strokeMode == "outer" {
+    // Accent-filled buttons (plus, CTA) carry no stroke.
+    if config.strokeMode == "outer" && kind != .accent {
       self.overlay(shape.inset(by: -1).stroke(config.outerStrokeColor, lineWidth: 2))
     } else {
       self
