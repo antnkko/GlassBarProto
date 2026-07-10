@@ -118,14 +118,16 @@ enum GlassDecorKind {
 }
 
 extension View {
-  /// Applies the outer stroke AFTER the glass so the material, press stretch,
-  /// shimmer and morphs stay untouched. Off = nothing.
+  /// Draws the outer stroke as an overlay meant to be applied to the pill's
+  /// CONTENT, before .glassEffect — so it lives inside the glass view and
+  /// stretches on press and morphs with the material, instead of sitting as a
+  /// static outer layer. A centered stroke reads as a rim ring. Off = nothing.
   @ViewBuilder
   func glassDecoration<S: InsettableShape>(
     _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig
   ) -> some View {
     if config.strokeMode == "outer" {
-      self.overlay(shape.inset(by: -1).stroke(config.outerStrokeColor, lineWidth: 2))
+      self.overlay(shape.stroke(config.outerStrokeColor, lineWidth: 2))
     } else {
       self
     }
