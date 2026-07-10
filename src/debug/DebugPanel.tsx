@@ -26,8 +26,8 @@ const STROKE_ORDER: StrokeMode[] = ['off', 'outer'];
 const STROKE_LABELS = ['Off', 'Outer'];
 const GLASS_ORDER: GlassVariant[] = ['regular', 'clear'];
 const GLASS_LABELS = ['Regular', 'Clear'];
-const STROKE_COLOR_ORDER: StrokeColorChoice[] = ['white', 'black', 'accent', 'gray'];
-const STROKE_COLOR_LABELS = ['White', 'Black', 'Accent', 'Gray'];
+const STROKE_COLOR_ORDER: StrokeColorChoice[] = ['black', 'gray'];
+const STROKE_COLOR_LABELS = ['Black', 'Gray'];
 
 interface Palette {
   bg: string;
@@ -77,6 +77,7 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
 
           <Section pal={pal} title="Тулбар">
             <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
               values={TOOLBAR_LABELS}
               selectedIndex={config.toolbarOption}
               onChange={e =>
@@ -88,6 +89,7 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
 
           <Section pal={pal} title="Appearance">
             <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
               values={['Light', 'Dark']}
               selectedIndex={config.appearance === 'dark' ? 1 : 0}
               onChange={e => onChange({appearance: e.nativeEvent.selectedSegmentIndex === 1 ? 'dark' : 'light'})}
@@ -96,6 +98,7 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
 
           <Section pal={pal} title="Liquid Glass">
             <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
               values={GLASS_LABELS}
               selectedIndex={Math.max(0, GLASS_ORDER.indexOf(config.glassVariant))}
               onChange={e => {
@@ -105,16 +108,9 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
                 }
               }}
             />
-            <SliderRow
-              label="Milk opacity"
-              value={config.milkOpacity}
-              min={0}
-              max={1}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({milkOpacity: v})}
-            />
+            {/* Milk (in-material tint) is baked at its default; Frost is the
+                single matte control since the two overlap and milk reads as
+                imperceptible next to frost. */}
             <SliderRow
               label="Frost"
               value={config.frost}
@@ -129,6 +125,7 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
 
           <Section pal={pal} title="Stroke">
             <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
               values={STROKE_LABELS}
               selectedIndex={Math.max(0, STROKE_ORDER.indexOf(config.strokeMode))}
               onChange={e => {
@@ -139,6 +136,7 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               }}
             />
             <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
               values={STROKE_COLOR_LABELS}
               selectedIndex={Math.max(0, STROKE_COLOR_ORDER.indexOf(config.strokeColorChoice))}
               onChange={e => {
