@@ -213,6 +213,9 @@ struct GlassToolbarView: View {
       Text("Subtitle")
         .font(.system(size: 14, weight: .medium))
         .foregroundStyle(subtitleColor)
+        // Subtitle lets backdrop light through, like the group icons.
+        // Multiply only darkens, so dark appearance stays normal.
+        .blendMode(config.appearance != "dark" ? .multiply : .normal)
     }
     .offset(y: -4)
   }
