@@ -33,7 +33,8 @@ struct GlassToolbarView: View {
   // Figma spec constants (pt).
   private let ghostSize: Double = 48
   private let avatarPhotoSize: Double = 42
-  private let ctaHeight: Double = 60
+  // Figma box model: py 18 + text line 24 + inner pb 4 = 64.
+  private let ctaHeight: Double = 64
   private let groupZoneSize: Double = 48
 
   var body: some View {
@@ -80,7 +81,7 @@ struct GlassToolbarView: View {
       ghostButton("tb_back", iconSize: 20, element: "back")
         .glassEffectID("tb-lead", in: glassNS)
     case 5:
-      ghostButton("tb_settings", iconSize: 24, element: "settings")
+      ghostButton("tb_settings", iconSize: 24, element: "settings", color: neutralDark)
         .glassEffectID("tb-lead", in: glassNS)
     default:
       EmptyView()
@@ -127,9 +128,11 @@ struct GlassToolbarView: View {
 
   // MARK: - Pieces (content INSIDE the glass view — the v2.2 lesson)
 
-  private func ghostButton(_ iconName: String, iconSize: Double, element: String) -> some View {
+  private func ghostButton(
+    _ iconName: String, iconSize: Double, element: String, color: Color? = nil
+  ) -> some View {
     ZStack {
-      icon(iconName, size: iconSize, color: config.mid, multiply: useMultiply)
+      icon(iconName, size: iconSize, color: color ?? config.mid, multiply: useMultiply)
     }
     .frame(width: ghostSize, height: ghostSize)
     .glassEffect(pillGlass, in: Circle())
@@ -170,7 +173,7 @@ struct GlassToolbarView: View {
 
   private func groupZone(_ iconName: String, element: String) -> some View {
     ZStack {
-      icon(iconName, size: 28, color: config.mid, multiply: useMultiply)
+      icon(iconName, size: 28, color: neutralDark, multiply: useMultiply)
     }
     .frame(width: groupZoneSize, height: groupZoneSize)
     .contentShape(Rectangle())
@@ -188,7 +191,7 @@ struct GlassToolbarView: View {
         .font(.system(size: 18, weight: .semibold))
         .tracking(0.18)
         .foregroundStyle(.white)
-        .padding(.bottom, 2)
+        .padding(.bottom, 4)
         .padding(.horizontal, 32)
     }
     .frame(height: ctaHeight)
@@ -252,6 +255,15 @@ struct GlassToolbarView: View {
     config.appearance == "dark"
       ? Color.white.opacity(0.14)
       : Color(hexString: "#F1F1F1") ?? Color.black.opacity(0.06)
+  }
+
+  // Design token neutral/dark — the settings icon and the button-group icons
+  // are darker than the mid inactive tone. Dark-mode counterpart is our own
+  // light equivalent (the mock only specifies light).
+  private var neutralDark: Color {
+    config.appearance == "dark"
+      ? (Color(hexString: "#C6C8CC") ?? .white)
+      : (Color(hexString: "#4B4E52") ?? .black)
   }
 
   // MARK: - Interactions
