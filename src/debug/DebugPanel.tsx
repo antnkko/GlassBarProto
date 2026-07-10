@@ -1,7 +1,6 @@
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
-import Slider from '@react-native-community/slider';
 import React from 'react';
-import {Pressable, ScrollView, StyleSheet, Switch, Text, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 
 import type {ToolbarOption} from '../../modules/glass-tab-bar';
 import {THEMES, type AppConfig, type ThemeName} from './configSchema';
@@ -28,7 +27,6 @@ const LIGHT_PALETTE: Palette = {bg: '#FFFFFF', text: '#1B1D21', sub: '#9A9CA1', 
 const DARK_PALETTE: Palette = {bg: '#1B1D21', text: '#F5F5F7', sub: '#8A8D93', chip: '#2A2D33'};
 
 export default function DebugPanel({config, dark = false, onChange, onClose}: Props) {
-  const accent = THEMES[config.theme].accent;
   const pal = dark ? DARK_PALETTE : LIGHT_PALETTE;
 
   return (
@@ -82,92 +80,9 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
             />
           </Section>
 
-          <Section pal={pal} title="Злипання скла">
-            <SliderRow
-              label="Coalescence spacing"
-              value={config.containerSpacing}
-              min={0}
-              max={80}
-              step={1}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({containerSpacing: v})}
-            />
-          </Section>
-
-          <Section pal={pal} title="Моушн">
-            <SliderRow
-              label="Spring duration (s)"
-              value={config.springDuration}
-              min={0.15}
-              max={0.8}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({springDuration: v})}
-            />
-            <SliderRow
-              label="Spring bounce"
-              value={config.springBounce}
-              min={0}
-              max={0.6}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({springBounce: v})}
-            />
-          </Section>
-
-          <Section pal={pal} title="Scrim">
-            <View style={s.toggleRow}>
-              <Text style={[s.rowLabel, {color: pal.text}]}>Scrim</Text>
-              <Switch
-                value={config.edgeBlur}
-                onValueChange={v => onChange({edgeBlur: v})}
-                trackColor={{true: accent}}
-              />
-            </View>
-            <SliderRow
-              label="Top height"
-              value={config.toolbarEdgeHeight}
-              min={44}
-              max={400}
-              step={2}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({toolbarEdgeHeight: v})}
-            />
-            <SliderRow
-              label="Bottom height"
-              value={config.scrimBottomHeight}
-              min={60}
-              max={220}
-              step={2}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({scrimBottomHeight: v})}
-            />
-            <SliderRow
-              label="Smoothness"
-              value={config.scrimSmoothness}
-              min={1}
-              max={3}
-              step={0.05}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({scrimSmoothness: v})}
-            />
-            <SliderRow
-              label="Blur"
-              value={config.edgeBlurMax}
-              min={0}
-              max={40}
-              step={1}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({edgeBlurMax: v})}
-            />
-          </Section>
+          {/* Material, motion, coalescence and scrim values are frozen at
+              the tuned defaults in configSchema — panel keeps only theme,
+              toolbar option and appearance. */}
         </ScrollView>
       </View>
     </>
@@ -197,62 +112,6 @@ function Section({title, pal, children}: {title: string; pal: Palette; children:
       <Text style={[s.sectionTitle, {color: pal.sub}]}>{title}</Text>
       {children}
     </View>
-  );
-}
-
-function SliderRow({
-  label,
-  value,
-  min,
-  max,
-  step,
-  accent,
-  pal,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  accent: string;
-  pal: Palette;
-  onChange: (v: number) => void;
-}) {
-  const digits = step < 1 ? 2 : 0;
-  const clamp = (v: number) => Math.min(max, Math.max(min, Number(v.toFixed(4))));
-
-  return (
-    <View style={s.row}>
-      <View style={s.rowHead}>
-        <Text style={[s.rowLabel, {color: pal.text}]}>{label}</Text>
-        <View style={s.stepper}>
-          <StepBtn label="−" pal={pal} onPress={() => onChange(clamp(value - step))} />
-          <Text style={[s.rowValue, {color: pal.text}]}>{value.toFixed(digits)}</Text>
-          <StepBtn label="+" pal={pal} onPress={() => onChange(clamp(value + step))} />
-        </View>
-      </View>
-      <Slider
-        style={s.slider}
-        value={value}
-        minimumValue={min}
-        maximumValue={max}
-        step={step}
-        minimumTrackTintColor={accent}
-        onValueChange={v => onChange(clamp(v))}
-      />
-    </View>
-  );
-}
-
-function StepBtn({label, pal, onPress}: {label: string; pal: Palette; onPress: () => void}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={8}
-      style={({pressed}) => [s.stepBtn, {backgroundColor: pal.chip}, pressed && {opacity: 0.5}]}>
-      <Text style={[s.stepBtnTxt, {color: pal.text}]}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -293,28 +152,6 @@ const s = StyleSheet.create({
   scrollContent: {paddingHorizontal: 20, paddingBottom: 30},
   section: {marginTop: 14, gap: 10},
   sectionTitle: {fontSize: 12, fontWeight: '700', color: '#9A9CA1', textTransform: 'uppercase', letterSpacing: 0.6},
-  row: {gap: 0},
-  rowHead: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
-  rowLabel: {fontSize: 14, color: '#1B1D21'},
-  rowValue: {
-    fontSize: 14,
-    fontVariant: ['tabular-nums'],
-    color: '#1B1D21',
-    minWidth: 44,
-    textAlign: 'center',
-  },
-  slider: {width: '100%', height: 36},
-  stepper: {flexDirection: 'row', alignItems: 'center', gap: 2},
-  stepBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: '#F2F2F4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepBtnTxt: {fontSize: 16, color: '#1B1D21', lineHeight: 18},
-  toggleRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
   swatches: {flexDirection: 'row', justifyContent: 'space-between'},
   swatchWrap: {alignItems: 'center', gap: 4, width: 78},
   swatchRing: {

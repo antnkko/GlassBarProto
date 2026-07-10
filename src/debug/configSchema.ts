@@ -67,9 +67,9 @@ export const defaultConfig: AppConfig = {
   toolbarOption: 2,
   // Scrim heights from the design (Figma 320:2512): top 356, bottom 114.
   // scrimBottomHeight is a fresh key so it merges over stored configs.
-  toolbarEdgeHeight: 356,
-  scrimBottomHeight: 114,
-  scrimSmoothness: 1.6,
+  toolbarEdgeHeight: 280,
+  scrimBottomHeight: 160,
+  scrimSmoothness: 3,
   edgeBlurMax: 24,
 };
 
