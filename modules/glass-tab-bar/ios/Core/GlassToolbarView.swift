@@ -33,8 +33,10 @@ struct GlassToolbarView: View {
   // Figma spec constants (pt).
   private let ghostSize: Double = 48
   private let avatarPhotoSize: Double = 42
-  // Figma box model: py 18 + text line 24 + inner pb 4 = 64.
-  private let ctaHeight: Double = 64
+  // Measured from the Figma render (node 273:3944): the CTA pill is 52pt
+  // tall (117 wide with the 32pt paddings) — the CSS-ish py values in the
+  // generated context are misleading, the actual auto-layout height wins.
+  private let ctaHeight: Double = 52
   private let groupZoneSize: Double = 48
 
   var body: some View {
