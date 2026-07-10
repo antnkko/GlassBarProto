@@ -1,9 +1,14 @@
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import Slider from '@react-native-community/slider';
 import React from 'react';
-import {Pressable, ScrollView, StyleSheet, Switch, Text, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 
-import type {GlassVariant, ShadowMode, StrokeMode, ToolbarOption} from '../../modules/glass-tab-bar';
+import type {
+  GlassVariant,
+  StrokeColorChoice,
+  StrokeMode,
+  ToolbarOption,
+} from '../../modules/glass-tab-bar';
 import {THEMES, type AppConfig, type ThemeName} from './configSchema';
 
 interface Props {
@@ -21,8 +26,8 @@ const STROKE_ORDER: StrokeMode[] = ['off', 'outer'];
 const STROKE_LABELS = ['Off', 'Outer'];
 const GLASS_ORDER: GlassVariant[] = ['regular', 'clear'];
 const GLASS_LABELS = ['Regular', 'Clear'];
-const SHADOW_ORDER: ShadowMode[] = ['none', 'design'];
-const SHADOW_LABELS = ['None', 'Design'];
+const STROKE_COLOR_ORDER: StrokeColorChoice[] = ['white', 'black', 'accent', 'gray'];
+const STROKE_COLOR_LABELS = ['White', 'Black', 'Accent', 'Gray'];
 
 interface Palette {
   bg: string;
@@ -100,33 +105,25 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
                 }
               }}
             />
-            <View style={s.toggleRow}>
-              <Text style={[s.rowLabel, {color: pal.text}]}>Interactive</Text>
-              <Switch
-                value={config.glassInteractive}
-                onValueChange={v => onChange({glassInteractive: v})}
-                trackColor={{true: accent}}
-              />
-            </View>
             <SliderRow
               label="Milk opacity"
               value={config.milkOpacity}
               min={0}
-              max={0.95}
+              max={1}
               step={0.01}
               accent={accent}
               pal={pal}
               onChange={v => onChange({milkOpacity: v})}
             />
             <SliderRow
-              label="Coalescence"
-              value={config.containerSpacing}
+              label="Frost"
+              value={config.frost}
               min={0}
-              max={80}
-              step={1}
+              max={1}
+              step={0.01}
               accent={accent}
               pal={pal}
-              onChange={v => onChange({containerSpacing: v})}
+              onChange={v => onChange({frost: v})}
             />
           </Section>
 
@@ -141,42 +138,29 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
                 }
               }}
             />
-          </Section>
-
-          <Section pal={pal} title="Shadow">
             <SegmentedControl
-              values={SHADOW_LABELS}
-              selectedIndex={Math.max(0, SHADOW_ORDER.indexOf(config.shadowMode))}
+              values={STROKE_COLOR_LABELS}
+              selectedIndex={Math.max(0, STROKE_COLOR_ORDER.indexOf(config.strokeColorChoice))}
               onChange={e => {
-                const mode = SHADOW_ORDER[e.nativeEvent.selectedSegmentIndex];
-                if (mode) {
-                  onChange({shadowMode: mode});
+                const choice = STROKE_COLOR_ORDER[e.nativeEvent.selectedSegmentIndex];
+                if (choice) {
+                  onChange({strokeColorChoice: choice});
                 }
               }}
             />
             <SliderRow
-              label="Opacity ×"
-              value={config.shadowOpacityScale}
+              label="Stroke opacity"
+              value={config.strokeOpacity}
               min={0}
-              max={2}
-              step={0.05}
+              max={1}
+              step={0.01}
               accent={accent}
               pal={pal}
-              onChange={v => onChange({shadowOpacityScale: v})}
-            />
-            <SliderRow
-              label="Radius ×"
-              value={config.shadowRadiusScale}
-              min={0.5}
-              max={2.5}
-              step={0.05}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({shadowRadiusScale: v})}
+              onChange={v => onChange({strokeOpacity: v})}
             />
           </Section>
 
-          {/* Motion and scrim values stay frozen at the tuned defaults. */}
+          {/* Motion, scrim and shadow values stay frozen at the tuned defaults. */}
         </ScrollView>
       </View>
     </>

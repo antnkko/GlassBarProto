@@ -78,6 +78,7 @@ struct GlassTabBarView: View {
   private var homePill: some View {
     let active = !localExpanded
     return ZStack {
+      frostFill(Capsule(), config: config)
       if active {
         highlightFill
           .padding(config.innerPadding)
@@ -111,6 +112,7 @@ struct GlassTabBarView: View {
 
   private var collapsedRightPill: some View {
     ZStack {
+      frostFill(Capsule(), config: config)
       icon("tab_squad", size: config.iconSize, color: config.mid)
     }
     .frame(width: config.pillWidth, height: config.pillHeight)
@@ -122,12 +124,15 @@ struct GlassTabBarView: View {
   }
 
   private var expandedBubble: some View {
-    HStack(spacing: config.subTabSpacing) {
-      ForEach(subTabs, id: \.self) { tab in
-        subTab(tab)
+    ZStack {
+      frostFill(Capsule(), config: config)
+      HStack(spacing: config.subTabSpacing) {
+        ForEach(subTabs, id: \.self) { tab in
+          subTab(tab)
+        }
       }
+      .padding(config.innerPadding)
     }
-    .padding(config.innerPadding)
     .frame(maxWidth: .infinity)
     .frame(height: config.pillHeight)
     // One drag gesture over the whole bubble: touch down and slide across the

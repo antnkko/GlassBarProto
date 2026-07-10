@@ -43,6 +43,9 @@ export interface NativeProps extends ViewProps {
     shadowMode: string;
     shadowOpacityScale: Double;
     shadowRadiusScale: Double;
+    frost: Double;
+    strokeColorChoice: string;
+    strokeOpacity: Double;
   }>;
   onToolbarPress?: DirectEventHandler<ToolbarPressEvent>;
 }

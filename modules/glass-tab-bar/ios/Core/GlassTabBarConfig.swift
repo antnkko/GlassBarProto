@@ -56,6 +56,14 @@ struct GlassTabBarConfig: Equatable {
   /// Multipliers over the design shadow values, tuned from the panel.
   var shadowOpacityScale: Double = 1
   var shadowRadiusScale: Double = 1
+
+  /// Extra frost: an opaque tint layer inside the glass, under the content.
+  /// Mattes the material AND covers the rim specular glints (0 = none).
+  var frost: Double = 0
+  /// Outer stroke color choice: "white" | "black" | "accent" | "gray".
+  var strokeColorChoice: String = "gray"
+  /// Outer stroke opacity.
+  var strokeOpacity: Double = 0.13
 }
 
 extension GlassTabBarConfig {
@@ -110,67 +118,41 @@ enum GlassDecorKind {
 }
 
 extension View {
-  /// Applies the design stroke and/or drop shadow AFTER the glass so the
-  /// material, press stretch, shimmer and morphs stay untouched. Stroke and
-  /// shadow are independent panel switches.
+  /// Applies the outer stroke AFTER the glass so the material, press stretch,
+  /// shimmer and morphs stay untouched. Off = nothing.
   @ViewBuilder
   func glassDecoration<S: InsettableShape>(
     _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig
   ) -> some View {
-    let stroked: some View = Group {
-      if config.strokeMode == "outer" {
-        self.overlay(
-          shape.inset(by: -1).stroke(config.strokeColor(kind: kind, inner: false), lineWidth: 2)
-        )
-      } else {
-        self
-      }
-    }
-    if config.shadowMode == "design" {
-      stroked.shadow(
-        color: config.shadowColor(kind: kind)
-          .opacity(min(max(config.shadowOpacityScale, 0), 2)),
-        radius: config.shadowRadius(kind: kind) * min(max(config.shadowRadiusScale, 0.1), 3)
-      )
+    if config.strokeMode == "outer" {
+      self.overlay(shape.inset(by: -1).stroke(config.outerStrokeColor, lineWidth: 2))
     } else {
-      stroked
+      self
+    }
+  }
+
+  /// Frost layer: fills the glass shape with an opaque tint UNDER the content
+  /// (icons stay crisp above it) — mattes the glass and covers rim glints.
+  @ViewBuilder
+  func frostFill<S: Shape>(_ shape: S, config: GlassTabBarConfig) -> some View {
+    if config.frost > 0.01 {
+      shape.fill(config.milkColor.opacity(config.frost))
     }
   }
 }
 
 extension GlassTabBarConfig {
-  func strokeColor(kind: GlassDecorKind, inner: Bool) -> Color {
-    switch kind {
-    case .accent:
-      return accent.opacity(0.7)
-    case .group:
-      return appearance == "dark"
-        ? Color.white.opacity(0.14)
-        : (Color(hexString: "#F1F1F1") ?? Color.black.opacity(0.06))
-    case .neutral:
-      // Design ring: the soft rgba(193,195,198,0.13).
-      return appearance == "dark"
-        ? Color.white.opacity(0.14)
-        : (Color(hexString: "#C1C3C6") ?? .gray).opacity(0.13)
+  /// The single, panel-controlled outer stroke color (choice + opacity),
+  /// applied uniformly to every element in outer mode.
+  var outerStrokeColor: Color {
+    let base: Color
+    switch strokeColorChoice {
+    case "white": base = .white
+    case "black": base = .black
+    case "accent": base = accent
+    default: base = Color(hexString: "#C1C3C6") ?? .gray
     }
-  }
-
-  func shadowColor(kind: GlassDecorKind) -> Color {
-    if appearance == "dark" {
-      return Color.black.opacity(0.35)
-    }
-    switch kind {
-    case .neutral: return (Color(hexString: "#C1C3C6") ?? .gray).opacity(0.3)
-    case .accent, .group: return Color.black.opacity(0.2)
-    }
-  }
-
-  func shadowRadius(kind: GlassDecorKind) -> Double {
-    if appearance == "dark" {
-      return 10
-    }
-    // CSS blur 20 / 16 ≈ SwiftUI radius 10 / 8.
-    return kind == .neutral ? 10 : 8
+    return base.opacity(strokeOpacity)
   }
 }
 

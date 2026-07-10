@@ -50,6 +50,9 @@ export interface NativeProps extends ViewProps {
     shadowMode: string;
     shadowOpacityScale: Double;
     shadowRadiusScale: Double;
+    frost: Double;
+    strokeColorChoice: string;
+    strokeOpacity: Double;
   }>;
   onTabPress?: DirectEventHandler<TabPressEvent>;
   onSubTabPress?: DirectEventHandler<TabPressEvent>;

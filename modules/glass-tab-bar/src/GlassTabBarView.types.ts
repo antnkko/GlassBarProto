@@ -46,11 +46,17 @@ export interface GlassConfig {
   shadowMode: ShadowMode;
   shadowOpacityScale: number;
   shadowRadiusScale: number;
+  /** Extra frost inside the glass (mattes + hides rim glints). */
+  frost: number;
+  /** Outer stroke color choice + opacity. */
+  strokeColorChoice: StrokeColorChoice;
+  strokeOpacity: number;
 }
 
 export type StrokeMode = 'off' | 'outer';
 export type GlassVariant = 'regular' | 'clear';
 export type ShadowMode = 'none' | 'design';
+export type StrokeColorChoice = 'white' | 'black' | 'accent' | 'gray';
 
 export interface TabPressEvent {
   tab: RootTab | 'plus';

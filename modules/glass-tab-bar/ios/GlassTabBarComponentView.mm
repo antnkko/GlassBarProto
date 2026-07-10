@@ -98,6 +98,9 @@ static NSDictionary *GlassTabBarConfigDict(const GlassTabBarConfigStruct &c)
     @"shadowMode" : RCTNSStringFromString(c.shadowMode),
     @"shadowOpacityScale" : @(c.shadowOpacityScale),
     @"shadowRadiusScale" : @(c.shadowRadiusScale),
+    @"frost" : @(c.frost),
+    @"strokeColorChoice" : RCTNSStringFromString(c.strokeColorChoice),
+    @"strokeOpacity" : @(c.strokeOpacity),
   };
 }
 

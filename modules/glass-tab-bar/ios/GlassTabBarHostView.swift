@@ -118,5 +118,8 @@ extension GlassTabBarConfig {
     if let v = bridge["shadowMode"] as? String, !v.isEmpty { shadowMode = v }
     if let v = bridge["shadowOpacityScale"] as? Double { shadowOpacityScale = v }
     if let v = bridge["shadowRadiusScale"] as? Double { shadowRadiusScale = v }
+    if let v = bridge["frost"] as? Double { frost = v }
+    if let v = bridge["strokeColorChoice"] as? String, !v.isEmpty { strokeColorChoice = v }
+    if let v = bridge["strokeOpacity"] as? Double { strokeOpacity = v }
   }
 }

@@ -4,6 +4,7 @@ import type {
   GlassVariant,
   HighlightBlend,
   ShadowMode,
+  StrokeColorChoice,
   StrokeMode,
   ToolbarOption,
 } from '../../modules/glass-tab-bar';
@@ -64,6 +65,11 @@ export interface AppConfig {
   shadowMode: ShadowMode;
   shadowOpacityScale: number;
   shadowRadiusScale: number;
+  /** Extra frost inside the glass (mattes + hides rim glints). */
+  frost: number;
+  /** Outer stroke color + opacity. */
+  strokeColorChoice: StrokeColorChoice;
+  strokeOpacity: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -94,6 +100,9 @@ export const defaultConfig: AppConfig = {
   shadowMode: 'none',
   shadowOpacityScale: 1,
   shadowRadiusScale: 1,
+  frost: 0,
+  strokeColorChoice: 'gray',
+  strokeOpacity: 0.13,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -130,6 +139,9 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     shadowMode: config.shadowMode,
     shadowOpacityScale: config.shadowOpacityScale,
     shadowRadiusScale: config.shadowRadiusScale,
+    frost: config.frost,
+    strokeColorChoice: config.strokeColorChoice,
+    strokeOpacity: config.strokeOpacity,
     ...frozenLayout,
   };
 }

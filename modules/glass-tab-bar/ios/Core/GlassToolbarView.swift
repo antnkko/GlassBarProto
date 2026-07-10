@@ -128,6 +128,7 @@ struct GlassToolbarView: View {
     _ iconName: String, iconSize: Double, element: String, color: Color? = nil
   ) -> some View {
     ZStack {
+      frostFill(Circle(), config: config)
       icon(iconName, size: iconSize, color: color ?? config.mid, multiply: useMultiply)
     }
     .frame(width: ghostSize, height: ghostSize)
@@ -139,6 +140,7 @@ struct GlassToolbarView: View {
 
   private var avatar: some View {
     ZStack {
+      frostFill(Circle(), config: config)
       Image("tb_avatar")
         .resizable()
         .scaledToFill()
@@ -155,15 +157,18 @@ struct GlassToolbarView: View {
 
   // Figma: pill h48, px 6, two 48pt icon zones with a 2×24 divider between.
   private var buttonGroup: some View {
-    HStack(spacing: 3) {
-      groupZone("tb_aa", element: "aa")
-      Capsule()
-        .fill(dividerColor)
-        .frame(width: 2, height: 24)
-        .blendMode(useMultiply ? .multiply : .normal)
-      groupZone("tb_more", element: "more")
+    ZStack {
+      frostFill(Capsule(), config: config)
+      HStack(spacing: 3) {
+        groupZone("tb_aa", element: "aa")
+        Capsule()
+          .fill(dividerColor)
+          .frame(width: 2, height: 24)
+          .blendMode(useMultiply ? .multiply : .normal)
+        groupZone("tb_more", element: "more")
+      }
+      .padding(.horizontal, 6)
     }
-    .padding(.horizontal, 6)
     .frame(height: ghostSize)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("tb-trail", in: glassNS)
