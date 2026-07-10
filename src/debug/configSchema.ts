@@ -73,7 +73,7 @@ export const defaultConfig: AppConfig = {
   toolbarOption: 2,
   toolbarEdgeHeight: 356,
   edgeBottomHeight: 96,
-  edgeMaterial: 'ultraThin',
+  edgeMaterial: 'thick',
   edgeFadeStart: 0.35,
   edgeCurve: 1.4,
   edgeIntensity: 1,

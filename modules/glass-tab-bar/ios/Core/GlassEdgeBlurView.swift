@@ -9,6 +9,24 @@ import UIKit
 //
 // Fully tunable from the dev panel: material thickness, where the fade
 // starts, the falloff gamma and a global intensity multiplier.
+private struct VariableBlurRepresentable: UIViewRepresentable {
+  let edge: String
+  let fadeStart: Double
+  let curve: Double
+  let intensity: Double
+  let radius: Double
+
+  func makeUIView(context: Context) -> VariableBlurUIView {
+    let view = VariableBlurUIView()
+    view.update(edge: edge, fadeStart: fadeStart, curve: curve, intensity: intensity, radius: radius)
+    return view
+  }
+
+  func updateUIView(_ view: VariableBlurUIView, context: Context) {
+    view.update(edge: edge, fadeStart: fadeStart, curve: curve, intensity: intensity, radius: radius)
+  }
+}
+
 struct GlassEdgeBlurView: View {
   /// "top" | "bottom" — which edge the blur is anchored to.
   let edge: String
@@ -24,13 +42,26 @@ struct GlassEdgeBlurView: View {
   var intensity: Double = 1.0
 
   var body: some View {
-    Rectangle()
-      .fill(resolvedMaterial)
-      .mask(maskGradient)
-      .id("scheme-\(appearance)")
-      .background(InterfaceStylePinner(style: appearance == "dark" ? .dark : .light))
-      .allowsHitTesting(false)
-      .ignoresSafeArea()
+    ZStack {
+      // Real blur underneath: a variableBlur radius ramp. A masked Material
+      // alone only fades its own ALPHA — half-transparent frost over sharp
+      // content, no actual blurring. The ramp supplies the blur, the
+      // material above supplies the frost look the panel controls.
+      VariableBlurRepresentable(
+        edge: edge,
+        fadeStart: fadeStart,
+        curve: curve,
+        intensity: intensity,
+        radius: blurRadius
+      )
+      Rectangle()
+        .fill(resolvedMaterial)
+        .mask(maskGradient)
+    }
+    .id("scheme-\(appearance)")
+    .background(InterfaceStylePinner(style: appearance == "dark" ? .dark : .light))
+    .allowsHitTesting(false)
+    .ignoresSafeArea()
   }
 
   private var resolvedMaterial: Material {
@@ -39,6 +70,17 @@ struct GlassEdgeBlurView: View {
     case "regular": return .regularMaterial
     case "thick": return .thickMaterial
     default: return .ultraThinMaterial
+    }
+  }
+
+  // The material tier also scales the real blur underneath, so one segmented
+  // control drives the overall strength of both layers.
+  private var blurRadius: Double {
+    switch material {
+    case "thin": return 24
+    case "regular": return 32
+    case "thick": return 40
+    default: return 18
     }
   }
 
