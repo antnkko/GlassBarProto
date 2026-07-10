@@ -86,9 +86,9 @@ struct GlassTabBarView: View {
       icon("tab_home", size: config.iconSize, color: active ? config.accent : config.mid)
     }
     .frame(width: config.pillWidth, height: config.pillHeight)
-    .glassDecoration(Capsule(), kind: .neutral, config: config)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("home", in: glassNS)
+    .glassDecoration(Capsule(), kind: .neutral, config: config)
     .contentShape(Capsule())
     .onTapGesture { homeTapped() }
   }
@@ -102,10 +102,10 @@ struct GlassTabBarView: View {
       icon("tab_plus", size: config.plusIconSize, color: .white)
     }
     .frame(width: config.pillWidth, height: config.pillHeight)
-    .glassDecoration(Capsule(), kind: .accent, config: config)
     .glassEffect(config.accentGlass, in: Capsule())
     .glassEffectID("plus", in: glassNS)
     .glassEffectTransition(.matchedGeometry)
+    .glassDecoration(Capsule(), kind: .accent, config: config)
     .contentShape(Capsule())
     .onTapGesture { plusTapped() }
   }
@@ -116,9 +116,9 @@ struct GlassTabBarView: View {
       icon("tab_squad", size: config.iconSize, color: config.mid)
     }
     .frame(width: config.pillWidth, height: config.pillHeight)
-    .glassDecoration(Capsule(), kind: .neutral, config: config)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
+    .glassDecoration(Capsule(), kind: .neutral, config: config)
     .contentShape(Capsule())
     .onTapGesture { expandTapped() }
   }
@@ -150,9 +150,9 @@ struct GlassTabBarView: View {
           )
       }
     }
-    .glassDecoration(Capsule(), kind: .neutral, config: config)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
+    .glassDecoration(Capsule(), kind: .neutral, config: config)
   }
 
   private func subTab(_ tab: String) -> some View {
