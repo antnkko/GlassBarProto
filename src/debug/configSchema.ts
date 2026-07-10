@@ -43,6 +43,8 @@ export interface AppConfig {
   toolbarEdgeHeight: number;
   /** Height of the bottom design scrim (full height from the screen edge). */
   scrimBottomHeight: number;
+  /** 1 = design curve; higher flattens the scrim's transparent tail. */
+  scrimSmoothness: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -65,6 +67,7 @@ export const defaultConfig: AppConfig = {
   // scrimBottomHeight is a fresh key so it merges over stored configs.
   toolbarEdgeHeight: 356,
   scrimBottomHeight: 114,
+  scrimSmoothness: 1.6,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */

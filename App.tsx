@@ -1,5 +1,5 @@
-import React, {useCallback, useEffect, useReducer, useState} from 'react';
-import {Linking, LogBox, Pressable, StatusBar, StyleSheet, Text, View} from 'react-native';
+import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
+import {Animated, Linking, LogBox, Pressable, StatusBar, StyleSheet, Text, View} from 'react-native';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 
 // Prototype: silence the dev warning toast so it doesn't cover the bottom bar.
@@ -35,11 +35,24 @@ function AppContent() {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [barCollapsed, setBarCollapsed] = useState(false);
+  const [scrolledTop, setScrolledTop] = useState(false);
+  // The top scrim exists only once content scrolls under it, and it arrives
+  // with a fade — a plain RN layer, so animating opacity is safe.
+  const topScrimOpacity = useRef(new Animated.Value(0)).current;
 
-  // Switching tabs restores the full-size bar.
+  // Switching tabs restores the full-size bar and the resting (no-scrim) top.
   useEffect(() => {
     setBarCollapsed(false);
+    setScrolledTop(false);
   }, [state.activeTab]);
+
+  useEffect(() => {
+    Animated.timing(topScrimOpacity, {
+      toValue: scrolledTop ? 1 : 0,
+      duration: 240,
+      useNativeDriver: true,
+    }).start();
+  }, [scrolledTop, topScrimOpacity]);
 
   // Hydrate persisted config before the first render of the bar,
   // so a stored config doesn't visually snap in after mount.
@@ -133,6 +146,7 @@ function AppContent() {
         dark={dark}
         topExtra={toolbarShown ? TOOLBAR_HEIGHT : 0}
         onCollapseChange={setBarCollapsed}
+        onScrolledChange={setScrolledTop}
       />
 
       {/* Design scrims (Figma 320:2512): plain eased gradients, no backdrop
@@ -141,6 +155,7 @@ function AppContent() {
         <EdgeScrim
           edge="bottom"
           dark={dark}
+          smoothness={config.scrimSmoothness}
           style={[styles.bottomBlur, {height: config.scrimBottomHeight}]}
         />
       )}
@@ -162,11 +177,16 @@ function AppContent() {
       </View>
 
       {config.edgeBlur && (
-        <EdgeScrim
-          edge="top"
-          dark={dark}
-          style={[styles.topBlur, {height: config.toolbarEdgeHeight}]}
-        />
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.topBlur, {height: config.toolbarEdgeHeight, opacity: topScrimOpacity}]}>
+          <EdgeScrim
+            edge="top"
+            dark={dark}
+            smoothness={config.scrimSmoothness}
+            style={styles.fill}
+          />
+        </Animated.View>
       )}
 
       {toolbarShown && (
@@ -218,6 +238,7 @@ const styles = StyleSheet.create({
   rootDark: {backgroundColor: '#121316'},
   topBlur: {position: 'absolute', top: 0, left: 0, right: 0},
   bottomBlur: {position: 'absolute', bottom: 0, left: 0, right: 0},
+  fill: {flex: 1},
   toolbar: {
     position: 'absolute',
     left: 0,

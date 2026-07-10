@@ -129,7 +129,7 @@ struct GlassToolbarView: View {
 
   private func ghostButton(_ iconName: String, iconSize: Double, element: String) -> some View {
     ZStack {
-      icon(iconName, size: iconSize, color: config.mid)
+      icon(iconName, size: iconSize, color: config.mid, multiply: useMultiply)
     }
     .frame(width: ghostSize, height: ghostSize)
     .glassEffect(pillGlass, in: Circle())
@@ -159,6 +159,7 @@ struct GlassToolbarView: View {
       Capsule()
         .fill(dividerColor)
         .frame(width: 2, height: 24)
+        .blendMode(useMultiply ? .multiply : .normal)
       groupZone("tb_more", element: "more")
     }
     .padding(.horizontal, 6)
@@ -169,7 +170,7 @@ struct GlassToolbarView: View {
 
   private func groupZone(_ iconName: String, element: String) -> some View {
     ZStack {
-      icon(iconName, size: 28, color: config.mid)
+      icon(iconName, size: 28, color: config.mid, multiply: useMultiply)
     }
     .frame(width: groupZoneSize, height: groupZoneSize)
     .contentShape(Rectangle())
@@ -225,13 +226,22 @@ struct GlassToolbarView: View {
     }
   }
 
-  private func icon(_ name: String, size: Double, color: Color) -> some View {
+  private func icon(_ name: String, size: Double, color: Color, multiply: Bool = false) -> some View {
     Image(name)
       .renderingMode(.template)
       .resizable()
       .scaledToFit()
       .frame(width: size, height: size)
       .foregroundStyle(color)
+      .blendMode(multiply ? .multiply : .normal)
+  }
+
+  // Design: the button-group state renders its icons and divider with
+  // mix-blend-multiply so backdrop light passes through. Multiply only
+  // darkens, so dark appearance falls back to normal (same rule as the
+  // bar's active highlight).
+  private var useMultiply: Bool {
+    localOption == 6 && config.appearance != "dark"
   }
 
   private var titleColor: Color {

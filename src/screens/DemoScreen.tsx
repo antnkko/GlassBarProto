@@ -26,13 +26,23 @@ interface Props {
   topExtra?: number;
   /** Instagram-style bar minimize: fires true on scroll down, false on scroll up / near top. */
   onCollapseChange?: (collapsed: boolean) => void;
+  /** Fires true once content is scrolled past the top, false back at rest — drives the top scrim. */
+  onScrolledChange?: (scrolled: boolean) => void;
 }
 
-export default function DemoScreen({tab, title, dark = false, topExtra = 0, onCollapseChange}: Props) {
+export default function DemoScreen({
+  tab,
+  title,
+  dark = false,
+  topExtra = 0,
+  onCollapseChange,
+  onScrolledChange,
+}: Props) {
   const palettes = dark ? CARD_PALETTES_DARK : CARD_PALETTES;
   const palette = palettes[tab] ?? palettes.home;
   const lastY = useRef(0);
   const collapsed = useRef(false);
+  const scrolled = useRef(false);
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
       <ScrollView
@@ -58,6 +68,11 @@ export default function DemoScreen({tab, title, dark = false, topExtra = 0, onCo
           if (next !== null && next !== collapsed.current) {
             collapsed.current = next;
             onCollapseChange?.(next);
+          }
+          const isScrolled = y > 16;
+          if (isScrolled !== scrolled.current) {
+            scrolled.current = isScrolled;
+            onScrolledChange?.(isScrolled);
           }
         }}>
         <Text style={[styles.title, dark && styles.titleDark]}>{title}</Text>

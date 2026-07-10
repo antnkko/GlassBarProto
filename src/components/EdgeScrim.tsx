@@ -25,13 +25,23 @@ const STOPS: Array<[location: number, alpha: number]> = [
   [1, 0.9],
 ];
 
-function rampFor(edge: 'top' | 'bottom', dark: boolean) {
+const MAX_ALPHA = 0.9;
+
+function rampFor(edge: 'top' | 'bottom', dark: boolean, smoothness: number) {
   // The design gradient runs transparent -> 0.9 downward (bottom edge).
   // For the top edge the ramp is mirrored so 0.9 sits at the screen edge.
+  //
+  // Smoothness raises the normalized alphas to a power: the dense end stays
+  // at 0.9 while the transparent tail flattens out (zero slope), so the
+  // gradient's onset over content becomes invisible. 1 = design curve.
   const base = dark ? '18, 19, 22' : '255, 255, 255';
+  const power = Math.max(1, smoothness);
   const stops = edge === 'top' ? [...STOPS].reverse() : STOPS;
   return {
-    colors: stops.map(([, alpha]) => `rgba(${base}, ${alpha})`) as [string, string, ...string[]],
+    colors: stops.map(([, alpha]) => {
+      const eased = MAX_ALPHA * Math.pow(alpha / MAX_ALPHA, power);
+      return `rgba(${base}, ${Number(eased.toFixed(4))})`;
+    }) as [string, string, ...string[]],
     locations: (edge === 'top'
       ? stops.map(([location]) => 1 - location)
       : stops.map(([location]) => location)) as [number, number, ...number[]],
@@ -41,10 +51,12 @@ function rampFor(edge: 'top' | 'bottom', dark: boolean) {
 interface Props {
   edge: 'top' | 'bottom';
   dark?: boolean;
+  /** 1 = design curve; higher flattens the transparent tail (softer onset). */
+  smoothness?: number;
   style?: StyleProp<ViewStyle>;
 }
 
-export default function EdgeScrim({edge, dark = false, style}: Props) {
-  const {colors, locations} = rampFor(edge, dark);
+export default function EdgeScrim({edge, dark = false, smoothness = 1, style}: Props) {
+  const {colors, locations} = rampFor(edge, dark, smoothness);
   return <LinearGradient colors={colors} locations={locations} style={style} pointerEvents="none" />;
 }
