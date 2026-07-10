@@ -185,20 +185,21 @@ struct GlassToolbarView: View {
   // interactive stretch and the morph carry it; the glass rim replaces the
   // mock's inner white glow.
   private var ctaButton: some View {
-    ZStack {
-      Capsule().fill(config.accent)
-      Text("Button")
-        .font(.system(size: 18, weight: .semibold))
-        .tracking(0.18)
-        .foregroundStyle(.white)
-        .padding(.bottom, 4)
-        .padding(.horizontal, 32)
-    }
-    .frame(height: ctaHeight)
-    .glassEffect(.regular.tint(config.accent).interactive(), in: Capsule())
-    .glassEffectID("tb-trail", in: glassNS)
-    .contentShape(Capsule())
-    .onTapGesture { pressed("cta") }
+    // The fill is a BACKGROUND of the text, not a ZStack sibling: a bare
+    // Capsule shape is greedy and would stretch the pill across all the
+    // free toolbar width. Background sizes to the label (design: px 32).
+    Text("Button")
+      .font(.system(size: 18, weight: .semibold))
+      .tracking(0.18)
+      .foregroundStyle(.white)
+      .padding(.bottom, 4)
+      .padding(.horizontal, 32)
+      .frame(height: ctaHeight)
+      .background(Capsule().fill(config.accent))
+      .glassEffect(.regular.tint(config.accent).interactive(), in: Capsule())
+      .glassEffectID("tb-trail", in: glassNS)
+      .contentShape(Capsule())
+      .onTapGesture { pressed("cta") }
   }
 
   // Figma: title 28 Obviously Narrow Bold (SF condensed bold as surrogate),
