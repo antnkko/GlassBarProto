@@ -121,5 +121,7 @@ extension GlassTabBarConfig {
     if let v = bridge["frost"] as? Double { frost = v }
     if let v = bridge["strokeColorChoice"] as? String, !v.isEmpty { strokeColorChoice = v }
     if let v = bridge["strokeOpacity"] as? Double { strokeOpacity = v }
+    if let v = bridge["edgeFrost"] as? Double { edgeFrost = v }
+    if let v = bridge["edgeFrostWidth"] as? Double, v > 0 { edgeFrostWidth = v }
   }
 }

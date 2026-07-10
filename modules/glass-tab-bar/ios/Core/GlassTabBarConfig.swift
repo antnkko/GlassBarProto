@@ -64,6 +64,12 @@ struct GlassTabBarConfig: Equatable {
   var strokeColorChoice: String = "gray"
   /// Outer stroke opacity.
   var strokeOpacity: Double = 0.13
+
+  /// Rim frost: a frosted band painted OVER the glass edge, covering the
+  /// specular rim glints. 0 = none (glints visible).
+  var edgeFrost: Double = 0
+  /// Width (pt) of that rim band.
+  var edgeFrostWidth: Double = 8
 }
 
 extension GlassTabBarConfig {
@@ -124,11 +130,24 @@ extension View {
   func glassDecoration<S: InsettableShape>(
     _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig
   ) -> some View {
-    if config.strokeMode == "outer" {
-      self.overlay(shape.inset(by: -1).stroke(config.outerStrokeColor, lineWidth: 2))
-    } else {
-      self
-    }
+    self
+      // Rim frost: paints a frosted band over the glass edge, above the
+      // material's specular, so it covers the rim glints. Accent pills have
+      // no glints, so they skip it.
+      .overlay {
+        if config.edgeFrost > 0.01 && kind != .accent {
+          shape.strokeBorder(
+            config.milkColor.opacity(config.edgeFrost),
+            lineWidth: config.edgeFrostWidth
+          )
+        }
+      }
+      // Outer design ring (separate switch).
+      .overlay {
+        if config.strokeMode == "outer" {
+          shape.inset(by: -1).stroke(config.outerStrokeColor, lineWidth: 2)
+        }
+      }
   }
 
   /// Frost layer: fills the glass shape with an opaque tint UNDER the content

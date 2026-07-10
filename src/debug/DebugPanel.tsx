@@ -125,6 +125,26 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               pal={pal}
               onChange={v => onChange({frost: v})}
             />
+            <SliderRow
+              label="Edge glint"
+              value={config.edgeFrost}
+              min={0}
+              max={1}
+              step={0.01}
+              accent={accent}
+              pal={pal}
+              onChange={v => onChange({edgeFrost: v})}
+            />
+            <SliderRow
+              label="Edge width"
+              value={config.edgeFrostWidth}
+              min={2}
+              max={16}
+              step={1}
+              accent={accent}
+              pal={pal}
+              onChange={v => onChange({edgeFrostWidth: v})}
+            />
           </Section>
 
           <Section pal={pal} title="Stroke">
