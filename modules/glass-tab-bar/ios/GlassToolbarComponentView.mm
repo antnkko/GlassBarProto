@@ -81,8 +81,6 @@ static NSDictionary *GlassToolbarConfigDict(const GlassToolbarConfigStruct &c)
     @"frost" : @(c.frost),
     @"strokeColorChoice" : RCTNSStringFromString(c.strokeColorChoice),
     @"strokeOpacity" : @(c.strokeOpacity),
-    @"edgeFrost" : @(c.edgeFrost),
-    @"edgeFrostWidth" : @(c.edgeFrostWidth),
   };
 }
 

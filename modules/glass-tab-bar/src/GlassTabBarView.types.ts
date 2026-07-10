@@ -51,9 +51,6 @@ export interface GlassConfig {
   /** Outer stroke color choice + opacity. */
   strokeColorChoice: StrokeColorChoice;
   strokeOpacity: number;
-  /** Rim frost over the glass edge — covers the specular glints. */
-  edgeFrost: number;
-  edgeFrostWidth: number;
 }
 
 export type StrokeMode = 'off' | 'outer';

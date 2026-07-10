@@ -70,9 +70,6 @@ export interface AppConfig {
   /** Outer stroke color + opacity. */
   strokeColorChoice: StrokeColorChoice;
   strokeOpacity: number;
-  /** Rim frost over the glass edge — covers the specular glints. */
-  edgeFrost: number;
-  edgeFrostWidth: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -106,8 +103,6 @@ export const defaultConfig: AppConfig = {
   frost: 0,
   strokeColorChoice: 'gray',
   strokeOpacity: 0.13,
-  edgeFrost: 0,
-  edgeFrostWidth: 8,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -147,8 +142,6 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     frost: config.frost,
     strokeColorChoice: config.strokeColorChoice,
     strokeOpacity: config.strokeOpacity,
-    edgeFrost: config.edgeFrost,
-    edgeFrostWidth: config.edgeFrostWidth,
     ...frozenLayout,
   };
 }
