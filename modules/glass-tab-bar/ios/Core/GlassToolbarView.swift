@@ -64,13 +64,7 @@ struct GlassToolbarView: View {
 
   // MARK: - Material (same recipe as the bar pills)
 
-  private var pillGlass: Glass {
-    var glass: Glass = .regular
-    if config.milkOpacity > 0.01 {
-      glass = glass.tint(config.milkColor.opacity(config.milkOpacity))
-    }
-    return glass.interactive()
-  }
+  private var pillGlass: Glass { config.pillGlass }
 
   // MARK: - Slots
 
@@ -202,7 +196,7 @@ struct GlassToolbarView: View {
       .padding(.horizontal, 32)
       .frame(height: ctaHeight)
       .background(Capsule().fill(config.accent))
-      .glassEffect(.regular.tint(config.accent).interactive(), in: Capsule())
+      .glassEffect(config.accentGlass, in: Capsule())
       .glassEffectID("tb-trail", in: glassNS)
       .glassDecoration(Capsule(), kind: .accent, config: config)
       .contentShape(Capsule())

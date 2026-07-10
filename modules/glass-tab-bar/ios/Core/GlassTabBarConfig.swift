@@ -44,8 +44,18 @@ struct GlassTabBarConfig: Equatable {
   var iconSize: Double = 32
   var plusIconSize: Double = 28
 
-  /// Design stroke experiment: "off" | "inner" | "outer" (ring). Off = none.
+  /// Design stroke experiment: "off" | "outer" (ring). Off = none.
   var strokeMode: String = "off"
+
+  /// Liquid Glass variant: "regular" | "clear".
+  var glassVariant: String = "regular"
+  /// Whether the glass reacts to touch (press stretch / shimmer).
+  var glassInteractive: Bool = true
+  /// Drop shadow: "none" (the frozen look) | "design" (mock values, scalable).
+  var shadowMode: String = "none"
+  /// Multipliers over the design shadow values, tuned from the panel.
+  var shadowOpacityScale: Double = 1
+  var shadowRadiusScale: Double = 1
 }
 
 extension GlassTabBarConfig {
@@ -64,6 +74,27 @@ extension GlassTabBarConfig {
   var milkColor: Color {
     appearance == "dark" ? (Color(hexString: "#1B1D21") ?? .black) : .white
   }
+
+  /// The neutral pill material assembled from the panel's Liquid Glass
+  /// controls: variant, milk tint and interactivity.
+  var pillGlass: Glass {
+    var glass = baseGlass
+    if milkOpacity > 0.01 {
+      glass = glass.tint(milkColor.opacity(milkOpacity))
+    }
+    return glassInteractive ? glass.interactive() : glass
+  }
+
+  /// Accent-filled pill material (plus button, CTA): same variant and
+  /// interactivity, accent tint instead of milk.
+  var accentGlass: Glass {
+    let glass = baseGlass.tint(accent)
+    return glassInteractive ? glass.interactive() : glass
+  }
+
+  private var baseGlass: Glass {
+    glassVariant == "clear" ? .clear : .regular
+  }
 }
 
 // MARK: - Stroke + shadow decoration (design experiment, panel-switchable)
@@ -79,23 +110,30 @@ enum GlassDecorKind {
 }
 
 extension View {
-  /// Applies the design stroke + drop shadow AFTER the glass so the material,
-  /// press stretch, shimmer and morphs stay untouched. "off" adds nothing.
+  /// Applies the design stroke and/or drop shadow AFTER the glass so the
+  /// material, press stretch, shimmer and morphs stay untouched. Stroke and
+  /// shadow are independent panel switches.
   @ViewBuilder
   func glassDecoration<S: InsettableShape>(
     _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig
   ) -> some View {
-    switch config.strokeMode {
-    case "inner":
-      self
-        .overlay(shape.strokeBorder(config.strokeColor(kind: kind, inner: true), lineWidth: 2))
-        .shadow(color: config.shadowColor(kind: kind), radius: config.shadowRadius(kind: kind))
-    case "outer":
-      self
-        .overlay(shape.inset(by: -1).stroke(config.strokeColor(kind: kind, inner: false), lineWidth: 2))
-        .shadow(color: config.shadowColor(kind: kind), radius: config.shadowRadius(kind: kind))
-    default:
-      self
+    let stroked: some View = Group {
+      if config.strokeMode == "outer" {
+        self.overlay(
+          shape.inset(by: -1).stroke(config.strokeColor(kind: kind, inner: false), lineWidth: 2)
+        )
+      } else {
+        self
+      }
+    }
+    if config.shadowMode == "design" {
+      stroked.shadow(
+        color: config.shadowColor(kind: kind)
+          .opacity(min(max(config.shadowOpacityScale, 0), 2)),
+        radius: config.shadowRadius(kind: kind) * min(max(config.shadowRadiusScale, 0.1), 3)
+      )
+    } else {
+      stroked
     }
   }
 }
@@ -110,13 +148,9 @@ extension GlassTabBarConfig {
         ? Color.white.opacity(0.14)
         : (Color(hexString: "#F1F1F1") ?? Color.black.opacity(0.06))
     case .neutral:
-      if appearance == "dark" {
-        return Color.white.opacity(0.14)
-      }
-      // Design: inner borders are #F1F1F1, the outer ring is the softer
-      // rgba(193,195,198,0.13).
-      return inner
-        ? (Color(hexString: "#F1F1F1") ?? Color.black.opacity(0.06))
+      // Design ring: the soft rgba(193,195,198,0.13).
+      return appearance == "dark"
+        ? Color.white.opacity(0.14)
         : (Color(hexString: "#C1C3C6") ?? .gray).opacity(0.13)
     }
   }

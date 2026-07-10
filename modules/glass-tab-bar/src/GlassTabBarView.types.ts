@@ -36,11 +36,21 @@ export interface GlassConfig {
   iconSize: number;
   plusIconSize: number;
 
-  /** Design stroke experiment: 'off' | 'inner' | 'outer'. */
+  /** Design stroke experiment: 'off' | 'outer'. */
   strokeMode: StrokeMode;
+  /** Liquid Glass variant. */
+  glassVariant: GlassVariant;
+  /** Press stretch / shimmer on touch. */
+  glassInteractive: boolean;
+  /** Drop shadow: 'none' (frozen look) | 'design' (mock values, scalable). */
+  shadowMode: ShadowMode;
+  shadowOpacityScale: number;
+  shadowRadiusScale: number;
 }
 
-export type StrokeMode = 'off' | 'inner' | 'outer';
+export type StrokeMode = 'off' | 'outer';
+export type GlassVariant = 'regular' | 'clear';
+export type ShadowMode = 'none' | 'design';
 
 export interface TabPressEvent {
   tab: RootTab | 'plus';

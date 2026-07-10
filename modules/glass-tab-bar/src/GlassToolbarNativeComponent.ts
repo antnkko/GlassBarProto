@@ -38,6 +38,11 @@ export interface NativeProps extends ViewProps {
     iconSize: Double;
     plusIconSize: Double;
     strokeMode: string;
+    glassVariant: string;
+    glassInteractive: boolean;
+    shadowMode: string;
+    shadowOpacityScale: Double;
+    shadowRadiusScale: Double;
   }>;
   onToolbarPress?: DirectEventHandler<ToolbarPressEvent>;
 }

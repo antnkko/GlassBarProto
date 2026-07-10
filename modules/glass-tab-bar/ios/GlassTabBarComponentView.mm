@@ -93,6 +93,11 @@ static NSDictionary *GlassTabBarConfigDict(const GlassTabBarConfigStruct &c)
     @"iconSize" : @(c.iconSize),
     @"plusIconSize" : @(c.plusIconSize),
     @"strokeMode" : RCTNSStringFromString(c.strokeMode),
+    @"glassVariant" : RCTNSStringFromString(c.glassVariant),
+    @"glassInteractive" : @(c.glassInteractive),
+    @"shadowMode" : RCTNSStringFromString(c.shadowMode),
+    @"shadowOpacityScale" : @(c.shadowOpacityScale),
+    @"shadowRadiusScale" : @(c.shadowRadiusScale),
   };
 }
 

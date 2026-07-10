@@ -113,5 +113,10 @@ extension GlassTabBarConfig {
     if let v = bridge["iconSize"] as? Double, v > 0 { iconSize = v }
     if let v = bridge["plusIconSize"] as? Double, v > 0 { plusIconSize = v }
     if let v = bridge["strokeMode"] as? String, !v.isEmpty { strokeMode = v }
+    if let v = bridge["glassVariant"] as? String, !v.isEmpty { glassVariant = v }
+    if let v = bridge["glassInteractive"] as? Bool { glassInteractive = v }
+    if let v = bridge["shadowMode"] as? String, !v.isEmpty { shadowMode = v }
+    if let v = bridge["shadowOpacityScale"] as? Double { shadowOpacityScale = v }
+    if let v = bridge["shadowRadiusScale"] as? Double { shadowRadiusScale = v }
   }
 }

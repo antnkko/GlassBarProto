@@ -1,7 +1,9 @@
 import type {
   BarAppearance,
   GlassConfig,
+  GlassVariant,
   HighlightBlend,
+  ShadowMode,
   StrokeMode,
   ToolbarOption,
 } from '../../modules/glass-tab-bar';
@@ -53,8 +55,15 @@ export interface AppConfig {
   scrimSmoothness: number;
   /** Max radius (pt) of the top progressive blur stack; 0 = gradient only. */
   edgeBlurMax: number;
-  /** Design stroke experiment: off = the frozen look, inner/outer variants. */
+  /** Design stroke experiment: off = the frozen look, outer = design ring. */
   strokeMode: StrokeMode;
+  /** Liquid Glass controls. */
+  glassVariant: GlassVariant;
+  glassInteractive: boolean;
+  /** Drop shadow: none = frozen look, design = mock values scaled below. */
+  shadowMode: ShadowMode;
+  shadowOpacityScale: number;
+  shadowRadiusScale: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -80,6 +89,11 @@ export const defaultConfig: AppConfig = {
   scrimSmoothness: 3,
   edgeBlurMax: 0,
   strokeMode: 'off',
+  glassVariant: 'regular',
+  glassInteractive: true,
+  shadowMode: 'none',
+  shadowOpacityScale: 1,
+  shadowRadiusScale: 1,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -109,7 +123,13 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     containerSpacing: config.containerSpacing,
     springDuration: config.springDuration,
     springBounce: config.springBounce,
-    strokeMode: config.strokeMode,
+    // Stored configs may still carry the retired 'inner' value.
+    strokeMode: (config.strokeMode as string) === 'inner' ? 'off' : config.strokeMode,
+    glassVariant: config.glassVariant,
+    glassInteractive: config.glassInteractive,
+    shadowMode: config.shadowMode,
+    shadowOpacityScale: config.shadowOpacityScale,
+    shadowRadiusScale: config.shadowRadiusScale,
     ...frozenLayout,
   };
 }

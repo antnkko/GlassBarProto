@@ -69,15 +69,9 @@ struct GlassTabBarView: View {
 
   // MARK: - Material
 
-  // Milkiness lives IN the material as a white tint, so edges, the press
-  // stretch/shimmer and the morph render natively on top of it.
-  private var pillGlass: Glass {
-    var glass: Glass = .regular
-    if config.milkOpacity > 0.01 {
-      glass = glass.tint(config.milkColor.opacity(config.milkOpacity))
-    }
-    return glass.interactive()
-  }
+  // Milkiness lives IN the material as a tint (see config.pillGlass) so
+  // edges, the press stretch/shimmer and the morph render natively on it.
+  private var pillGlass: Glass { config.pillGlass }
 
   // MARK: - Pieces (v1 pattern: content INSIDE the glass view)
 
@@ -107,7 +101,7 @@ struct GlassTabBarView: View {
       icon("tab_plus", size: config.plusIconSize, color: .white)
     }
     .frame(width: config.pillWidth, height: config.pillHeight)
-    .glassEffect(.regular.tint(config.accent).interactive(), in: Capsule())
+    .glassEffect(config.accentGlass, in: Capsule())
     .glassEffectID("plus", in: glassNS)
     .glassEffectTransition(.matchedGeometry)
     .glassDecoration(Capsule(), kind: .accent, config: config)
