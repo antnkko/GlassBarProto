@@ -12,18 +12,18 @@ import UIKit
 private struct VariableBlurRepresentable: UIViewRepresentable {
   let edge: String
   let fadeStart: Double
-  let curve: Double
+  let blurCurve: Double
   let intensity: Double
   let radius: Double
 
   func makeUIView(context: Context) -> VariableBlurUIView {
     let view = VariableBlurUIView()
-    view.update(edge: edge, fadeStart: fadeStart, curve: curve, intensity: intensity, radius: radius)
+    view.update(edge: edge, fadeStart: fadeStart, blurCurve: blurCurve, intensity: intensity, radius: radius)
     return view
   }
 
   func updateUIView(_ view: VariableBlurUIView, context: Context) {
-    view.update(edge: edge, fadeStart: fadeStart, curve: curve, intensity: intensity, radius: radius)
+    view.update(edge: edge, fadeStart: fadeStart, blurCurve: blurCurve, intensity: intensity, radius: radius)
   }
 }
 
@@ -36,10 +36,14 @@ struct GlassEdgeBlurView: View {
   var material: String = "ultraThin"
   /// 0...0.8 — portion of the strip that stays fully blurred before fading.
   var fadeStart: Double = 0.35
-  /// Falloff gamma: 1 = linear fade, higher = steeper drop toward content.
+  /// Falloff gamma of the FROST mask: 1 = linear, higher = steeper drop.
   var curve: Double = 1.4
   /// 0...1 — global multiplier on the whole strip.
   var intensity: Double = 1.0
+  /// Max radius (pt) of the real variable blur underneath the frost.
+  var blurRadius: Double = 18
+  /// Falloff gamma of the BLUR ramp (smoothstep-eased, lands at zero).
+  var blurCurve: Double = 2.0
 
   var body: some View {
     ZStack {
@@ -50,7 +54,7 @@ struct GlassEdgeBlurView: View {
       VariableBlurRepresentable(
         edge: edge,
         fadeStart: fadeStart,
-        curve: curve,
+        blurCurve: blurCurve,
         intensity: intensity,
         radius: blurRadius
       )
@@ -70,17 +74,6 @@ struct GlassEdgeBlurView: View {
     case "regular": return .regularMaterial
     case "thick": return .thickMaterial
     default: return .ultraThinMaterial
-    }
-  }
-
-  // The material tier also scales the real blur underneath, so one segmented
-  // control drives the overall strength of both layers.
-  private var blurRadius: Double {
-    switch material {
-    case "thin": return 24
-    case "regular": return 32
-    case "thick": return 40
-    default: return 18
     }
   }
 

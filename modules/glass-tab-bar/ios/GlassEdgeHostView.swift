@@ -10,6 +10,8 @@ final class GlassEdgeState: ObservableObject {
   @Published var fadeStart = 0.35
   @Published var curve = 1.4
   @Published var intensity = 1.0
+  @Published var blurRadius = 18.0
+  @Published var blurCurve = 2.0
 }
 
 private struct GlassEdgeRoot: View {
@@ -22,7 +24,9 @@ private struct GlassEdgeRoot: View {
       material: state.material,
       fadeStart: state.fadeStart,
       curve: state.curve,
-      intensity: state.intensity
+      intensity: state.intensity,
+      blurRadius: state.blurRadius,
+      blurCurve: state.blurCurve
     )
   }
 }
@@ -53,7 +57,9 @@ public final class GlassEdgeHostView: UIView {
     material: String,
     fadeStart: Double,
     curve: Double,
-    intensity: Double
+    intensity: Double,
+    blurRadius: Double,
+    blurCurve: Double
   ) {
     if state.edge != edge { state.edge = edge }
     if state.appearance != appearance { state.appearance = appearance }
@@ -61,5 +67,7 @@ public final class GlassEdgeHostView: UIView {
     if state.fadeStart != fadeStart { state.fadeStart = fadeStart }
     if state.curve != curve { state.curve = curve }
     if state.intensity != intensity { state.intensity = intensity }
+    if state.blurRadius != blurRadius { state.blurRadius = blurRadius }
+    if state.blurCurve != blurCurve { state.blurCurve = blurCurve }
   }
 }

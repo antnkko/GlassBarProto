@@ -47,10 +47,14 @@ export interface AppConfig {
   edgeMaterial: EdgeMaterial;
   /** 0..0.8 — portion of the strip that stays fully blurred before fading. */
   edgeFadeStart: number;
-  /** Falloff gamma: 1 = linear fade, higher = steeper drop. */
+  /** Falloff gamma of the frost mask: 1 = linear fade, higher = steeper drop. */
   edgeCurve: number;
   /** 0..1 global multiplier on the strips. */
   edgeIntensity: number;
+  /** Max radius (pt) of the real variable blur under the frost. */
+  edgeBlurRadius: number;
+  /** Falloff gamma of the blur ramp (smoothstep-eased, lands at zero). */
+  edgeBlurCurve: number;
 }
 
 export type EdgeMaterial = 'ultraThin' | 'thin' | 'regular' | 'thick';
@@ -77,6 +81,9 @@ export const defaultConfig: AppConfig = {
   edgeFadeStart: 0.35,
   edgeCurve: 1.4,
   edgeIntensity: 1,
+  // New keys merge over stored configs without a persist bump.
+  edgeBlurRadius: 18,
+  edgeBlurCurve: 2,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */

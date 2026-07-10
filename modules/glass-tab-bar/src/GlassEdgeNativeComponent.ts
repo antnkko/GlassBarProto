@@ -14,10 +14,14 @@ export interface NativeProps extends ViewProps {
   material: string;
   /** 0..0.8 — portion of the strip that stays fully blurred before fading. */
   fadeStart: Double;
-  /** Falloff gamma: 1 = linear fade, higher = steeper drop. */
+  /** Falloff gamma of the FROST mask: 1 = linear fade, higher = steeper drop. */
   curve: Double;
   /** 0..1 global multiplier on the whole strip. */
   intensity: Double;
+  /** Max radius (pt) of the real variable blur underneath the frost. */
+  blurRadius: Double;
+  /** Falloff gamma of the BLUR ramp (smoothstep-eased, lands at zero). */
+  blurCurve: Double;
 }
 
 export default codegenNativeComponent<NativeProps>(

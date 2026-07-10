@@ -14,10 +14,10 @@ import UIKit
 final class VariableBlurUIView: UIVisualEffectView {
   private var edge = "top"
   private var fadeStart: Double = 0.3
-  private var curve: Double = 1.0
+  private var blurCurve: Double = 2.0
   private var intensity: Double = 1.0
   /// Max blur radius at the solid end of the mask (pt). platformChrome uses 22.5.
-  private var maxRadius: Double = 22.5
+  private var maxRadius: Double = 18
 
   init() {
     super.init(effect: UIBlurEffect(style: .regular))
@@ -28,13 +28,13 @@ final class VariableBlurUIView: UIVisualEffectView {
   @available(*, unavailable)
   required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
-  func update(edge: String, fadeStart: Double, curve: Double, intensity: Double, radius: Double) {
-    guard edge != self.edge || fadeStart != self.fadeStart || curve != self.curve
+  func update(edge: String, fadeStart: Double, blurCurve: Double, intensity: Double, radius: Double) {
+    guard edge != self.edge || fadeStart != self.fadeStart || blurCurve != self.blurCurve
       || intensity != self.intensity || radius != self.maxRadius
     else { return }
     self.edge = edge
     self.fadeStart = fadeStart
-    self.curve = curve
+    self.blurCurve = blurCurve
     self.intensity = intensity
     self.maxRadius = radius
     applyFilter()
@@ -61,6 +61,9 @@ final class VariableBlurUIView: UIVisualEffectView {
     filter.setValue(maxRadius, forKey: "inputRadius")
     filter.setValue(mask, forKey: "inputMaskImage")
     filter.setValue(true, forKey: "inputNormalizeEdges")
+    // Anti-banding: dithers the mip interpolation steps that otherwise show
+    // as a visible line where the low-radius end of the ramp begins.
+    filter.setValue(true, forKey: "inputDither")
 
     // The blur lives on the backdrop subview's layer; find it by class name
     // instead of trusting subview order.
@@ -76,12 +79,13 @@ final class VariableBlurUIView: UIVisualEffectView {
     }
   }
 
-  // 1×128 ramp where the ALPHA channel drives the local blur radius (the
+  // 1×256 ramp where the ALPHA channel drives the local blur radius (the
   // runtime's own systemVariableBlurMask is an alpha ramp). Solid `intensity`
-  // until fadeStart, then intensity·(1-t)^curve — the same model the panel
-  // sliders already control, applied to radius now.
+  // until fadeStart, then a smoothstep-eased falloff raised to blurCurve —
+  // zero value AND zero slope at the content end, so content entering the
+  // zone picks up blur asymptotically instead of across a visible line.
   private func makeMaskImage() -> CGImage? {
-    let height = 128
+    let height = 256
     guard
       let context = CGContext(
         data: nil,
@@ -95,7 +99,7 @@ final class VariableBlurUIView: UIVisualEffectView {
     else { return nil }
 
     let start = min(max(fadeStart, 0), 0.95)
-    let gamma = max(curve, 0.1)
+    let gamma = max(blurCurve, 0.1)
     let peak = min(max(intensity, 0), 1)
 
     for row in 0..<height {
@@ -107,7 +111,8 @@ final class VariableBlurUIView: UIVisualEffectView {
         alpha = peak
       } else {
         let progress = (t - start) / max(1 - start, 0.0001)
-        alpha = peak * pow(1 - progress, gamma)
+        let eased = progress * progress * (3 - 2 * progress) // smoothstep
+        alpha = peak * pow(1 - eased, gamma)
       }
       context.setFillColor(CGColor(red: 0, green: 0, blue: 0, alpha: CGFloat(alpha)))
       // CG origin is bottom-left, our t axis is top-down — flip the row.

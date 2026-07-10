@@ -140,6 +140,26 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               }}
             />
             <SliderRow
+              label="Blur radius"
+              value={config.edgeBlurRadius}
+              min={0}
+              max={50}
+              step={1}
+              accent={accent}
+              pal={pal}
+              onChange={v => onChange({edgeBlurRadius: v})}
+            />
+            <SliderRow
+              label="Blur curve"
+              value={config.edgeBlurCurve}
+              min={0.5}
+              max={4}
+              step={0.05}
+              accent={accent}
+              pal={pal}
+              onChange={v => onChange({edgeBlurCurve: v})}
+            />
+            <SliderRow
               label="Top height"
               value={config.toolbarEdgeHeight}
               min={44}

@@ -146,6 +146,8 @@ function AppContent() {
           fadeStart={config.edgeFadeStart}
           curve={config.edgeCurve}
           intensity={config.edgeIntensity}
+          blurRadius={config.edgeBlurRadius}
+          blurCurve={config.edgeBlurCurve}
           pointerEvents="none"
           style={[styles.bottomBlur, {height: insets.bottom + config.edgeBottomHeight}]}
         />
@@ -175,6 +177,8 @@ function AppContent() {
           fadeStart={config.edgeFadeStart}
           curve={config.edgeCurve}
           intensity={config.edgeIntensity}
+          blurRadius={config.edgeBlurRadius}
+          blurCurve={config.edgeBlurCurve}
           pointerEvents="none"
           style={[styles.topBlur, {height: insets.top + config.toolbarEdgeHeight}]}
         />

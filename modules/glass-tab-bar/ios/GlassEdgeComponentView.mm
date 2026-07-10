@@ -42,7 +42,9 @@ using namespace facebook::react;
                    material:RCTNSStringFromString(newProps.material)
                   fadeStart:newProps.fadeStart
                       curve:newProps.curve
-                  intensity:newProps.intensity];
+                  intensity:newProps.intensity
+                 blurRadius:newProps.blurRadius
+                  blurCurve:newProps.blurCurve];
 
   [super updateProps:props oldProps:oldProps];
 }
