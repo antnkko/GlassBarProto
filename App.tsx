@@ -210,18 +210,15 @@ function AppContent() {
         />
       )}
 
-      {/* The gear moves below the toolbar when one is shown. */}
+      {/* The dev panel opens only from the toolbar's settings icon (option 5).
+          Invisible long-press escape in the top-left keeps the tool reachable
+          if no settings button is on screen — it's not a visible button. */}
       {!panelOpen && (
         <Pressable
-          style={[
-            styles.gear,
-            dark && styles.gearDark,
-            {top: insets.top + (toolbarShown ? TOOLBAR_HEIGHT + 16 : 8)},
-          ]}
-          onPress={() => setPanelOpen(true)}
-          hitSlop={8}>
-          <Text style={[styles.gearTxt, dark && styles.gearTxtDark]}>⚙︎</Text>
-        </Pressable>
+          style={[styles.escape, {top: insets.top}]}
+          onLongPress={() => setPanelOpen(true)}
+          delayLongPress={500}
+        />
       )}
 
       {panelOpen && (
@@ -264,21 +261,7 @@ const styles = StyleSheet.create({
     height: bar.stripHeight,
   },
   barFill: {flex: 1},
-  gear: {
-    position: 'absolute',
-    right: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(27,29,33,0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: {width: 0, height: 2},
-  },
-  gearTxt: {color: '#FFF', fontSize: 20},
+  escape: {position: 'absolute', left: 0, width: 44, height: 44},
   optBadge: {
     position: 'absolute',
     left: 8,
@@ -291,6 +274,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   optBadgeTxt: {color: '#FFF', fontSize: 16, fontWeight: '700'},
-  gearDark: {backgroundColor: 'rgba(245,245,247,0.9)'},
-  gearTxtDark: {color: '#1B1D21'},
 });

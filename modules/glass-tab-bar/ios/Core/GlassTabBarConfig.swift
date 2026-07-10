@@ -122,11 +122,19 @@ extension View {
   /// shimmer and morphs stay untouched. Off = nothing.
   @ViewBuilder
   func glassDecoration<S: InsettableShape>(
-    _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig
+    _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig, visible: Bool = true
   ) -> some View {
     // Accent-filled buttons (plus, CTA) carry no stroke.
     if config.strokeMode == "outer" && kind != .accent {
-      self.overlay(shape.inset(by: -1).stroke(config.outerStrokeColor, lineWidth: 2))
+      // The stroke sits as an outer overlay (visible at rest). It fades out
+      // smoothly during any feedback — press stretch, tap, morph — and back
+      // in only once the button fully settles, so it never reads as a
+      // separate static layer over the moving glass.
+      self.overlay(
+        shape.inset(by: -1).stroke(config.outerStrokeColor, lineWidth: 2)
+          .opacity(visible ? 1 : 0)
+          .animation(.easeInOut(duration: 0.28), value: visible)
+      )
     } else {
       self
     }

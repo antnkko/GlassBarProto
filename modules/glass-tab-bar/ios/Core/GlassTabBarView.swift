@@ -33,6 +33,11 @@ struct GlassTabBarView: View {
   @State private var localActiveTab = "home"
   @State private var seq = 0
 
+  // Which element is being pressed, and whether a morph is in flight — the
+  // stroke hides during either and returns only when everything settles.
+  @State private var pressedID: String?
+  @State private var morphing = false
+
   @Namespace private var glassNS
   @Namespace private var highlightNS
 
@@ -88,8 +93,9 @@ struct GlassTabBarView: View {
     .frame(width: config.pillWidth, height: config.pillHeight)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("home", in: glassNS)
-    .glassDecoration(Capsule(), kind: .neutral, config: config)
+    .glassDecoration(Capsule(), kind: .neutral, config: config, visible: strokeVisible("home"))
     .contentShape(Capsule())
+    .simultaneousGesture(pressGesture("home"))
     .onTapGesture { homeTapped() }
   }
 
@@ -118,8 +124,9 @@ struct GlassTabBarView: View {
     .frame(width: config.pillWidth, height: config.pillHeight)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
-    .glassDecoration(Capsule(), kind: .neutral, config: config)
+    .glassDecoration(Capsule(), kind: .neutral, config: config, visible: strokeVisible("right"))
     .contentShape(Capsule())
+    .simultaneousGesture(pressGesture("right"))
     .onTapGesture { expandTapped() }
   }
 
@@ -145,14 +152,16 @@ struct GlassTabBarView: View {
           .gesture(
             DragGesture(minimumDistance: 0)
               .onChanged { value in
+                if pressedID != "bubble" { pressedID = "bubble" }
                 selectSubTab(atX: value.location.x, width: geo.size.width)
               }
+              .onEnded { _ in pressedID = nil }
           )
       }
     }
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
-    .glassDecoration(Capsule(), kind: .neutral, config: config)
+    .glassDecoration(Capsule(), kind: .neutral, config: config, visible: strokeVisible("bubble"))
   }
 
   private func subTab(_ tab: String) -> some View {
@@ -193,12 +202,37 @@ struct GlassTabBarView: View {
       .foregroundStyle(color)
   }
 
+  // MARK: - Feedback state
+
+  // Press down/up detector that doesn't steal the tap (used as a simultaneous
+  // gesture); marks the pressed element so its stroke fades for the stretch.
+  private func pressGesture(_ id: String) -> some Gesture {
+    DragGesture(minimumDistance: 0)
+      .onChanged { _ in if pressedID != id { pressedID = id } }
+      .onEnded { _ in pressedID = nil }
+  }
+
+  private func strokeVisible(_ id: String) -> Bool {
+    pressedID != id && !morphing
+  }
+
+  // Runs a spring morph while holding `morphing` true, so every element's
+  // stroke fades during the transition and returns on completion.
+  private func morph(_ body: @escaping () -> Void) {
+    morphing = true
+    withAnimation(config.spring) {
+      body()
+    } completion: {
+      morphing = false
+    }
+  }
+
   // MARK: - Interactions (optimistic: animate first, report up after)
 
   private func homeTapped() {
     guard localExpanded else { return }
     seq += 1
-    withAnimation(config.spring) {
+    morph {
       localExpanded = false
       localActiveTab = "home"
     }
@@ -208,7 +242,7 @@ struct GlassTabBarView: View {
 
   private func expandTapped() {
     seq += 1
-    withAnimation(config.spring) {
+    morph {
       localExpanded = true
       localActiveTab = "squad"
     }
@@ -237,8 +271,6 @@ struct GlassTabBarView: View {
     subTabTapped(subTabs[index])
   }
 
-  // MARK: - Reconciliation with RN-controlled props
-
   // Apply controlled props only when RN has caught up with our optimistic
   // state (lastSeq >= seq) AND the value actually differs. A stale echo
   // during rapid taps has lastSeq < seq and is ignored.
@@ -250,7 +282,7 @@ struct GlassTabBarView: View {
 
   private func syncFromProps(animated: Bool) {
     if animated {
-      withAnimation(config.spring) {
+      morph {
         localExpanded = expanded
         localActiveTab = activeTab
       }

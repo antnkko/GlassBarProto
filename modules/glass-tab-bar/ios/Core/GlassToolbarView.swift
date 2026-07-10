@@ -28,6 +28,11 @@ struct GlassToolbarView: View {
   @State private var localOption = 0
   @State private var seq = 0
 
+  // Feedback state: the pressed element and whether a morph is in flight —
+  // the stroke hides during either and returns once settled.
+  @State private var pressedID: String?
+  @State private var morphing = false
+
   @Namespace private var glassNS
 
   // Figma spec constants (pt).
@@ -58,8 +63,25 @@ struct GlassToolbarView: View {
     .background(InterfaceStylePinner(style: config.interfaceStyle))
     .onAppear { localOption = option }
     .onChange(of: option) { _, next in
-      withAnimation(config.spring) { localOption = next }
+      morphing = true
+      withAnimation(config.spring) {
+        localOption = next
+      } completion: {
+        morphing = false
+      }
     }
+  }
+
+  // MARK: - Feedback
+
+  private func pressGesture(_ id: String) -> some Gesture {
+    DragGesture(minimumDistance: 0)
+      .onChanged { _ in if pressedID != id { pressedID = id } }
+      .onEnded { _ in pressedID = nil }
+  }
+
+  private func strokeVisible(_ id: String) -> Bool {
+    pressedID != id && !morphing
   }
 
   // MARK: - Material (same recipe as the bar pills)
@@ -133,8 +155,9 @@ struct GlassToolbarView: View {
     }
     .frame(width: ghostSize, height: ghostSize)
     .glassEffect(pillGlass, in: Circle())
-    .glassDecoration(Circle(), kind: .neutral, config: config)
+    .glassDecoration(Circle(), kind: .neutral, config: config, visible: strokeVisible(element))
     .contentShape(Circle())
+    .simultaneousGesture(pressGesture(element))
     .onTapGesture { pressed(element) }
   }
 
@@ -150,8 +173,9 @@ struct GlassToolbarView: View {
     .frame(width: ghostSize, height: ghostSize)
     .glassEffect(pillGlass, in: Circle())
     .glassEffectID("tb-trail", in: glassNS)
-    .glassDecoration(Circle(), kind: .neutral, config: config)
+    .glassDecoration(Circle(), kind: .neutral, config: config, visible: strokeVisible("avatar"))
     .contentShape(Circle())
+    .simultaneousGesture(pressGesture("avatar"))
     .onTapGesture { pressed("avatar") }
   }
 
@@ -172,7 +196,8 @@ struct GlassToolbarView: View {
     .frame(height: ghostSize)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("tb-trail", in: glassNS)
-    .glassDecoration(Capsule(), kind: .group, config: config)
+    .glassDecoration(Capsule(), kind: .group, config: config, visible: strokeVisible("group"))
+    .simultaneousGesture(pressGesture("group"))
   }
 
   private func groupZone(_ iconName: String, element: String) -> some View {
