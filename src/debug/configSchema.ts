@@ -39,25 +39,11 @@ export interface AppConfig {
   /** Figma toolbar dev-spec configuration (1–8), 0 = no toolbar. */
   toolbarOption: ToolbarOption;
 
-  /** Height of the top progressive blur strip below the safe area. */
+  /** Height of the top design scrim (full height from the screen edge). */
   toolbarEdgeHeight: number;
-  /** Height of the bottom progressive blur strip above the home indicator. */
-  edgeBottomHeight: number;
-  /** Blur strength of the edge strips. */
-  edgeMaterial: EdgeMaterial;
-  /** 0..0.8 — portion of the strip that stays fully blurred before fading. */
-  edgeFadeStart: number;
-  /** Falloff gamma of the frost mask: 1 = linear fade, higher = steeper drop. */
-  edgeCurve: number;
-  /** 0..1 global multiplier on the strips. */
-  edgeIntensity: number;
-  /** Max radius (pt) of the real variable blur under the frost. */
-  edgeBlurRadius: number;
-  /** Falloff gamma of the blur ramp (smoothstep-eased, lands at zero). */
-  edgeBlurCurve: number;
+  /** Height of the bottom design scrim (full height from the screen edge). */
+  scrimBottomHeight: number;
 }
-
-export type EdgeMaterial = 'ultraThin' | 'thin' | 'regular' | 'thick';
 
 export const defaultConfig: AppConfig = {
   theme: 'blazeOrange',
@@ -75,15 +61,10 @@ export const defaultConfig: AppConfig = {
   edgeBlur: true,
 
   toolbarOption: 2,
+  // Scrim heights from the design (Figma 320:2512): top 356, bottom 114.
+  // scrimBottomHeight is a fresh key so it merges over stored configs.
   toolbarEdgeHeight: 356,
-  edgeBottomHeight: 96,
-  edgeMaterial: 'thick',
-  edgeFadeStart: 0.35,
-  edgeCurve: 1.4,
-  edgeIntensity: 1,
-  // New keys merge over stored configs without a persist bump.
-  edgeBlurRadius: 18,
-  edgeBlurCurve: 2,
+  scrimBottomHeight: 114,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */

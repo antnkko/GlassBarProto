@@ -10,8 +10,7 @@
     "ios": {
       "componentProvider": {
         "GlassTabBar": "GlassTabBarComponentView",
-        "GlassToolbar": "GlassToolbarComponentView",
-        "GlassEdge": "GlassEdgeComponentView"
+        "GlassToolbar": "GlassToolbarComponentView"
       }
     }
   }

@@ -5,7 +5,8 @@ import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-contex
 // Prototype: silence the dev warning toast so it doesn't cover the bottom bar.
 LogBox.ignoreAllLogs(true);
 
-import {GlassEdgeView, GlassTabBarView, GlassToolbarView} from './modules/glass-tab-bar';
+import {GlassTabBarView, GlassToolbarView} from './modules/glass-tab-bar';
+import EdgeScrim from './src/components/EdgeScrim';
 import DebugPanel from './src/debug/DebugPanel';
 import {defaultConfig, toNativeConfig, type AppConfig} from './src/debug/configSchema';
 import {loadConfig, saveConfigDebounced} from './src/debug/persist';
@@ -121,7 +122,6 @@ function AppContent() {
 
   const dark = config.appearance === 'dark';
   const toolbarShown = config.toolbarOption > 0;
-  const appearance = dark ? 'dark' : 'light';
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
@@ -135,21 +135,13 @@ function AppContent() {
         onCollapseChange={setBarCollapsed}
       />
 
-      {/* Our own progressive blur strips (Material + gradient mask in the
-          native module) — the system scroll edge effect's region proved
-          uncontrollable from RN, so the edges are ours now. */}
+      {/* Design scrims (Figma 320:2512): plain eased gradients, no backdrop
+          effects — the glass pills sample clean content underneath. */}
       {config.edgeBlur && (
-        <GlassEdgeView
+        <EdgeScrim
           edge="bottom"
-          appearance={appearance}
-          material={config.edgeMaterial}
-          fadeStart={config.edgeFadeStart}
-          curve={config.edgeCurve}
-          intensity={config.edgeIntensity}
-          blurRadius={config.edgeBlurRadius}
-          blurCurve={config.edgeBlurCurve}
-          pointerEvents="none"
-          style={[styles.bottomBlur, {height: insets.bottom + config.edgeBottomHeight}]}
+          dark={dark}
+          style={[styles.bottomBlur, {height: config.scrimBottomHeight}]}
         />
       )}
 
@@ -170,17 +162,10 @@ function AppContent() {
       </View>
 
       {config.edgeBlur && (
-        <GlassEdgeView
+        <EdgeScrim
           edge="top"
-          appearance={appearance}
-          material={config.edgeMaterial}
-          fadeStart={config.edgeFadeStart}
-          curve={config.edgeCurve}
-          intensity={config.edgeIntensity}
-          blurRadius={config.edgeBlurRadius}
-          blurCurve={config.edgeBlurCurve}
-          pointerEvents="none"
-          style={[styles.topBlur, {height: insets.top + config.toolbarEdgeHeight}]}
+          dark={dark}
+          style={[styles.topBlur, {height: config.toolbarEdgeHeight}]}
         />
       )}
 

@@ -4,7 +4,7 @@ import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Switch, Text, View} from 'react-native';
 
 import type {ToolbarOption} from '../../modules/glass-tab-bar';
-import {THEMES, type AppConfig, type EdgeMaterial, type ThemeName} from './configSchema';
+import {THEMES, type AppConfig, type ThemeName} from './configSchema';
 
 interface Props {
   config: AppConfig;
@@ -16,8 +16,6 @@ interface Props {
 const THEME_ORDER: ThemeName[] = ['blazeOrange', 'blueRibbon', 'jade', 'slack'];
 // Figma dev-spec toolbar rows; index === ToolbarOption, 0 = off.
 const TOOLBAR_LABELS = ['Off', '1', '2', '3', '4', '5', '6', '7', '8'];
-const EDGE_MATERIAL_ORDER: EdgeMaterial[] = ['ultraThin', 'thin', 'regular', 'thick'];
-const EDGE_MATERIAL_LABELS = ['Ultra', 'Thin', 'Regular', 'Thick'];
 
 interface Palette {
   bg: string;
@@ -120,45 +118,15 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
             />
           </Section>
 
-          <Section pal={pal} title="Edge blur">
+          <Section pal={pal} title="Scrim">
             <View style={s.toggleRow}>
-              <Text style={[s.rowLabel, {color: pal.text}]}>Edge blur</Text>
+              <Text style={[s.rowLabel, {color: pal.text}]}>Scrim</Text>
               <Switch
                 value={config.edgeBlur}
                 onValueChange={v => onChange({edgeBlur: v})}
                 trackColor={{true: accent}}
               />
             </View>
-            <SegmentedControl
-              values={EDGE_MATERIAL_LABELS}
-              selectedIndex={Math.max(0, EDGE_MATERIAL_ORDER.indexOf(config.edgeMaterial))}
-              onChange={e => {
-                const material = EDGE_MATERIAL_ORDER[e.nativeEvent.selectedSegmentIndex];
-                if (material) {
-                  onChange({edgeMaterial: material});
-                }
-              }}
-            />
-            <SliderRow
-              label="Blur radius"
-              value={config.edgeBlurRadius}
-              min={0}
-              max={50}
-              step={1}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({edgeBlurRadius: v})}
-            />
-            <SliderRow
-              label="Blur curve"
-              value={config.edgeBlurCurve}
-              min={0.5}
-              max={4}
-              step={0.05}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({edgeBlurCurve: v})}
-            />
             <SliderRow
               label="Top height"
               value={config.toolbarEdgeHeight}
@@ -171,43 +139,13 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
             />
             <SliderRow
               label="Bottom height"
-              value={config.edgeBottomHeight}
-              min={40}
+              value={config.scrimBottomHeight}
+              min={60}
               max={220}
               step={2}
               accent={accent}
               pal={pal}
-              onChange={v => onChange({edgeBottomHeight: v})}
-            />
-            <SliderRow
-              label="Fade start"
-              value={config.edgeFadeStart}
-              min={0}
-              max={0.8}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({edgeFadeStart: v})}
-            />
-            <SliderRow
-              label="Fade curve"
-              value={config.edgeCurve}
-              min={0.5}
-              max={3}
-              step={0.05}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({edgeCurve: v})}
-            />
-            <SliderRow
-              label="Intensity"
-              value={config.edgeIntensity}
-              min={0.2}
-              max={1}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({edgeIntensity: v})}
+              onChange={v => onChange({scrimBottomHeight: v})}
             />
           </Section>
         </ScrollView>
