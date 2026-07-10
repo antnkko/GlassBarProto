@@ -92,6 +92,7 @@ static NSDictionary *GlassTabBarConfigDict(const GlassTabBarConfigStruct &c)
     @"subTabSpacing" : @(c.subTabSpacing),
     @"iconSize" : @(c.iconSize),
     @"plusIconSize" : @(c.plusIconSize),
+    @"strokeMode" : RCTNSStringFromString(c.strokeMode),
   };
 }
 

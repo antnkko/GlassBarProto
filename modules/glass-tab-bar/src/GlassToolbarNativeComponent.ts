@@ -37,6 +37,7 @@ export interface NativeProps extends ViewProps {
     subTabSpacing: Double;
     iconSize: Double;
     plusIconSize: Double;
+    strokeMode: string;
   }>;
   onToolbarPress?: DirectEventHandler<ToolbarPressEvent>;
 }

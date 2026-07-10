@@ -35,7 +35,12 @@ export interface GlassConfig {
   subTabSpacing: number;
   iconSize: number;
   plusIconSize: number;
+
+  /** Design stroke experiment: 'off' | 'inner' | 'outer'. */
+  strokeMode: StrokeMode;
 }
+
+export type StrokeMode = 'off' | 'inner' | 'outer';
 
 export interface TabPressEvent {
   tab: RootTab | 'plus';

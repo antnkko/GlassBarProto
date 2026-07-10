@@ -1,4 +1,10 @@
-import type {BarAppearance, GlassConfig, HighlightBlend, ToolbarOption} from '../../modules/glass-tab-bar';
+import type {
+  BarAppearance,
+  GlassConfig,
+  HighlightBlend,
+  StrokeMode,
+  ToolbarOption,
+} from '../../modules/glass-tab-bar';
 
 export type ThemeName = 'blazeOrange' | 'blueRibbon' | 'jade' | 'slack';
 
@@ -47,6 +53,8 @@ export interface AppConfig {
   scrimSmoothness: number;
   /** Max radius (pt) of the top progressive blur stack; 0 = gradient only. */
   edgeBlurMax: number;
+  /** Design stroke experiment: off = the frozen look, inner/outer variants. */
+  strokeMode: StrokeMode;
 }
 
 export const defaultConfig: AppConfig = {
@@ -71,6 +79,7 @@ export const defaultConfig: AppConfig = {
   scrimBottomHeight: 160,
   scrimSmoothness: 3,
   edgeBlurMax: 0,
+  strokeMode: 'off',
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -100,6 +109,7 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     containerSpacing: config.containerSpacing,
     springDuration: config.springDuration,
     springBounce: config.springBounce,
+    strokeMode: config.strokeMode,
     ...frozenLayout,
   };
 }

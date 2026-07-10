@@ -93,6 +93,7 @@ struct GlassTabBarView: View {
     .frame(width: config.pillWidth, height: config.pillHeight)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("home", in: glassNS)
+    .glassDecoration(Capsule(), kind: .neutral, config: config)
     .contentShape(Capsule())
     .onTapGesture { homeTapped() }
   }
@@ -109,6 +110,7 @@ struct GlassTabBarView: View {
     .glassEffect(.regular.tint(config.accent).interactive(), in: Capsule())
     .glassEffectID("plus", in: glassNS)
     .glassEffectTransition(.matchedGeometry)
+    .glassDecoration(Capsule(), kind: .accent, config: config)
     .contentShape(Capsule())
     .onTapGesture { plusTapped() }
   }
@@ -120,6 +122,7 @@ struct GlassTabBarView: View {
     .frame(width: config.pillWidth, height: config.pillHeight)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
+    .glassDecoration(Capsule(), kind: .neutral, config: config)
     .contentShape(Capsule())
     .onTapGesture { expandTapped() }
   }
@@ -150,6 +153,7 @@ struct GlassTabBarView: View {
     }
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
+    .glassDecoration(Capsule(), kind: .neutral, config: config)
   }
 
   private func subTab(_ tab: String) -> some View {

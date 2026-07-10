@@ -112,5 +112,6 @@ extension GlassTabBarConfig {
     if let v = bridge["subTabSpacing"] as? Double { subTabSpacing = v }
     if let v = bridge["iconSize"] as? Double, v > 0 { iconSize = v }
     if let v = bridge["plusIconSize"] as? Double, v > 0 { plusIconSize = v }
+    if let v = bridge["strokeMode"] as? String, !v.isEmpty { strokeMode = v }
   }
 }

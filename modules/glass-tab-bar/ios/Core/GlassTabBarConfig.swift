@@ -43,6 +43,9 @@ struct GlassTabBarConfig: Equatable {
   var subTabSpacing: Double = 0
   var iconSize: Double = 32
   var plusIconSize: Double = 28
+
+  /// Design stroke experiment: "off" | "inner" | "outer" (ring). Off = none.
+  var strokeMode: String = "off"
 }
 
 extension GlassTabBarConfig {
@@ -60,6 +63,80 @@ extension GlassTabBarConfig {
   /// "milky" idea translates instead of blinding.
   var milkColor: Color {
     appearance == "dark" ? (Color(hexString: "#1B1D21") ?? .black) : .white
+  }
+}
+
+// MARK: - Stroke + shadow decoration (design experiment, panel-switchable)
+
+/// Which stroke/shadow recipe a glass element uses.
+enum GlassDecorKind {
+  /// White pills: ring rgba(193,195,198,0.13), shadow 0 0 20 rgba(193,195,198,0.3).
+  case neutral
+  /// Accent-filled pills (plus, CTA): accent@0.7 stroke, shadow 0 0 16 black@0.2.
+  case accent
+  /// The toolbar button group: #F1F1F1 stroke, shadow 0 0 16 black@0.2.
+  case group
+}
+
+extension View {
+  /// Applies the design stroke + drop shadow AFTER the glass so the material,
+  /// press stretch, shimmer and morphs stay untouched. "off" adds nothing.
+  @ViewBuilder
+  func glassDecoration<S: InsettableShape>(
+    _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig
+  ) -> some View {
+    switch config.strokeMode {
+    case "inner":
+      self
+        .overlay(shape.strokeBorder(config.strokeColor(kind: kind, inner: true), lineWidth: 2))
+        .shadow(color: config.shadowColor(kind: kind), radius: config.shadowRadius(kind: kind))
+    case "outer":
+      self
+        .overlay(shape.inset(by: -1).stroke(config.strokeColor(kind: kind, inner: false), lineWidth: 2))
+        .shadow(color: config.shadowColor(kind: kind), radius: config.shadowRadius(kind: kind))
+    default:
+      self
+    }
+  }
+}
+
+extension GlassTabBarConfig {
+  func strokeColor(kind: GlassDecorKind, inner: Bool) -> Color {
+    switch kind {
+    case .accent:
+      return accent.opacity(0.7)
+    case .group:
+      return appearance == "dark"
+        ? Color.white.opacity(0.14)
+        : (Color(hexString: "#F1F1F1") ?? Color.black.opacity(0.06))
+    case .neutral:
+      if appearance == "dark" {
+        return Color.white.opacity(0.14)
+      }
+      // Design: inner borders are #F1F1F1, the outer ring is the softer
+      // rgba(193,195,198,0.13).
+      return inner
+        ? (Color(hexString: "#F1F1F1") ?? Color.black.opacity(0.06))
+        : (Color(hexString: "#C1C3C6") ?? .gray).opacity(0.13)
+    }
+  }
+
+  func shadowColor(kind: GlassDecorKind) -> Color {
+    if appearance == "dark" {
+      return Color.black.opacity(0.35)
+    }
+    switch kind {
+    case .neutral: return (Color(hexString: "#C1C3C6") ?? .gray).opacity(0.3)
+    case .accent, .group: return Color.black.opacity(0.2)
+    }
+  }
+
+  func shadowRadius(kind: GlassDecorKind) -> Double {
+    if appearance == "dark" {
+      return 10
+    }
+    // CSS blur 20 / 16 ≈ SwiftUI radius 10 / 8.
+    return kind == .neutral ? 10 : 8
   }
 }
 

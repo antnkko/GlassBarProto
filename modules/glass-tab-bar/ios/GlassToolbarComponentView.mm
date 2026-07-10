@@ -72,6 +72,7 @@ static NSDictionary *GlassToolbarConfigDict(const GlassToolbarConfigStruct &c)
     @"subTabSpacing" : @(c.subTabSpacing),
     @"iconSize" : @(c.iconSize),
     @"plusIconSize" : @(c.plusIconSize),
+    @"strokeMode" : RCTNSStringFromString(c.strokeMode),
   };
 }
 

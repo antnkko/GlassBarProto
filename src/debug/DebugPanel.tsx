@@ -2,7 +2,7 @@ import SegmentedControl from '@react-native-segmented-control/segmented-control'
 import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 
-import type {ToolbarOption} from '../../modules/glass-tab-bar';
+import type {StrokeMode, ToolbarOption} from '../../modules/glass-tab-bar';
 import {THEMES, type AppConfig, type ThemeName} from './configSchema';
 
 interface Props {
@@ -15,6 +15,9 @@ interface Props {
 const THEME_ORDER: ThemeName[] = ['blazeOrange', 'blueRibbon', 'jade', 'slack'];
 // Figma dev-spec toolbar rows; index === ToolbarOption, 0 = off.
 const TOOLBAR_LABELS = ['Off', '1', '2', '3', '4', '5', '6', '7', '8'];
+// Off reverts to the frozen look; inner/outer are the design stroke variants.
+const STROKE_ORDER: StrokeMode[] = ['off', 'inner', 'outer'];
+const STROKE_LABELS = ['Off', 'Inner', 'Outer'];
 
 interface Palette {
   bg: string;
@@ -77,6 +80,19 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               values={['Light', 'Dark']}
               selectedIndex={config.appearance === 'dark' ? 1 : 0}
               onChange={e => onChange({appearance: e.nativeEvent.selectedSegmentIndex === 1 ? 'dark' : 'light'})}
+            />
+          </Section>
+
+          <Section pal={pal} title="Stroke">
+            <SegmentedControl
+              values={STROKE_LABELS}
+              selectedIndex={Math.max(0, STROKE_ORDER.indexOf(config.strokeMode))}
+              onChange={e => {
+                const mode = STROKE_ORDER[e.nativeEvent.selectedSegmentIndex];
+                if (mode) {
+                  onChange({strokeMode: mode});
+                }
+              }}
             />
           </Section>
 
