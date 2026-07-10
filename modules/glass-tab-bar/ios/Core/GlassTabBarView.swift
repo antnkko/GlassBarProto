@@ -37,6 +37,8 @@ struct GlassTabBarView: View {
   // stroke hides during either and returns only when everything settles.
   @State private var pressedID: String?
   @State private var morphing = false
+  // Monotonic token so a delayed press-clear is cancelled by a re-press.
+  @State private var pressToken = 0
 
   @Namespace private var glassNS
   @Namespace private var highlightNS
@@ -155,7 +157,7 @@ struct GlassTabBarView: View {
                 if pressedID != "bubble" { pressedID = "bubble" }
                 selectSubTab(atX: value.location.x, width: geo.size.width)
               }
-              .onEnded { _ in pressedID = nil }
+              .onEnded { _ in endPress() }
           )
       }
     }
@@ -209,7 +211,18 @@ struct GlassTabBarView: View {
   private func pressGesture(_ id: String) -> some Gesture {
     DragGesture(minimumDistance: 0)
       .onChanged { _ in if pressedID != id { pressedID = id } }
-      .onEnded { _ in pressedID = nil }
+      .onEnded { _ in endPress() }
+  }
+
+  // The interactive stretch bounces on release, so the stroke must come back
+  // only after it settles: clear the press a beat later, cancelled by a
+  // re-press via the token.
+  private func endPress() {
+    pressToken += 1
+    let token = pressToken
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+      if pressToken == token { pressedID = nil }
+    }
   }
 
   private func strokeVisible(_ id: String) -> Bool {
@@ -217,10 +230,12 @@ struct GlassTabBarView: View {
   }
 
   // Runs a spring morph while holding `morphing` true, so every element's
-  // stroke fades during the transition and returns on completion.
+  // stroke fades during the transition. `.removed` fires completion only once
+  // the spring has fully settled — past the bounce — so the stroke returns
+  // after the button is truly back at rest, not mid-overshoot.
   private func morph(_ body: @escaping () -> Void) {
     morphing = true
-    withAnimation(config.spring) {
+    withAnimation(config.spring, completionCriteria: .removed) {
       body()
     } completion: {
       morphing = false

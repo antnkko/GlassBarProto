@@ -32,6 +32,7 @@ struct GlassToolbarView: View {
   // the stroke hides during either and returns once settled.
   @State private var pressedID: String?
   @State private var morphing = false
+  @State private var pressToken = 0
 
   @Namespace private var glassNS
 
@@ -64,7 +65,7 @@ struct GlassToolbarView: View {
     .onAppear { localOption = option }
     .onChange(of: option) { _, next in
       morphing = true
-      withAnimation(config.spring) {
+      withAnimation(config.spring, completionCriteria: .removed) {
         localOption = next
       } completion: {
         morphing = false
@@ -77,7 +78,17 @@ struct GlassToolbarView: View {
   private func pressGesture(_ id: String) -> some Gesture {
     DragGesture(minimumDistance: 0)
       .onChanged { _ in if pressedID != id { pressedID = id } }
-      .onEnded { _ in pressedID = nil }
+      .onEnded { _ in endPress() }
+  }
+
+  // Clear the press a beat later so the stroke returns after the release
+  // bounce settles; a re-press bumps the token and cancels the pending clear.
+  private func endPress() {
+    pressToken += 1
+    let token = pressToken
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+      if pressToken == token { pressedID = nil }
+    }
   }
 
   private func strokeVisible(_ id: String) -> Bool {

@@ -211,11 +211,12 @@ function AppContent() {
       )}
 
       {/* The dev panel opens only from the toolbar's settings icon (option 5).
-          Invisible long-press escape in the top-left keeps the tool reachable
-          if no settings button is on screen — it's not a visible button. */}
+          Invisible long-press escape lives in the status-bar zone ABOVE the
+          toolbar (0..insets.top) so it never overlaps the toolbar buttons and
+          steals their taps — it's a hidden reach-hatch, not a visible button. */}
       {!panelOpen && (
         <Pressable
-          style={[styles.escape, {top: insets.top}]}
+          style={[styles.escape, {height: insets.top}]}
           onLongPress={() => setPanelOpen(true)}
           delayLongPress={500}
         />
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
     height: bar.stripHeight,
   },
   barFill: {flex: 1},
-  escape: {position: 'absolute', left: 0, width: 44, height: 44},
+  escape: {position: 'absolute', top: 0, left: 0, width: 44},
   optBadge: {
     position: 'absolute',
     left: 8,
