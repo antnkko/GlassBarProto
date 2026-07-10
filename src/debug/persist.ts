@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {defaultConfig, type AppConfig} from './configSchema';
 
-const STORAGE_KEY = 'glass-bar-config.v13';
+const STORAGE_KEY = 'glass-bar-config.v14';
 
 export async function loadConfig(): Promise<AppConfig> {
   try {

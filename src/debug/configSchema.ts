@@ -70,7 +70,7 @@ export const defaultConfig: AppConfig = {
   toolbarEdgeHeight: 280,
   scrimBottomHeight: 160,
   scrimSmoothness: 3,
-  edgeBlurMax: 24,
+  edgeBlurMax: 0,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
