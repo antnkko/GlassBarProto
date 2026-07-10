@@ -194,7 +194,8 @@ struct GlassToolbarView: View {
       .font(.system(size: 18, weight: .semibold))
       .tracking(0.18)
       .foregroundStyle(.white)
-      .padding(.bottom, 4)
+      // The mock's pb-4 compensates the Obviously font's baseline; SF
+      // centers optically without it.
       .padding(.horizontal, 32)
       .frame(height: ctaHeight)
       .background(Capsule().fill(config.accent))
