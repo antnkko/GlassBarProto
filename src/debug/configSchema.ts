@@ -45,6 +45,8 @@ export interface AppConfig {
   scrimBottomHeight: number;
   /** 1 = design curve; higher flattens the scrim's transparent tail. */
   scrimSmoothness: number;
+  /** Max radius (pt) of the top progressive blur stack; 0 = gradient only. */
+  edgeBlurMax: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -68,6 +70,7 @@ export const defaultConfig: AppConfig = {
   toolbarEdgeHeight: 356,
   scrimBottomHeight: 114,
   scrimSmoothness: 1.6,
+  edgeBlurMax: 24,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */

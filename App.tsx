@@ -5,7 +5,7 @@ import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-contex
 // Prototype: silence the dev warning toast so it doesn't cover the bottom bar.
 LogBox.ignoreAllLogs(true);
 
-import {GlassTabBarView, GlassToolbarView} from './modules/glass-tab-bar';
+import {GlassEdgeBlurView, GlassTabBarView, GlassToolbarView} from './modules/glass-tab-bar';
 import EdgeScrim from './src/components/EdgeScrim';
 import DebugPanel from './src/debug/DebugPanel';
 import {defaultConfig, toNativeConfig, type AppConfig} from './src/debug/configSchema';
@@ -180,6 +180,18 @@ function AppContent() {
         <Animated.View
           pointerEvents="none"
           style={[styles.topBlur, {height: config.toolbarEdgeHeight, opacity: topScrimOpacity}]}>
+          {/* Real progressive blur (top only — a backdrop effect under the
+              tab bar would poison the pills' glass sampling), the design
+              scrim tint above it. Both follow the same master curve. */}
+          {config.edgeBlurMax > 0 && (
+            <GlassEdgeBlurView
+              edge="top"
+              maxRadius={config.edgeBlurMax}
+              smoothness={config.scrimSmoothness}
+              pointerEvents="none"
+              style={StyleSheet.absoluteFill}
+            />
+          )}
           <EdgeScrim
             edge="top"
             dark={dark}

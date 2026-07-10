@@ -157,6 +157,16 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               pal={pal}
               onChange={v => onChange({scrimSmoothness: v})}
             />
+            <SliderRow
+              label="Blur"
+              value={config.edgeBlurMax}
+              min={0}
+              max={40}
+              step={1}
+              accent={accent}
+              pal={pal}
+              onChange={v => onChange({edgeBlurMax: v})}
+            />
           </Section>
         </ScrollView>
       </View>
