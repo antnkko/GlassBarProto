@@ -122,7 +122,6 @@ extension GlassTabBarConfig {
     if let v = bridge["strokeColorChoice"] as? String, !v.isEmpty { strokeColorChoice = v }
     if let v = bridge["strokeOpacity"] as? Double { strokeOpacity = v }
     if let v = bridge["accentStrokeOpacity"] as? Double { accentStrokeOpacity = v }
-    if let v = bridge["accentRingStyle"] as? String, !v.isEmpty { accentRingStyle = v }
     if let v = bridge["accentGlowOpacity"] as? Double { accentGlowOpacity = v }
   }
 }

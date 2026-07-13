@@ -16,9 +16,6 @@ interface Props {
 const THEME_ORDER: ThemeName[] = ['blazeOrange', 'blueRibbon', 'jade', 'slack'];
 // Figma dev-spec toolbar rows; index === ToolbarOption, 0 = off.
 const TOOLBAR_LABELS = ['Off', '1', '2', '3', '4', '5', '6', '7', '8'];
-// Accent ring appearance experiments (temporary dev control).
-const RING_ORDER = ['fade', 'grow', 'stay', 'blur'] as const;
-const RING_LABELS = ['Fade', 'Grow', 'Stay', 'Blur'];
 
 interface Palette {
   bg: string;
@@ -91,17 +88,6 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
             {/* The variant is frozen to Regular; milk (in-material tint) is
                 baked at its default. Frost is the single matte control since
                 the layers overlap and milk reads as imperceptible next to it. */}
-            <SegmentedControl
-              appearance={dark ? 'dark' : 'light'}
-              values={RING_LABELS}
-              selectedIndex={Math.max(0, RING_ORDER.indexOf(config.accentRingStyle))}
-              onChange={e => {
-                const style = RING_ORDER[e.nativeEvent.selectedSegmentIndex];
-                if (style) {
-                  onChange({accentRingStyle: style});
-                }
-              }}
-            />
             <SliderRow
               label="Accent stroke"
               value={config.accentStrokeOpacity}

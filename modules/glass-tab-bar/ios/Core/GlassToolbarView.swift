@@ -210,20 +210,21 @@ struct GlassToolbarView: View {
   }
 
   // Figma: pill h48, px 6, two 48pt icon zones with a 2×24 divider between.
+  // The frost lives in .background, NOT as a ZStack sibling — a bare
+  // Capsule().fill is greedy and stretched the pill across the free toolbar
+  // width once the frost default went above 0 (same lesson as the CTA).
   private var buttonGroup: some View {
-    ZStack {
-      frostFill(Capsule(), config: config)
-      HStack(spacing: 3) {
-        groupZone("tb_aa", element: "aa")
-        Capsule()
-          .fill(dividerColor)
-          .frame(width: 2, height: 24)
-          .blendMode(useMultiply ? .multiply : .normal)
-        groupZone("tb_more", element: "more")
-      }
-      .padding(.horizontal, 6)
+    HStack(spacing: 3) {
+      groupZone("tb_aa", element: "aa")
+      Capsule()
+        .fill(dividerColor)
+        .frame(width: 2, height: 24)
+        .blendMode(useMultiply ? .multiply : .normal)
+      groupZone("tb_more", element: "more")
     }
+    .padding(.horizontal, 6)
     .frame(height: ghostSize)
+    .background(frostFill(Capsule(), config: config))
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("tb-trail", in: glassNS)
     .glassDecoration(Capsule(), kind: .group, config: config, visible: decorVisible("group"))

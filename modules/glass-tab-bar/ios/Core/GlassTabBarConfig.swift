@@ -71,9 +71,6 @@ struct GlassTabBarConfig: Equatable {
   var accentStrokeOpacity: Double = 0.65
   /// White inner glow opacity in accent buttons — panel-controlled, 0 = off.
   var accentGlowOpacity: Double = 0.5
-  /// How the accent ring re-appears after feedback: "fade" | "grow" | "stay"
-  /// | "blur" — appearance-style experiments, panel-switchable.
-  var accentRingStyle: String = "fade"
 }
 
 extension GlassTabBarConfig {
@@ -155,59 +152,22 @@ extension View {
       // separate static layer over the moving glass. Accent buttons take the
       // design's own rim (accent @0.75, Figma 387:2498) instead of the
       // panel-controlled neutral color.
-      // The fade is driven by withAnimation at the state change. The accent
-      // ring is high-contrast, so it additionally takes its own directional
-      // animation: a longer, softer fade-in (0.45s) while keeping the hide
-      // fast (0.12s) so it never lingers over the stretching glass. Safe for
-      // the freshly inserted plus: the morph clear arrives by timer AFTER
-      // insertion, so the value changes on a live view.
+      // Every ring — neutral and accent — GROWS out from under the glass:
+      // it starts slightly inside the edge and expands into place while
+      // fading in, so the entrance reads as part of the button rather than
+      // a separate layer popping in (the winner of the stage-30 style
+      // experiments). Hide is always fast, no delay.
       let color = kind == .accent
         ? config.accent.opacity(config.accentStrokeOpacity)
         : config.outerStrokeColor
-      let ring = shape.inset(by: -1).stroke(color, lineWidth: 2)
-        .opacity(visible ? 1 : 0)
-      if kind == .accent {
-        // The high-contrast accent ring needs an entrance that reads as part
-        // of the button, not a separate layer popping in. Four candidate
-        // fictions, panel-switchable; hide is always fast (0.12s, no delay).
-        switch config.accentRingStyle {
-        case "grow":
-          // Grows out from under the glass: starts slightly inside the edge
-          // and expands into place while fading in.
-          self.overlay(
-            ring.scaleEffect(visible ? 1 : 0.94)
-              .animation(
-                visible ? .easeOut(duration: 0.4).delay(0.1) : .easeInOut(duration: 0.12),
-                value: visible)
-          )
-        case "stay":
-          // Never fully leaves: dims to 30% during feedback and rides the
-          // animated frame through the morph — no from-nowhere entrance.
-          self.overlay(
-            shape.inset(by: -1).stroke(color, lineWidth: 2)
-              .opacity(visible ? 1 : 0.3)
-              .animation(.easeInOut(duration: 0.25), value: visible)
-          )
-        case "blur":
-          // Comes into focus: sharpens from a 4pt blur while fading in —
-          // reads as the glass focusing rather than a layer appearing.
-          self.overlay(
-            ring.blur(radius: visible ? 0 : 4)
-              .animation(
-                visible ? .easeInOut(duration: 0.4).delay(0.1) : .easeInOut(duration: 0.12),
-                value: visible)
-          )
-        default:
-          // Fade: the button lands first, then the rim draws on.
-          self.overlay(
-            ring.animation(
-              visible ? .easeInOut(duration: 0.45).delay(0.15) : .easeInOut(duration: 0.12),
-              value: visible)
-          )
-        }
-      } else {
-        self.overlay(ring)
-      }
+      self.overlay(
+        shape.inset(by: -1).stroke(color, lineWidth: 2)
+          .opacity(visible ? 1 : 0)
+          .scaleEffect(visible ? 1 : 0.94)
+          .animation(
+            visible ? .easeOut(duration: 0.4).delay(0.1) : .easeInOut(duration: 0.12),
+            value: visible)
+      )
     } else {
       self
     }
