@@ -53,11 +53,6 @@ export interface AppConfig {
   /** Max radius (pt) of the top progressive blur stack; 0 = gradient only. */
   edgeBlurMax: number;
   glassInteractive: boolean;
-  /** Extra frost inside the glass (mattes + hides rim glints). Fresh key
-   *  (was `frost`) so the 0.9 default lands over stored configs. */
-  frostLevel: number;
-  /** Accent ring (plus, CTA) opacity. */
-  accentStrokeOpacity: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -83,8 +78,6 @@ export const defaultConfig: AppConfig = {
   scrimSmoothness: 3,
   edgeBlurMax: 0,
   glassInteractive: true,
-  frostLevel: 0.9,
-  accentStrokeOpacity: 0.65,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -126,10 +119,10 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     // Historical bridge names — the native side reads absolute 0–1 knobs.
     shadowOpacityScale: 0.35,
     shadowRadiusScale: 0.35,
-    frost: config.frostLevel,
-    accentStrokeOpacity: config.accentStrokeOpacity,
-    // The inner glow is part of the accent look — frozen at the design value
-    // (control removed; hardcoding also overrides any stored panel value).
+    // Frost, the accent ring and the inner glow are part of the final look —
+    // frozen (controls removed; hardcoding also overrides stored values).
+    frost: 0.9,
+    accentStrokeOpacity: 0.6,
     accentGlowOpacity: 0.5,
     ...frozenLayout,
   };

@@ -1,5 +1,4 @@
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
-import Slider from '@react-native-community/slider';
 import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 
@@ -28,7 +27,6 @@ const LIGHT_PALETTE: Palette = {bg: '#FFFFFF', text: '#1B1D21', sub: '#9A9CA1', 
 const DARK_PALETTE: Palette = {bg: '#1B1D21', text: '#F5F5F7', sub: '#8A8D93', chip: '#2A2D33'};
 
 export default function DebugPanel({config, dark = false, onChange, onClose}: Props) {
-  const accent = THEMES[config.theme].accent;
   const pal = dark ? DARK_PALETTE : LIGHT_PALETTE;
 
   return (
@@ -84,33 +82,8 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
             />
           </Section>
 
-          <Section pal={pal} title="Liquid Glass">
-            {/* The variant is frozen to Regular; milk (in-material tint) is
-                baked at its default. Frost is the single matte control since
-                the layers overlap and milk reads as imperceptible next to it. */}
-            <SliderRow
-              label="Accent stroke"
-              value={config.accentStrokeOpacity}
-              min={0}
-              max={1}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({accentStrokeOpacity: v})}
-            />
-            <SliderRow
-              label="Frost"
-              value={config.frostLevel}
-              min={0}
-              max={1}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({frostLevel: v})}
-            />
-          </Section>
-
-          {/* Motion, scrim, stroke and shadow are frozen at the design look. */}
+          {/* Material, motion, scrim, stroke and shadow are all frozen at the
+              final design look. */}
         </ScrollView>
       </View>
     </>
@@ -143,61 +116,7 @@ function Section({title, pal, children}: {title: string; pal: Palette; children:
   );
 }
 
-function SliderRow({
-  label,
-  value,
-  min,
-  max,
-  step,
-  accent,
-  pal,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  accent: string;
-  pal: Palette;
-  onChange: (v: number) => void;
-}) {
-  const digits = step < 1 ? 2 : 0;
-  const clamp = (v: number) => Math.min(max, Math.max(min, Number(v.toFixed(4))));
 
-  return (
-    <View style={s.row}>
-      <View style={s.rowHead}>
-        <Text style={[s.rowLabel, {color: pal.text}]}>{label}</Text>
-        <View style={s.stepper}>
-          <StepBtn label="−" pal={pal} onPress={() => onChange(clamp(value - step))} />
-          <Text style={[s.rowValue, {color: pal.text}]}>{value.toFixed(digits)}</Text>
-          <StepBtn label="+" pal={pal} onPress={() => onChange(clamp(value + step))} />
-        </View>
-      </View>
-      <Slider
-        style={s.slider}
-        value={value}
-        minimumValue={min}
-        maximumValue={max}
-        step={step}
-        minimumTrackTintColor={accent}
-        onValueChange={v => onChange(clamp(v))}
-      />
-    </View>
-  );
-}
-
-function StepBtn({label, pal, onPress}: {label: string; pal: Palette; onPress: () => void}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={8}
-      style={({pressed}) => [s.stepBtn, {backgroundColor: pal.chip}, pressed && {opacity: 0.5}]}>
-      <Text style={[s.stepBtnTxt, {color: pal.text}]}>{label}</Text>
-    </Pressable>
-  );
-}
 
 const s = StyleSheet.create({
   backdrop: {
