@@ -102,6 +102,7 @@ static NSDictionary *GlassTabBarConfigDict(const GlassTabBarConfigStruct &c)
     @"strokeColorChoice" : RCTNSStringFromString(c.strokeColorChoice),
     @"strokeOpacity" : @(c.strokeOpacity),
     @"accentStrokeOpacity" : @(c.accentStrokeOpacity),
+    @"accentRingStyle" : RCTNSStringFromString(c.accentRingStyle),
     @"accentGlowOpacity" : @(c.accentGlowOpacity),
   };
 }

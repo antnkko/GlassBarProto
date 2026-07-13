@@ -71,6 +71,9 @@ struct GlassTabBarConfig: Equatable {
   var accentStrokeOpacity: Double = 0.65
   /// White inner glow opacity in accent buttons — panel-controlled, 0 = off.
   var accentGlowOpacity: Double = 0.5
+  /// How the accent ring re-appears after feedback: "fade" | "grow" | "stay"
+  /// | "blur" — appearance-style experiments, panel-switchable.
+  var accentRingStyle: String = "fade"
 }
 
 extension GlassTabBarConfig {
@@ -164,13 +167,44 @@ extension View {
       let ring = shape.inset(by: -1).stroke(color, lineWidth: 2)
         .opacity(visible ? 1 : 0)
       if kind == .accent {
-        // The accent ring enters a beat later than the neutral decor — the
-        // 0.15s delay lets the button land first, then the rim draws on.
-        self.overlay(
-          ring.animation(
-            visible ? .easeInOut(duration: 0.45).delay(0.15) : .easeInOut(duration: 0.12),
-            value: visible)
-        )
+        // The high-contrast accent ring needs an entrance that reads as part
+        // of the button, not a separate layer popping in. Four candidate
+        // fictions, panel-switchable; hide is always fast (0.12s, no delay).
+        switch config.accentRingStyle {
+        case "grow":
+          // Grows out from under the glass: starts slightly inside the edge
+          // and expands into place while fading in.
+          self.overlay(
+            ring.scaleEffect(visible ? 1 : 0.94)
+              .animation(
+                visible ? .easeOut(duration: 0.4).delay(0.1) : .easeInOut(duration: 0.12),
+                value: visible)
+          )
+        case "stay":
+          // Never fully leaves: dims to 30% during feedback and rides the
+          // animated frame through the morph — no from-nowhere entrance.
+          self.overlay(
+            shape.inset(by: -1).stroke(color, lineWidth: 2)
+              .opacity(visible ? 1 : 0.3)
+              .animation(.easeInOut(duration: 0.25), value: visible)
+          )
+        case "blur":
+          // Comes into focus: sharpens from a 4pt blur while fading in —
+          // reads as the glass focusing rather than a layer appearing.
+          self.overlay(
+            ring.blur(radius: visible ? 0 : 4)
+              .animation(
+                visible ? .easeInOut(duration: 0.4).delay(0.1) : .easeInOut(duration: 0.12),
+                value: visible)
+          )
+        default:
+          // Fade: the button lands first, then the rim draws on.
+          self.overlay(
+            ring.animation(
+              visible ? .easeInOut(duration: 0.45).delay(0.15) : .easeInOut(duration: 0.12),
+              value: visible)
+          )
+        }
       } else {
         self.overlay(ring)
       }
