@@ -51,6 +51,8 @@ export interface GlassConfig {
   /** Outer stroke color choice + opacity. */
   strokeColorChoice: StrokeColorChoice;
   strokeOpacity: number;
+  /** Accent ring (plus, CTA) opacity. */
+  accentStrokeOpacity: number;
 }
 
 export type StrokeMode = 'off' | 'outer';

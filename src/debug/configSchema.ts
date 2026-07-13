@@ -56,6 +56,8 @@ export interface AppConfig {
   /** Extra frost inside the glass (mattes + hides rim glints). Fresh key
    *  (was `frost`) so the 0.9 default lands over stored configs. */
   frostLevel: number;
+  /** Accent ring (plus, CTA) opacity. */
+  accentStrokeOpacity: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -82,6 +84,7 @@ export const defaultConfig: AppConfig = {
   edgeBlurMax: 0,
   glassInteractive: true,
   frostLevel: 0.9,
+  accentStrokeOpacity: 0.65,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -124,6 +127,7 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     shadowOpacityScale: 0.35,
     shadowRadiusScale: 0.35,
     frost: config.frostLevel,
+    accentStrokeOpacity: config.accentStrokeOpacity,
     ...frozenLayout,
   };
 }

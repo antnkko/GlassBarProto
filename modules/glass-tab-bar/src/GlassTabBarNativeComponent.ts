@@ -53,6 +53,7 @@ export interface NativeProps extends ViewProps {
     frost: Double;
     strokeColorChoice: string;
     strokeOpacity: Double;
+    accentStrokeOpacity: Double;
   }>;
   onTabPress?: DirectEventHandler<TabPressEvent>;
   onSubTabPress?: DirectEventHandler<TabPressEvent>;

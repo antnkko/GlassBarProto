@@ -89,6 +89,16 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
                 baked at its default. Frost is the single matte control since
                 the layers overlap and milk reads as imperceptible next to it. */}
             <SliderRow
+              label="Accent stroke"
+              value={config.accentStrokeOpacity}
+              min={0}
+              max={1}
+              step={0.01}
+              accent={accent}
+              pal={pal}
+              onChange={v => onChange({accentStrokeOpacity: v})}
+            />
+            <SliderRow
               label="Frost"
               value={config.frostLevel}
               min={0}

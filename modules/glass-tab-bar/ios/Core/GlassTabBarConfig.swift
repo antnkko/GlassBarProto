@@ -67,6 +67,8 @@ struct GlassTabBarConfig: Equatable {
   var strokeColorChoice: String = "gray"
   /// Outer stroke opacity.
   var strokeOpacity: Double = 0.13
+  /// Accent ring (plus, CTA) opacity — panel-controlled.
+  var accentStrokeOpacity: Double = 0.65
 }
 
 extension GlassTabBarConfig {
@@ -152,7 +154,9 @@ extension View {
       // fast (0.12s) so it never lingers over the stretching glass. Safe for
       // the freshly inserted plus: the morph clear arrives by timer AFTER
       // insertion, so the value changes on a live view.
-      let color = kind == .accent ? config.accent.opacity(0.65) : config.outerStrokeColor
+      let color = kind == .accent
+        ? config.accent.opacity(config.accentStrokeOpacity)
+        : config.outerStrokeColor
       let ring = shape.inset(by: -1).stroke(color, lineWidth: 2)
         .opacity(visible ? 1 : 0)
       if kind == .accent {

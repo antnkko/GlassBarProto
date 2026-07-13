@@ -81,6 +81,7 @@ static NSDictionary *GlassToolbarConfigDict(const GlassToolbarConfigStruct &c)
     @"frost" : @(c.frost),
     @"strokeColorChoice" : RCTNSStringFromString(c.strokeColorChoice),
     @"strokeOpacity" : @(c.strokeOpacity),
+    @"accentStrokeOpacity" : @(c.accentStrokeOpacity),
   };
 }
 
