@@ -235,7 +235,7 @@ struct GlassTabBarView: View {
   private func endPress() {
     pressToken += 1
     let token = pressToken
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
       if pressToken == token {
         withAnimation(.easeInOut(duration: 0.25)) { pressedID = nil }
       }
@@ -247,19 +247,18 @@ struct GlassTabBarView: View {
   }
 
   // Runs a spring morph while holding `morphing` true, so every element's
-  // decor fades during the transition. The clear is TIMED at the perceptual
-  // settle (duration + one bounce swing) instead of completionCriteria
-  // .removed — for a bouncy spring, mathematical rest lands ~1s+ after the
-  // eye already sees the morph as finished, which read as the decor
-  // "loading in" late.
+  // decor fades during the transition. The fade-in STARTS during the landing
+  // (0.75 of the perceptual duration) and completes together with the bounce
+  // settling — the decor reads as part of the touchdown, not as a late
+  // "load-in" afterwards.
   private func morph(_ body: @escaping () -> Void) {
     withAnimation(.easeInOut(duration: 0.12)) { morphing = true }
     withAnimation(config.spring) { body() }
     morphToken += 1
     let token = morphToken
-    DispatchQueue.main.asyncAfter(deadline: .now() + config.springDuration + 0.2) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + config.springDuration * 0.75) {
       if morphToken == token {
-        withAnimation(.easeInOut(duration: 0.25)) { morphing = false }
+        withAnimation(.easeInOut(duration: 0.3)) { morphing = false }
       }
     }
   }

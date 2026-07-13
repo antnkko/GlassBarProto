@@ -65,16 +65,15 @@ struct GlassToolbarView: View {
     .background(InterfaceStylePinner(style: config.interfaceStyle))
     .onAppear { localOption = option }
     .onChange(of: option) { _, next in
-      // Timed clear at the perceptual settle (see the bar's morph()) — the
-      // .removed criterion waits for mathematical rest, ~1s+ past what the
-      // eye reads as finished.
+      // The fade-in starts during the landing and completes with the bounce
+      // (see the bar's morph()).
       withAnimation(.easeInOut(duration: 0.12)) { morphing = true }
       withAnimation(config.spring) { localOption = next }
       morphToken += 1
       let token = morphToken
-      DispatchQueue.main.asyncAfter(deadline: .now() + config.springDuration + 0.2) {
+      DispatchQueue.main.asyncAfter(deadline: .now() + config.springDuration * 0.75) {
         if morphToken == token {
-          withAnimation(.easeInOut(duration: 0.25)) { morphing = false }
+          withAnimation(.easeInOut(duration: 0.3)) { morphing = false }
         }
       }
     }
@@ -104,7 +103,7 @@ struct GlassToolbarView: View {
   private func endPress() {
     pressToken += 1
     let token = pressToken
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
       if pressToken == token {
         withAnimation(.easeInOut(duration: 0.25)) { pressedID = nil }
       }
