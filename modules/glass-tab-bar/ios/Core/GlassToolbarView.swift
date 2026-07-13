@@ -245,10 +245,10 @@ struct GlassToolbarView: View {
       // centers optically without it.
       .padding(.horizontal, 32)
       .frame(height: ctaHeight)
-      .background(Capsule().fill(config.accent))
+      .background(Capsule().fill(config.accentFill))
       .glassEffect(config.accentGlass, in: Capsule())
       .glassEffectID("tb-trail", in: glassNS)
-      .glassDecoration(Capsule(), kind: .accent, config: config)
+      .glassDecoration(Capsule(), kind: .accent, config: config, visible: decorVisible("cta"))
       .glassShadow(Capsule(), kind: .accent, config: config, visible: decorVisible("cta"))
       .contentShape(Capsule())
       .gesture(tapPressGesture("cta") { pressed("cta") })

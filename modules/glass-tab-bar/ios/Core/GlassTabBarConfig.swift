@@ -102,6 +102,18 @@ extension GlassTabBarConfig {
     return glassInteractive ? glass.interactive() : glass
   }
 
+  /// Accent button fill with the design's white inner glow (Figma 387:2498:
+  /// inset 0 0 8 4 white@0.5 — the spread is approximated by stacking a
+  /// tight and a wide inner shadow). Lives IN the glass content, so the
+  /// press stretch and the morph carry it — no feedback fade needed.
+  var accentFill: AnyShapeStyle {
+    AnyShapeStyle(
+      accent
+        .shadow(.inner(color: .white.opacity(0.5), radius: 4))
+        .shadow(.inner(color: .white.opacity(0.5), radius: 10))
+    )
+  }
+
   private var baseGlass: Glass {
     glassVariant == "clear" ? .clear : .regular
   }
@@ -126,14 +138,16 @@ extension View {
   func glassDecoration<S: InsettableShape>(
     _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig, visible: Bool = true
   ) -> some View {
-    // Accent-filled buttons (plus, CTA) carry no stroke.
-    if config.strokeMode == "outer" && kind != .accent {
+    if config.strokeMode == "outer" {
       // The stroke sits as an outer overlay (visible at rest). It fades out
       // smoothly during any feedback — press stretch, tap, morph — and back
       // in only once the button fully settles, so it never reads as a
-      // separate static layer over the moving glass.
+      // separate static layer over the moving glass. Accent buttons take the
+      // design's own rim (accent @0.75, Figma 387:2498) instead of the
+      // panel-controlled neutral color.
+      let color = kind == .accent ? config.accent.opacity(0.75) : config.outerStrokeColor
       self.overlay(
-        shape.inset(by: -1).stroke(config.outerStrokeColor, lineWidth: 2)
+        shape.inset(by: -1).stroke(color, lineWidth: 2)
           .opacity(visible ? 1 : 0)
           .animation(.easeInOut(duration: 0.28), value: visible)
       )

@@ -103,17 +103,17 @@ struct GlassTabBarView: View {
 
   private var plusButton: some View {
     ZStack {
-      // Fully opaque accent: the glass tint alone reads slightly translucent.
-      // The fill lives in the glass content, so press-stretch and the
-      // matched-geometry exit still carry it.
-      Capsule().fill(config.accent)
+      // Fully opaque accent + the design's white inner glow: the fill lives
+      // in the glass content, so press-stretch and the matched-geometry exit
+      // carry it (glow included).
+      Capsule().fill(config.accentFill)
       icon("tab_plus", size: config.plusIconSize, color: .white)
     }
     .frame(width: config.pillWidth, height: config.pillHeight)
     .glassEffect(config.accentGlass, in: Capsule())
     .glassEffectID("plus", in: glassNS)
     .glassEffectTransition(.matchedGeometry)
-    .glassDecoration(Capsule(), kind: .accent, config: config)
+    .glassDecoration(Capsule(), kind: .accent, config: config, visible: decorVisible("plus"))
     .glassShadow(Capsule(), kind: .accent, config: config, visible: decorVisible("plus"))
     .contentShape(Capsule())
     .gesture(tapPressGesture("plus") { plusTapped() })
