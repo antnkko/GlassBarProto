@@ -44,20 +44,21 @@ struct GlassTabBarConfig: Equatable {
   var iconSize: Double = 32
   var plusIconSize: Double = 28
 
-  /// Design stroke experiment: "off" | "outer" (ring). Off = none.
-  var strokeMode: String = "off"
+  /// Design stroke: "off" | "outer" (ring). Frozen to outer by the JS side.
+  var strokeMode: String = "outer"
 
   /// Liquid Glass variant: "regular" | "clear".
   var glassVariant: String = "regular"
   /// Whether the glass reacts to touch (press stretch / shimmer).
   var glassInteractive: Bool = true
-  /// Drop shadow: "none" (the frozen look) | "design" (caster ring).
-  var shadowMode: String = "none"
-  /// Absolute 0–1 panel knobs (field names are historical bridge names):
-  /// opacity is the shadow alpha, radius maps 0–1 → 0–40pt. Accent/group
-  /// keep the design's proportions relative to neutral (×0.67 / ×0.8).
-  var shadowOpacityScale: Double = 0.3
-  var shadowRadiusScale: Double = 0.5
+  /// Drop shadow: "none" | "design" (caster ring on the white elements).
+  /// Frozen to design by the JS side.
+  var shadowMode: String = "design"
+  /// Absolute 0–1 knobs (field names are historical bridge names): opacity is
+  /// the shadow alpha, radius maps 0–1 → 0–40pt. Group keeps the design's
+  /// proportions relative to neutral (×0.67 / ×0.8); accent has no shadow.
+  var shadowOpacityScale: Double = 0.35
+  var shadowRadiusScale: Double = 0.35
 
   /// Extra frost: an opaque tint layer inside the glass, under the content.
   /// Mattes the material AND covers the rim specular glints (0 = none).

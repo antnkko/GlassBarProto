@@ -113,8 +113,9 @@ struct GlassTabBarView: View {
     .glassEffect(config.accentGlass, in: Capsule())
     .glassEffectID("plus", in: glassNS)
     .glassEffectTransition(.matchedGeometry)
+    // Accent buttons carry no drop shadow — their style is the accent rim +
+    // white inner glow; the design shadow belongs to the white elements only.
     .glassDecoration(Capsule(), kind: .accent, config: config, visible: decorVisible("plus"))
-    .glassShadow(Capsule(), kind: .accent, config: config, visible: decorVisible("plus"))
     .contentShape(Capsule())
     .gesture(tapPressGesture("plus") { plusTapped() })
   }

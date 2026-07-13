@@ -3,12 +3,7 @@ import Slider from '@react-native-community/slider';
 import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 
-import type {
-  ShadowMode,
-  StrokeColorChoice,
-  StrokeMode,
-  ToolbarOption,
-} from '../../modules/glass-tab-bar';
+import type {ToolbarOption} from '../../modules/glass-tab-bar';
 import {THEMES, type AppConfig, type ThemeName} from './configSchema';
 
 interface Props {
@@ -21,13 +16,6 @@ interface Props {
 const THEME_ORDER: ThemeName[] = ['blazeOrange', 'blueRibbon', 'jade', 'slack'];
 // Figma dev-spec toolbar rows; index === ToolbarOption, 0 = off.
 const TOOLBAR_LABELS = ['Off', '1', '2', '3', '4', '5', '6', '7', '8'];
-// Off reverts to the frozen look; outer is the design ring.
-const STROKE_ORDER: StrokeMode[] = ['off', 'outer'];
-const STROKE_LABELS = ['Off', 'Outer'];
-const STROKE_COLOR_ORDER: StrokeColorChoice[] = ['black', 'gray'];
-const STROKE_COLOR_LABELS = ['Black', 'Gray'];
-const SHADOW_ORDER: ShadowMode[] = ['none', 'design'];
-const SHADOW_LABELS = ['Off', 'Design'];
 
 interface Palette {
   bg: string;
@@ -112,76 +100,7 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
             />
           </Section>
 
-          <Section pal={pal} title="Stroke">
-            <SegmentedControl
-              appearance={dark ? 'dark' : 'light'}
-              values={STROKE_LABELS}
-              selectedIndex={Math.max(0, STROKE_ORDER.indexOf(config.strokeMode))}
-              onChange={e => {
-                const mode = STROKE_ORDER[e.nativeEvent.selectedSegmentIndex];
-                if (mode) {
-                  onChange({strokeMode: mode});
-                }
-              }}
-            />
-            <SegmentedControl
-              appearance={dark ? 'dark' : 'light'}
-              values={STROKE_COLOR_LABELS}
-              selectedIndex={Math.max(0, STROKE_COLOR_ORDER.indexOf(config.strokeColorChoice))}
-              onChange={e => {
-                const choice = STROKE_COLOR_ORDER[e.nativeEvent.selectedSegmentIndex];
-                if (choice) {
-                  onChange({strokeColorChoice: choice});
-                }
-              }}
-            />
-            <SliderRow
-              label="Stroke opacity"
-              value={config.strokeOpacity}
-              min={0}
-              max={1}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({strokeOpacity: v})}
-            />
-          </Section>
-
-          <Section pal={pal} title="Shadow">
-            <SegmentedControl
-              appearance={dark ? 'dark' : 'light'}
-              values={SHADOW_LABELS}
-              selectedIndex={Math.max(0, SHADOW_ORDER.indexOf(config.shadowMode))}
-              onChange={e => {
-                const mode = SHADOW_ORDER[e.nativeEvent.selectedSegmentIndex];
-                if (mode) {
-                  onChange({shadowMode: mode});
-                }
-              }}
-            />
-            <SliderRow
-              label="Opacity"
-              value={config.shadowOpacity}
-              min={0}
-              max={1}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({shadowOpacity: v})}
-            />
-            <SliderRow
-              label="Radius"
-              value={config.shadowRadius}
-              min={0}
-              max={1}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({shadowRadius: v})}
-            />
-          </Section>
-
-          {/* Motion, scrim and shadow values stay frozen at the tuned defaults. */}
+          {/* Motion, scrim, stroke and shadow are frozen at the design look. */}
         </ScrollView>
       </View>
     </>

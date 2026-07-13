@@ -248,8 +248,8 @@ struct GlassToolbarView: View {
       .background(Capsule().fill(config.accentFill))
       .glassEffect(config.accentGlass, in: Capsule())
       .glassEffectID("tb-trail", in: glassNS)
+      // Accent = rim + inner glow only; the drop shadow is for white elements.
       .glassDecoration(Capsule(), kind: .accent, config: config, visible: decorVisible("cta"))
-      .glassShadow(Capsule(), kind: .accent, config: config, visible: decorVisible("cta"))
       .contentShape(Capsule())
       .gesture(tapPressGesture("cta") { pressed("cta") })
   }

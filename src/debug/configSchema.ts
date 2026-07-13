@@ -1,11 +1,7 @@
 import type {
   BarAppearance,
   GlassConfig,
-  GlassVariant,
   HighlightBlend,
-  ShadowMode,
-  StrokeColorChoice,
-  StrokeMode,
   ToolbarOption,
 } from '../../modules/glass-tab-bar';
 
@@ -56,22 +52,9 @@ export interface AppConfig {
   scrimSmoothness: number;
   /** Max radius (pt) of the top progressive blur stack; 0 = gradient only. */
   edgeBlurMax: number;
-  /** Design stroke experiment: off = the frozen look, outer = design ring. */
-  strokeMode: StrokeMode;
-  /** Liquid Glass controls. */
-  glassVariant: GlassVariant;
   glassInteractive: boolean;
-  /** Drop shadow: none = frozen look, design = the caster ring below. */
-  shadowMode: ShadowMode;
-  /** Shadow alpha 0–1 (design: 0.3). Fresh keys — merge over stored configs. */
-  shadowOpacity: number;
-  /** Shadow blur 0–1 → 0–40pt (design: 0.5 = 20pt). */
-  shadowRadius: number;
   /** Extra frost inside the glass (mattes + hides rim glints). */
   frost: number;
-  /** Outer stroke color + opacity. */
-  strokeColorChoice: StrokeColorChoice;
-  strokeOpacity: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -96,15 +79,8 @@ export const defaultConfig: AppConfig = {
   scrimBottomHeight: 160,
   scrimSmoothness: 3,
   edgeBlurMax: 0,
-  strokeMode: 'off',
-  glassVariant: 'regular',
   glassInteractive: true,
-  shadowMode: 'none',
-  shadowOpacity: 0.3,
-  shadowRadius: 0.5,
   frost: 0,
-  strokeColorChoice: 'gray',
-  strokeOpacity: 0.13,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -134,19 +110,19 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     containerSpacing: config.containerSpacing,
     springDuration: config.springDuration,
     springBounce: config.springBounce,
-    // Stored configs may still carry the retired 'inner' value.
-    strokeMode: (config.strokeMode as string) === 'inner' ? 'off' : config.strokeMode,
-    // Frozen to Regular (the control is gone); stored 'clear' is ignored.
+    // Frozen look (controls removed; hardcoding here also overrides any
+    // stored panel values): Regular glass, gray outer stroke @0.13, design
+    // shadow at 0.35 alpha / 0.35→14pt radius on the white elements.
     glassVariant: 'regular',
     glassInteractive: config.glassInteractive,
-    shadowMode: config.shadowMode,
-    // The bridge field names are historical; the native side reads these as
-    // the absolute 0–1 opacity/radius knobs.
-    shadowOpacityScale: config.shadowOpacity,
-    shadowRadiusScale: config.shadowRadius,
+    strokeMode: 'outer',
+    strokeColorChoice: 'gray',
+    strokeOpacity: 0.13,
+    shadowMode: 'design',
+    // Historical bridge names — the native side reads absolute 0–1 knobs.
+    shadowOpacityScale: 0.35,
+    shadowRadiusScale: 0.35,
     frost: config.frost,
-    strokeColorChoice: config.strokeColorChoice,
-    strokeOpacity: config.strokeOpacity,
     ...frozenLayout,
   };
 }
