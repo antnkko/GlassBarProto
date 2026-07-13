@@ -134,7 +134,8 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     springBounce: config.springBounce,
     // Stored configs may still carry the retired 'inner' value.
     strokeMode: (config.strokeMode as string) === 'inner' ? 'off' : config.strokeMode,
-    glassVariant: config.glassVariant,
+    // Frozen to Regular (the control is gone); stored 'clear' is ignored.
+    glassVariant: 'regular',
     glassInteractive: config.glassInteractive,
     shadowMode: config.shadowMode,
     shadowOpacityScale: config.shadowOpacityScale,

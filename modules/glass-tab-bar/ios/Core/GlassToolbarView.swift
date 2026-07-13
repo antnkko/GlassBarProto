@@ -75,10 +75,17 @@ struct GlassToolbarView: View {
 
   // MARK: - Feedback
 
-  private func pressGesture(_ id: String) -> some Gesture {
+  // One gesture per element: press detection AND the tap action. A separate
+  // simultaneous press-detector next to .onTapGesture silenced the tap
+  // entirely (verified with real XCUITest taps), so the tap is the drag's
+  // release instead: near-zero translation on end = a tap.
+  private func tapPressGesture(_ id: String, onTap: @escaping () -> Void) -> some Gesture {
     DragGesture(minimumDistance: 0)
       .onChanged { _ in if pressedID != id { pressedID = id } }
-      .onEnded { _ in endPress() }
+      .onEnded { value in
+        endPress()
+        if hypot(value.translation.width, value.translation.height) < 12 { onTap() }
+      }
   }
 
   // Clear the press a beat later so the stroke returns after the release
@@ -167,9 +174,9 @@ struct GlassToolbarView: View {
     .frame(width: ghostSize, height: ghostSize)
     .glassEffect(pillGlass, in: Circle())
     .glassDecoration(Circle(), kind: .neutral, config: config, visible: strokeVisible(element))
+    .glassShadow(.neutral, config: config)
     .contentShape(Circle())
-    .simultaneousGesture(pressGesture(element))
-    .onTapGesture { pressed(element) }
+    .gesture(tapPressGesture(element) { pressed(element) })
   }
 
   private var avatar: some View {
@@ -185,9 +192,9 @@ struct GlassToolbarView: View {
     .glassEffect(pillGlass, in: Circle())
     .glassEffectID("tb-trail", in: glassNS)
     .glassDecoration(Circle(), kind: .neutral, config: config, visible: strokeVisible("avatar"))
+    .glassShadow(.neutral, config: config)
     .contentShape(Circle())
-    .simultaneousGesture(pressGesture("avatar"))
-    .onTapGesture { pressed("avatar") }
+    .gesture(tapPressGesture("avatar") { pressed("avatar") })
   }
 
   // Figma: pill h48, px 6, two 48pt icon zones with a 2×24 divider between.
@@ -208,7 +215,7 @@ struct GlassToolbarView: View {
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("tb-trail", in: glassNS)
     .glassDecoration(Capsule(), kind: .group, config: config, visible: strokeVisible("group"))
-    .simultaneousGesture(pressGesture("group"))
+    .glassShadow(.group, config: config)
   }
 
   private func groupZone(_ iconName: String, element: String) -> some View {
@@ -217,7 +224,9 @@ struct GlassToolbarView: View {
     }
     .frame(width: groupZoneSize, height: groupZoneSize)
     .contentShape(Rectangle())
-    .onTapGesture { pressed(element) }
+    // The whole pill holds the press ("group" strokes as one), each zone taps
+    // its own element.
+    .gesture(tapPressGesture("group") { pressed(element) })
   }
 
   // Figma: accent pill h≈60, px 32, "Button" semibold 18 white. The solid
@@ -240,6 +249,7 @@ struct GlassToolbarView: View {
       .glassEffect(config.accentGlass, in: Capsule())
       .glassEffectID("tb-trail", in: glassNS)
       .glassDecoration(Capsule(), kind: .accent, config: config)
+      .glassShadow(.accent, config: config)
       .contentShape(Capsule())
       .onTapGesture { pressed("cta") }
   }

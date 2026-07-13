@@ -4,7 +4,7 @@ import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 
 import type {
-  GlassVariant,
+  ShadowMode,
   StrokeColorChoice,
   StrokeMode,
   ToolbarOption,
@@ -24,10 +24,10 @@ const TOOLBAR_LABELS = ['Off', '1', '2', '3', '4', '5', '6', '7', '8'];
 // Off reverts to the frozen look; outer is the design ring.
 const STROKE_ORDER: StrokeMode[] = ['off', 'outer'];
 const STROKE_LABELS = ['Off', 'Outer'];
-const GLASS_ORDER: GlassVariant[] = ['regular', 'clear'];
-const GLASS_LABELS = ['Regular', 'Clear'];
 const STROKE_COLOR_ORDER: StrokeColorChoice[] = ['black', 'gray'];
 const STROKE_COLOR_LABELS = ['Black', 'Gray'];
+const SHADOW_ORDER: ShadowMode[] = ['none', 'design'];
+const SHADOW_LABELS = ['Off', 'Design'];
 
 interface Palette {
   bg: string;
@@ -97,20 +97,9 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
           </Section>
 
           <Section pal={pal} title="Liquid Glass">
-            <SegmentedControl
-              appearance={dark ? 'dark' : 'light'}
-              values={GLASS_LABELS}
-              selectedIndex={Math.max(0, GLASS_ORDER.indexOf(config.glassVariant))}
-              onChange={e => {
-                const variant = GLASS_ORDER[e.nativeEvent.selectedSegmentIndex];
-                if (variant) {
-                  onChange({glassVariant: variant});
-                }
-              }}
-            />
-            {/* Milk (in-material tint) is baked at its default; Frost is the
-                single matte control since the two overlap and milk reads as
-                imperceptible next to frost. */}
+            {/* The variant is frozen to Regular; milk (in-material tint) is
+                baked at its default. Frost is the single matte control since
+                the layers overlap and milk reads as imperceptible next to it. */}
             <SliderRow
               label="Frost"
               value={config.frost}
@@ -155,6 +144,40 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               accent={accent}
               pal={pal}
               onChange={v => onChange({strokeOpacity: v})}
+            />
+          </Section>
+
+          <Section pal={pal} title="Shadow">
+            <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
+              values={SHADOW_LABELS}
+              selectedIndex={Math.max(0, SHADOW_ORDER.indexOf(config.shadowMode))}
+              onChange={e => {
+                const mode = SHADOW_ORDER[e.nativeEvent.selectedSegmentIndex];
+                if (mode) {
+                  onChange({shadowMode: mode});
+                }
+              }}
+            />
+            <SliderRow
+              label="Opacity scale"
+              value={config.shadowOpacityScale}
+              min={0}
+              max={3}
+              step={0.05}
+              accent={accent}
+              pal={pal}
+              onChange={v => onChange({shadowOpacityScale: v})}
+            />
+            <SliderRow
+              label="Radius scale"
+              value={config.shadowRadiusScale}
+              min={0}
+              max={3}
+              step={0.05}
+              accent={accent}
+              pal={pal}
+              onChange={v => onChange({shadowRadiusScale: v})}
             />
           </Section>
 

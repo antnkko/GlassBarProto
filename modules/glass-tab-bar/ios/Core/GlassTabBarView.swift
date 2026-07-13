@@ -96,9 +96,9 @@ struct GlassTabBarView: View {
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("home", in: glassNS)
     .glassDecoration(Capsule(), kind: .neutral, config: config, visible: strokeVisible("home"))
+    .glassShadow(.neutral, config: config)
     .contentShape(Capsule())
-    .simultaneousGesture(pressGesture("home"))
-    .onTapGesture { homeTapped() }
+    .gesture(tapPressGesture("home") { homeTapped() })
   }
 
   private var plusButton: some View {
@@ -114,6 +114,7 @@ struct GlassTabBarView: View {
     .glassEffectID("plus", in: glassNS)
     .glassEffectTransition(.matchedGeometry)
     .glassDecoration(Capsule(), kind: .accent, config: config)
+    .glassShadow(.accent, config: config)
     .contentShape(Capsule())
     .onTapGesture { plusTapped() }
   }
@@ -127,9 +128,9 @@ struct GlassTabBarView: View {
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
     .glassDecoration(Capsule(), kind: .neutral, config: config, visible: strokeVisible("right"))
+    .glassShadow(.neutral, config: config)
     .contentShape(Capsule())
-    .simultaneousGesture(pressGesture("right"))
-    .onTapGesture { expandTapped() }
+    .gesture(tapPressGesture("right") { expandTapped() })
   }
 
   private var expandedBubble: some View {
@@ -164,6 +165,7 @@ struct GlassTabBarView: View {
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
     .glassDecoration(Capsule(), kind: .neutral, config: config, visible: strokeVisible("bubble"))
+    .glassShadow(.neutral, config: config)
   }
 
   private func subTab(_ tab: String) -> some View {
@@ -206,12 +208,17 @@ struct GlassTabBarView: View {
 
   // MARK: - Feedback state
 
-  // Press down/up detector that doesn't steal the tap (used as a simultaneous
-  // gesture); marks the pressed element so its stroke fades for the stretch.
-  private func pressGesture(_ id: String) -> some Gesture {
+  // One gesture per pill: press detection AND the tap action. A separate
+  // simultaneous press-detector next to .onTapGesture silenced the tap
+  // entirely (verified with real XCUITest taps), so the tap is the drag's
+  // release instead: near-zero translation on end = a tap.
+  private func tapPressGesture(_ id: String, onTap: @escaping () -> Void) -> some Gesture {
     DragGesture(minimumDistance: 0)
       .onChanged { _ in if pressedID != id { pressedID = id } }
-      .onEnded { _ in endPress() }
+      .onEnded { value in
+        endPress()
+        if hypot(value.translation.width, value.translation.height) < 12 { onTap() }
+      }
   }
 
   // The interactive stretch bounces on release, so the stroke must come back

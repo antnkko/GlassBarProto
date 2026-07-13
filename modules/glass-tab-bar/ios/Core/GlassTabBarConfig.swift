@@ -148,6 +148,25 @@ extension View {
       shape.fill(config.milkColor.opacity(config.frost))
     }
   }
+
+  /// Design drop shadow, panel-switchable. Applied AFTER the glass so the
+  /// whole rendered pill casts it. Base values from the Figma mock:
+  /// neutral 0 0 20 rgba(193,195,198,0.3); accent/group 0 0 16 black@0.2 —
+  /// both scaled by the panel's opacity/radius multipliers.
+  @ViewBuilder
+  func glassShadow(_ kind: GlassDecorKind, config: GlassTabBarConfig) -> some View {
+    if config.shadowMode == "design" {
+      let neutral = kind == .neutral
+      let baseColor: Color = neutral ? (Color(hexString: "#C1C3C6") ?? .gray) : .black
+      let baseOpacity: Double = neutral ? 0.3 : 0.2
+      let baseRadius: Double = neutral ? 20 : 16
+      self.shadow(
+        color: baseColor.opacity(min(1, baseOpacity * config.shadowOpacityScale)),
+        radius: baseRadius * config.shadowRadiusScale)
+    } else {
+      self
+    }
+  }
 }
 
 extension GlassTabBarConfig {
