@@ -53,8 +53,9 @@ export interface AppConfig {
   /** Max radius (pt) of the top progressive blur stack; 0 = gradient only. */
   edgeBlurMax: number;
   glassInteractive: boolean;
-  /** Extra frost inside the glass (mattes + hides rim glints). */
-  frost: number;
+  /** Extra frost inside the glass (mattes + hides rim glints). Fresh key
+   *  (was `frost`) so the 0.9 default lands over stored configs. */
+  frostLevel: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -80,7 +81,7 @@ export const defaultConfig: AppConfig = {
   scrimSmoothness: 3,
   edgeBlurMax: 0,
   glassInteractive: true,
-  frost: 0,
+  frostLevel: 0.9,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -122,7 +123,7 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     // Historical bridge names — the native side reads absolute 0–1 knobs.
     shadowOpacityScale: 0.35,
     shadowRadiusScale: 0.35,
-    frost: config.frost,
+    frost: config.frostLevel,
     ...frozenLayout,
   };
 }

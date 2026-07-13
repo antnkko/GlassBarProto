@@ -90,13 +90,13 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
                 the layers overlap and milk reads as imperceptible next to it. */}
             <SliderRow
               label="Frost"
-              value={config.frost}
+              value={config.frostLevel}
               min={0}
               max={1}
               step={0.01}
               accent={accent}
               pal={pal}
-              onChange={v => onChange({frost: v})}
+              onChange={v => onChange({frostLevel: v})}
             />
           </Section>
 
