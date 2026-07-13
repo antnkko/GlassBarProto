@@ -164,9 +164,11 @@ extension View {
       let ring = shape.inset(by: -1).stroke(color, lineWidth: 2)
         .opacity(visible ? 1 : 0)
       if kind == .accent {
+        // The accent ring enters a beat later than the neutral decor — the
+        // 0.15s delay lets the button land first, then the rim draws on.
         self.overlay(
           ring.animation(
-            visible ? .easeInOut(duration: 0.45) : .easeInOut(duration: 0.12),
+            visible ? .easeInOut(duration: 0.45).delay(0.15) : .easeInOut(duration: 0.12),
             value: visible)
         )
       } else {
