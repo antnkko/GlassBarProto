@@ -98,7 +98,7 @@ struct GlassToolbarView: View {
     }
   }
 
-  private func strokeVisible(_ id: String) -> Bool {
+  private func decorVisible(_ id: String) -> Bool {
     pressedID != id && !morphing
   }
 
@@ -173,8 +173,8 @@ struct GlassToolbarView: View {
     }
     .frame(width: ghostSize, height: ghostSize)
     .glassEffect(pillGlass, in: Circle())
-    .glassDecoration(Circle(), kind: .neutral, config: config, visible: strokeVisible(element))
-    .glassShadow(Circle(), kind: .neutral, config: config)
+    .glassDecoration(Circle(), kind: .neutral, config: config, visible: decorVisible(element))
+    .glassShadow(Circle(), kind: .neutral, config: config, visible: decorVisible(element))
     .contentShape(Circle())
     .gesture(tapPressGesture(element) { pressed(element) })
   }
@@ -191,8 +191,8 @@ struct GlassToolbarView: View {
     .frame(width: ghostSize, height: ghostSize)
     .glassEffect(pillGlass, in: Circle())
     .glassEffectID("tb-trail", in: glassNS)
-    .glassDecoration(Circle(), kind: .neutral, config: config, visible: strokeVisible("avatar"))
-    .glassShadow(Circle(), kind: .neutral, config: config)
+    .glassDecoration(Circle(), kind: .neutral, config: config, visible: decorVisible("avatar"))
+    .glassShadow(Circle(), kind: .neutral, config: config, visible: decorVisible("avatar"))
     .contentShape(Circle())
     .gesture(tapPressGesture("avatar") { pressed("avatar") })
   }
@@ -214,8 +214,8 @@ struct GlassToolbarView: View {
     .frame(height: ghostSize)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("tb-trail", in: glassNS)
-    .glassDecoration(Capsule(), kind: .group, config: config, visible: strokeVisible("group"))
-    .glassShadow(Capsule(), kind: .group, config: config)
+    .glassDecoration(Capsule(), kind: .group, config: config, visible: decorVisible("group"))
+    .glassShadow(Capsule(), kind: .group, config: config, visible: decorVisible("group"))
   }
 
   private func groupZone(_ iconName: String, element: String) -> some View {
@@ -249,9 +249,9 @@ struct GlassToolbarView: View {
       .glassEffect(config.accentGlass, in: Capsule())
       .glassEffectID("tb-trail", in: glassNS)
       .glassDecoration(Capsule(), kind: .accent, config: config)
-      .glassShadow(Capsule(), kind: .accent, config: config)
+      .glassShadow(Capsule(), kind: .accent, config: config, visible: decorVisible("cta"))
       .contentShape(Capsule())
-      .onTapGesture { pressed("cta") }
+      .gesture(tapPressGesture("cta") { pressed("cta") })
   }
 
   // Figma: title 28 Obviously Narrow Bold (SF condensed bold as surrogate),

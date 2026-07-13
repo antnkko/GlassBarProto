@@ -95,8 +95,8 @@ struct GlassTabBarView: View {
     .frame(width: config.pillWidth, height: config.pillHeight)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("home", in: glassNS)
-    .glassDecoration(Capsule(), kind: .neutral, config: config, visible: strokeVisible("home"))
-    .glassShadow(Capsule(), kind: .neutral, config: config)
+    .glassDecoration(Capsule(), kind: .neutral, config: config, visible: decorVisible("home"))
+    .glassShadow(Capsule(), kind: .neutral, config: config, visible: decorVisible("home"))
     .contentShape(Capsule())
     .gesture(tapPressGesture("home") { homeTapped() })
   }
@@ -114,9 +114,9 @@ struct GlassTabBarView: View {
     .glassEffectID("plus", in: glassNS)
     .glassEffectTransition(.matchedGeometry)
     .glassDecoration(Capsule(), kind: .accent, config: config)
-    .glassShadow(Capsule(), kind: .accent, config: config)
+    .glassShadow(Capsule(), kind: .accent, config: config, visible: decorVisible("plus"))
     .contentShape(Capsule())
-    .onTapGesture { plusTapped() }
+    .gesture(tapPressGesture("plus") { plusTapped() })
   }
 
   private var collapsedRightPill: some View {
@@ -127,8 +127,8 @@ struct GlassTabBarView: View {
     .frame(width: config.pillWidth, height: config.pillHeight)
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
-    .glassDecoration(Capsule(), kind: .neutral, config: config, visible: strokeVisible("right"))
-    .glassShadow(Capsule(), kind: .neutral, config: config)
+    .glassDecoration(Capsule(), kind: .neutral, config: config, visible: decorVisible("right"))
+    .glassShadow(Capsule(), kind: .neutral, config: config, visible: decorVisible("right"))
     .contentShape(Capsule())
     .gesture(tapPressGesture("right") { expandTapped() })
   }
@@ -164,8 +164,8 @@ struct GlassTabBarView: View {
     }
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("bubble", in: glassNS)
-    .glassDecoration(Capsule(), kind: .neutral, config: config, visible: strokeVisible("bubble"))
-    .glassShadow(Capsule(), kind: .neutral, config: config)
+    .glassDecoration(Capsule(), kind: .neutral, config: config, visible: decorVisible("bubble"))
+    .glassShadow(Capsule(), kind: .neutral, config: config, visible: decorVisible("bubble"))
   }
 
   private func subTab(_ tab: String) -> some View {
@@ -232,7 +232,7 @@ struct GlassTabBarView: View {
     }
   }
 
-  private func strokeVisible(_ id: String) -> Bool {
+  private func decorVisible(_ id: String) -> Bool {
     pressedID != id && !morphing
   }
 

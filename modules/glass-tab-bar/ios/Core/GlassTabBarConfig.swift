@@ -162,10 +162,18 @@ extension View {
   /// accent/group 0 0 16 black@0.2 — scaled by the panel's multipliers.
   @ViewBuilder
   func glassShadow<S: InsettableShape>(
-    _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig
+    _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig, visible: Bool = true
   ) -> some View {
     if config.shadowMode == "design" {
-      self.background(GlassShadowSource(shape: shape, kind: kind, config: config))
+      // Same feedback rule as the stroke: the ring is anchored to the frame,
+      // so during the interactive stretch/morph it would lag the glass and
+      // read as a leftover. It fades out on press/morph and returns only
+      // after the element settles.
+      self.background(
+        GlassShadowSource(shape: shape, kind: kind, config: config)
+          .opacity(visible ? 1 : 0)
+          .animation(.easeInOut(duration: 0.28), value: visible)
+      )
     } else {
       self
     }
