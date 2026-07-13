@@ -58,8 +58,6 @@ export interface AppConfig {
   frostLevel: number;
   /** Accent ring (plus, CTA) opacity. */
   accentStrokeOpacity: number;
-  /** White inner glow opacity in accent buttons (0 = off). */
-  accentGlowOpacity: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -87,7 +85,6 @@ export const defaultConfig: AppConfig = {
   glassInteractive: true,
   frostLevel: 0.9,
   accentStrokeOpacity: 0.65,
-  accentGlowOpacity: 0.5,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -131,7 +128,9 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     shadowRadiusScale: 0.35,
     frost: config.frostLevel,
     accentStrokeOpacity: config.accentStrokeOpacity,
-    accentGlowOpacity: config.accentGlowOpacity,
+    // The inner glow is part of the accent look — frozen at the design value
+    // (control removed; hardcoding also overrides any stored panel value).
+    accentGlowOpacity: 0.5,
     ...frozenLayout,
   };
 }

@@ -99,16 +99,6 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               onChange={v => onChange({accentStrokeOpacity: v})}
             />
             <SliderRow
-              label="Inner glow"
-              value={config.accentGlowOpacity}
-              min={0}
-              max={1}
-              step={0.01}
-              accent={accent}
-              pal={pal}
-              onChange={v => onChange({accentGlowOpacity: v})}
-            />
-            <SliderRow
               label="Frost"
               value={config.frostLevel}
               min={0}
