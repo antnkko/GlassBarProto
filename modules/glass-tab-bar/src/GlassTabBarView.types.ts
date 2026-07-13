@@ -53,6 +53,8 @@ export interface GlassConfig {
   strokeOpacity: number;
   /** Accent ring (plus, CTA) opacity. */
   accentStrokeOpacity: number;
+  /** White inner glow opacity in accent buttons (0 = off). */
+  accentGlowOpacity: number;
 }
 
 export type StrokeMode = 'off' | 'outer';

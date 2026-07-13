@@ -69,6 +69,8 @@ struct GlassTabBarConfig: Equatable {
   var strokeOpacity: Double = 0.13
   /// Accent ring (plus, CTA) opacity — panel-controlled.
   var accentStrokeOpacity: Double = 0.65
+  /// White inner glow opacity in accent buttons — panel-controlled, 0 = off.
+  var accentGlowOpacity: Double = 0.5
 }
 
 extension GlassTabBarConfig {
@@ -109,11 +111,13 @@ extension GlassTabBarConfig {
   /// inset 0 0 8 4 white@0.5 — the spread is approximated by stacking a
   /// tight and a wide inner shadow). Lives IN the glass content, so the
   /// press stretch and the morph carry it — no feedback fade needed.
+  /// Glow opacity is panel-controlled; 0 turns the glow off entirely.
   var accentFill: AnyShapeStyle {
-    AnyShapeStyle(
+    guard accentGlowOpacity > 0.01 else { return AnyShapeStyle(accent) }
+    return AnyShapeStyle(
       accent
-        .shadow(.inner(color: .white.opacity(0.5), radius: 4))
-        .shadow(.inner(color: .white.opacity(0.5), radius: 10))
+        .shadow(.inner(color: .white.opacity(accentGlowOpacity), radius: 4))
+        .shadow(.inner(color: .white.opacity(accentGlowOpacity), radius: 10))
     )
   }
 

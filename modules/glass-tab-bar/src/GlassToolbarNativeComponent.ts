@@ -47,6 +47,7 @@ export interface NativeProps extends ViewProps {
     strokeColorChoice: string;
     strokeOpacity: Double;
     accentStrokeOpacity: Double;
+    accentGlowOpacity: Double;
   }>;
   onToolbarPress?: DirectEventHandler<ToolbarPressEvent>;
 }
