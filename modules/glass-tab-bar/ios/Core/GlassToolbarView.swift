@@ -174,7 +174,7 @@ struct GlassToolbarView: View {
     .frame(width: ghostSize, height: ghostSize)
     .glassEffect(pillGlass, in: Circle())
     .glassDecoration(Circle(), kind: .neutral, config: config, visible: strokeVisible(element))
-    .glassShadow(.neutral, config: config)
+    .glassShadow(Circle(), kind: .neutral, config: config)
     .contentShape(Circle())
     .gesture(tapPressGesture(element) { pressed(element) })
   }
@@ -192,7 +192,7 @@ struct GlassToolbarView: View {
     .glassEffect(pillGlass, in: Circle())
     .glassEffectID("tb-trail", in: glassNS)
     .glassDecoration(Circle(), kind: .neutral, config: config, visible: strokeVisible("avatar"))
-    .glassShadow(.neutral, config: config)
+    .glassShadow(Circle(), kind: .neutral, config: config)
     .contentShape(Circle())
     .gesture(tapPressGesture("avatar") { pressed("avatar") })
   }
@@ -215,7 +215,7 @@ struct GlassToolbarView: View {
     .glassEffect(pillGlass, in: Capsule())
     .glassEffectID("tb-trail", in: glassNS)
     .glassDecoration(Capsule(), kind: .group, config: config, visible: strokeVisible("group"))
-    .glassShadow(.group, config: config)
+    .glassShadow(Capsule(), kind: .group, config: config)
   }
 
   private func groupZone(_ iconName: String, element: String) -> some View {
@@ -249,7 +249,7 @@ struct GlassToolbarView: View {
       .glassEffect(config.accentGlass, in: Capsule())
       .glassEffectID("tb-trail", in: glassNS)
       .glassDecoration(Capsule(), kind: .accent, config: config)
-      .glassShadow(.accent, config: config)
+      .glassShadow(Capsule(), kind: .accent, config: config)
       .contentShape(Capsule())
       .onTapGesture { pressed("cta") }
   }

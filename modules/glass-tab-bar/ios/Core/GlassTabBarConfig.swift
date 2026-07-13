@@ -149,23 +149,49 @@ extension View {
     }
   }
 
-  /// Design drop shadow, panel-switchable. Applied AFTER the glass so the
-  /// whole rendered pill casts it. Base values from the Figma mock:
-  /// neutral 0 0 20 rgba(193,195,198,0.3); accent/group 0 0 16 black@0.2 —
-  /// both scaled by the panel's opacity/radius multipliers.
+  /// Design drop shadow, panel-switchable. .shadow directly on the glass view
+  /// is dead on device: real Liquid Glass is a backdrop effect with almost no
+  /// alpha of its own, so there is nothing to cast from (the simulator's
+  /// opaque wash DOES have alpha, which made it look fine there). Instead an
+  /// explicit caster shape draws the shadow from BEHIND the glass, with its
+  /// own body punched out of the mask so only the outer ring remains — a flat
+  /// soft gradient in the backdrop, safe for the glass sampling.
+  /// Base values from the Figma mock: neutral 0 0 20 rgba(193,195,198,0.3);
+  /// accent/group 0 0 16 black@0.2 — scaled by the panel's multipliers.
   @ViewBuilder
-  func glassShadow(_ kind: GlassDecorKind, config: GlassTabBarConfig) -> some View {
+  func glassShadow<S: InsettableShape>(
+    _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig
+  ) -> some View {
     if config.shadowMode == "design" {
-      let neutral = kind == .neutral
-      let baseColor: Color = neutral ? (Color(hexString: "#C1C3C6") ?? .gray) : .black
-      let baseOpacity: Double = neutral ? 0.3 : 0.2
-      let baseRadius: Double = neutral ? 20 : 16
-      self.shadow(
-        color: baseColor.opacity(min(1, baseOpacity * config.shadowOpacityScale)),
-        radius: baseRadius * config.shadowRadiusScale)
+      self.background(GlassShadowSource(shape: shape, kind: kind, config: config))
     } else {
       self
     }
+  }
+}
+
+/// Shadow without a visible source: an opaque caster fills the glass shape,
+/// its drop shadow paints the ring, then the mask keeps only the pixels
+/// OUTSIDE the shape — the caster disappears, the shadow stays.
+private struct GlassShadowSource<S: InsettableShape>: View {
+  let shape: S
+  let kind: GlassDecorKind
+  let config: GlassTabBarConfig
+
+  var body: some View {
+    let neutral = kind == .neutral
+    let radius = (neutral ? 20.0 : 16.0) * config.shadowRadiusScale
+    let color = (neutral ? (Color(hexString: "#C1C3C6") ?? .gray) : Color.black)
+      .opacity(min(1, (neutral ? 0.3 : 0.2) * config.shadowOpacityScale))
+    shape
+      .fill(Color.black)
+      .shadow(color: color, radius: radius)
+      .mask {
+        Rectangle()
+          .padding(-(radius * 3 + 20))
+          .overlay(shape.fill(Color.black).blendMode(.destinationOut))
+          .compositingGroup()
+      }
   }
 }
 
