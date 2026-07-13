@@ -37,8 +37,9 @@ struct GlassTabBarView: View {
   // stroke hides during either and returns only when everything settles.
   @State private var pressedID: String?
   @State private var morphing = false
-  // Monotonic token so a delayed press-clear is cancelled by a re-press.
+  // Monotonic tokens so a delayed clear is cancelled by a newer press/morph.
   @State private var pressToken = 0
+  @State private var morphToken = 0
 
   @Namespace private var glassNS
   @Namespace private var highlightNS
@@ -156,7 +157,9 @@ struct GlassTabBarView: View {
           .gesture(
             DragGesture(minimumDistance: 0)
               .onChanged { value in
-                if pressedID != "bubble" { pressedID = "bubble" }
+                if pressedID != "bubble" {
+                  withAnimation(.easeInOut(duration: 0.12)) { pressedID = "bubble" }
+                }
                 selectSubTab(atX: value.location.x, width: geo.size.width)
               }
               .onEnded { _ in endPress() }
@@ -215,7 +218,11 @@ struct GlassTabBarView: View {
   // release instead: near-zero translation on end = a tap.
   private func tapPressGesture(_ id: String, onTap: @escaping () -> Void) -> some Gesture {
     DragGesture(minimumDistance: 0)
-      .onChanged { _ in if pressedID != id { pressedID = id } }
+      .onChanged { _ in
+        if pressedID != id {
+          withAnimation(.easeInOut(duration: 0.12)) { pressedID = id }
+        }
+      }
       .onEnded { value in
         endPress()
         if hypot(value.translation.width, value.translation.height) < 12 { onTap() }
@@ -229,7 +236,9 @@ struct GlassTabBarView: View {
     pressToken += 1
     let token = pressToken
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-      if pressToken == token { pressedID = nil }
+      if pressToken == token {
+        withAnimation(.easeInOut(duration: 0.25)) { pressedID = nil }
+      }
     }
   }
 
@@ -238,15 +247,20 @@ struct GlassTabBarView: View {
   }
 
   // Runs a spring morph while holding `morphing` true, so every element's
-  // stroke fades during the transition. `.removed` fires completion only once
-  // the spring has fully settled — past the bounce — so the stroke returns
-  // after the button is truly back at rest, not mid-overshoot.
+  // decor fades during the transition. The clear is TIMED at the perceptual
+  // settle (duration + one bounce swing) instead of completionCriteria
+  // .removed — for a bouncy spring, mathematical rest lands ~1s+ after the
+  // eye already sees the morph as finished, which read as the decor
+  // "loading in" late.
   private func morph(_ body: @escaping () -> Void) {
-    morphing = true
-    withAnimation(config.spring, completionCriteria: .removed) {
-      body()
-    } completion: {
-      morphing = false
+    withAnimation(.easeInOut(duration: 0.12)) { morphing = true }
+    withAnimation(config.spring) { body() }
+    morphToken += 1
+    let token = morphToken
+    DispatchQueue.main.asyncAfter(deadline: .now() + config.springDuration + 0.2) {
+      if morphToken == token {
+        withAnimation(.easeInOut(duration: 0.25)) { morphing = false }
+      }
     }
   }
 

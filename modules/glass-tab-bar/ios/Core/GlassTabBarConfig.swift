@@ -146,11 +146,13 @@ extension View {
       // separate static layer over the moving glass. Accent buttons take the
       // design's own rim (accent @0.75, Figma 387:2498) instead of the
       // panel-controlled neutral color.
+      // The fade is driven by withAnimation at the state change (not by an
+      // .animation(value:) here) — a freshly inserted matchedGeometry view
+      // (plus entering a morph) would otherwise pop in with no transition.
       let color = kind == .accent ? config.accent.opacity(0.75) : config.outerStrokeColor
       self.overlay(
         shape.inset(by: -1).stroke(color, lineWidth: 2)
           .opacity(visible ? 1 : 0)
-          .animation(.easeInOut(duration: 0.28), value: visible)
       )
     } else {
       self
@@ -183,11 +185,11 @@ extension View {
       // Same feedback rule as the stroke: the ring is anchored to the frame,
       // so during the interactive stretch/morph it would lag the glass and
       // read as a leftover. It fades out on press/morph and returns only
-      // after the element settles.
+      // after the element settles; the fade itself is driven by withAnimation
+      // at the state change (see glassDecoration).
       self.background(
         GlassShadowSource(shape: shape, kind: kind, config: config)
           .opacity(visible ? 1 : 0)
-          .animation(.easeInOut(duration: 0.28), value: visible)
       )
     } else {
       self

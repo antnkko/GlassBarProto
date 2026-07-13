@@ -33,6 +33,7 @@ struct GlassToolbarView: View {
   @State private var pressedID: String?
   @State private var morphing = false
   @State private var pressToken = 0
+  @State private var morphToken = 0
 
   @Namespace private var glassNS
 
@@ -64,11 +65,17 @@ struct GlassToolbarView: View {
     .background(InterfaceStylePinner(style: config.interfaceStyle))
     .onAppear { localOption = option }
     .onChange(of: option) { _, next in
-      morphing = true
-      withAnimation(config.spring, completionCriteria: .removed) {
-        localOption = next
-      } completion: {
-        morphing = false
+      // Timed clear at the perceptual settle (see the bar's morph()) — the
+      // .removed criterion waits for mathematical rest, ~1s+ past what the
+      // eye reads as finished.
+      withAnimation(.easeInOut(duration: 0.12)) { morphing = true }
+      withAnimation(config.spring) { localOption = next }
+      morphToken += 1
+      let token = morphToken
+      DispatchQueue.main.asyncAfter(deadline: .now() + config.springDuration + 0.2) {
+        if morphToken == token {
+          withAnimation(.easeInOut(duration: 0.25)) { morphing = false }
+        }
       }
     }
   }
@@ -81,7 +88,11 @@ struct GlassToolbarView: View {
   // release instead: near-zero translation on end = a tap.
   private func tapPressGesture(_ id: String, onTap: @escaping () -> Void) -> some Gesture {
     DragGesture(minimumDistance: 0)
-      .onChanged { _ in if pressedID != id { pressedID = id } }
+      .onChanged { _ in
+        if pressedID != id {
+          withAnimation(.easeInOut(duration: 0.12)) { pressedID = id }
+        }
+      }
       .onEnded { value in
         endPress()
         if hypot(value.translation.width, value.translation.height) < 12 { onTap() }
@@ -94,7 +105,9 @@ struct GlassToolbarView: View {
     pressToken += 1
     let token = pressToken
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-      if pressToken == token { pressedID = nil }
+      if pressToken == token {
+        withAnimation(.easeInOut(duration: 0.25)) { pressedID = nil }
+      }
     }
   }
 
