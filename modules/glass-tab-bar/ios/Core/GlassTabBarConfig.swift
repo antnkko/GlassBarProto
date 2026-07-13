@@ -51,11 +51,13 @@ struct GlassTabBarConfig: Equatable {
   var glassVariant: String = "regular"
   /// Whether the glass reacts to touch (press stretch / shimmer).
   var glassInteractive: Bool = true
-  /// Drop shadow: "none" (the frozen look) | "design" (mock values, scalable).
+  /// Drop shadow: "none" (the frozen look) | "design" (caster ring).
   var shadowMode: String = "none"
-  /// Multipliers over the design shadow values, tuned from the panel.
-  var shadowOpacityScale: Double = 1
-  var shadowRadiusScale: Double = 1
+  /// Absolute 0–1 panel knobs (field names are historical bridge names):
+  /// opacity is the shadow alpha, radius maps 0–1 → 0–40pt. Accent/group
+  /// keep the design's proportions relative to neutral (×0.67 / ×0.8).
+  var shadowOpacityScale: Double = 0.3
+  var shadowRadiusScale: Double = 0.5
 
   /// Extra frost: an opaque tint layer inside the glass, under the content.
   /// Mattes the material AND covers the rim specular glints (0 = none).
@@ -180,9 +182,12 @@ private struct GlassShadowSource<S: InsettableShape>: View {
 
   var body: some View {
     let neutral = kind == .neutral
-    let radius = (neutral ? 20.0 : 16.0) * config.shadowRadiusScale
+    // Panel knobs are absolute 0–1: radius 1.0 = 40pt, opacity is the alpha.
+    // Accent/group keep the design's proportions vs neutral (16/20, 0.2/0.3),
+    // so the defaults 0.5/0.3 reproduce the mock exactly for every kind.
+    let radius = config.shadowRadiusScale * 40 * (neutral ? 1.0 : 0.8)
     let color = (neutral ? (Color(hexString: "#C1C3C6") ?? .gray) : Color.black)
-      .opacity(min(1, (neutral ? 0.3 : 0.2) * config.shadowOpacityScale))
+      .opacity(min(1, config.shadowOpacityScale * (neutral ? 1.0 : 0.67)))
     shape
       .fill(Color.black)
       .shadow(color: color, radius: radius)

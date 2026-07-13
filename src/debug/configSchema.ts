@@ -61,10 +61,12 @@ export interface AppConfig {
   /** Liquid Glass controls. */
   glassVariant: GlassVariant;
   glassInteractive: boolean;
-  /** Drop shadow: none = frozen look, design = mock values scaled below. */
+  /** Drop shadow: none = frozen look, design = the caster ring below. */
   shadowMode: ShadowMode;
-  shadowOpacityScale: number;
-  shadowRadiusScale: number;
+  /** Shadow alpha 0–1 (design: 0.3). Fresh keys — merge over stored configs. */
+  shadowOpacity: number;
+  /** Shadow blur 0–1 → 0–40pt (design: 0.5 = 20pt). */
+  shadowRadius: number;
   /** Extra frost inside the glass (mattes + hides rim glints). */
   frost: number;
   /** Outer stroke color + opacity. */
@@ -98,8 +100,8 @@ export const defaultConfig: AppConfig = {
   glassVariant: 'regular',
   glassInteractive: true,
   shadowMode: 'none',
-  shadowOpacityScale: 1,
-  shadowRadiusScale: 1,
+  shadowOpacity: 0.3,
+  shadowRadius: 0.5,
   frost: 0,
   strokeColorChoice: 'gray',
   strokeOpacity: 0.13,
@@ -138,8 +140,10 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     glassVariant: 'regular',
     glassInteractive: config.glassInteractive,
     shadowMode: config.shadowMode,
-    shadowOpacityScale: config.shadowOpacityScale,
-    shadowRadiusScale: config.shadowRadiusScale,
+    // The bridge field names are historical; the native side reads these as
+    // the absolute 0–1 opacity/radius knobs.
+    shadowOpacityScale: config.shadowOpacity,
+    shadowRadiusScale: config.shadowRadius,
     frost: config.frost,
     strokeColorChoice: config.strokeColorChoice,
     strokeOpacity: config.strokeOpacity,

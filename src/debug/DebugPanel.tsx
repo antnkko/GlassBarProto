@@ -160,24 +160,24 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
               }}
             />
             <SliderRow
-              label="Opacity scale"
-              value={config.shadowOpacityScale}
+              label="Opacity"
+              value={config.shadowOpacity}
               min={0}
-              max={3}
-              step={0.05}
+              max={1}
+              step={0.01}
               accent={accent}
               pal={pal}
-              onChange={v => onChange({shadowOpacityScale: v})}
+              onChange={v => onChange({shadowOpacity: v})}
             />
             <SliderRow
-              label="Radius scale"
-              value={config.shadowRadiusScale}
+              label="Radius"
+              value={config.shadowRadius}
               min={0}
-              max={3}
-              step={0.05}
+              max={1}
+              step={0.01}
               accent={accent}
               pal={pal}
-              onChange={v => onChange({shadowRadiusScale: v})}
+              onChange={v => onChange({shadowRadius: v})}
             />
           </Section>
 
