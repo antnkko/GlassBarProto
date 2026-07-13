@@ -189,11 +189,12 @@ extension View {
   /// explicit caster shape draws the shadow from BEHIND the glass, with its
   /// own body punched out of the mask so only the outer ring remains — a flat
   /// soft gradient in the backdrop, safe for the glass sampling.
-  /// Base values from the Figma mock: neutral 0 0 20 rgba(193,195,198,0.3);
-  /// accent/group 0 0 16 black@0.2 — scaled by the panel's multipliers.
+  /// One uniform shadow for every white element (the mock's separate black
+  /// group shadow read visibly heavier than the gray of its neighbours);
+  /// accent buttons carry no shadow at all.
   @ViewBuilder
   func glassShadow<S: InsettableShape>(
-    _ shape: S, kind: GlassDecorKind, config: GlassTabBarConfig, visible: Bool = true
+    _ shape: S, config: GlassTabBarConfig, visible: Bool = true
   ) -> some View {
     if config.shadowMode == "design" {
       // Same feedback rule as the stroke: the ring is anchored to the frame,
@@ -202,7 +203,7 @@ extension View {
       // after the element settles; the fade itself is driven by withAnimation
       // at the state change (see glassDecoration).
       self.background(
-        GlassShadowSource(shape: shape, kind: kind, config: config)
+        GlassShadowSource(shape: shape, config: config)
           .opacity(visible ? 1 : 0)
       )
     } else {
@@ -216,17 +217,13 @@ extension View {
 /// OUTSIDE the shape — the caster disappears, the shadow stays.
 private struct GlassShadowSource<S: InsettableShape>: View {
   let shape: S
-  let kind: GlassDecorKind
   let config: GlassTabBarConfig
 
   var body: some View {
-    let neutral = kind == .neutral
     // Panel knobs are absolute 0–1: radius 1.0 = 40pt, opacity is the alpha.
-    // Accent/group keep the design's proportions vs neutral (16/20, 0.2/0.3),
-    // so the defaults 0.5/0.3 reproduce the mock exactly for every kind.
-    let radius = config.shadowRadiusScale * 40 * (neutral ? 1.0 : 0.8)
-    let color = (neutral ? (Color(hexString: "#C1C3C6") ?? .gray) : Color.black)
-      .opacity(min(1, config.shadowOpacityScale * (neutral ? 1.0 : 0.67)))
+    let radius = config.shadowRadiusScale * 40
+    let color = (Color(hexString: "#C1C3C6") ?? .gray)
+      .opacity(min(1, config.shadowOpacityScale))
     shape
       .fill(Color.black)
       .shadow(color: color, radius: radius)
