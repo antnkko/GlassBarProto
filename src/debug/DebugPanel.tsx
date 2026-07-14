@@ -1,9 +1,13 @@
 import SegmentedControl from '@react-native-segmented-control/segmented-control';
+import Slider from '@react-native-community/slider';
 import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 
 import type {ToolbarOption} from '../../modules/glass-tab-bar';
 import type {AppConfig} from './configSchema';
+
+// The accent is frozen to blazeOrange — the slider's active track uses it.
+const ACCENT = '#F65D00';
 
 interface Props {
   config: AppConfig;
@@ -88,8 +92,29 @@ export default function DebugPanel({config, dark = false, onChange, onClose, onF
             />
           </Section>
 
-          {/* Material, motion, scrim, stroke and shadow are all frozen at the
-              final design look. */}
+          <Section pal={pal} title="Shadow">
+            <SliderRow
+              label="Opacity"
+              value={config.shadowOpacity}
+              min={0}
+              max={1}
+              step={0.01}
+              pal={pal}
+              onChange={v => onChange({shadowOpacity: v})}
+            />
+            <SliderRow
+              label="Radius"
+              value={config.shadowRadius}
+              min={0}
+              max={1}
+              step={0.01}
+              pal={pal}
+              onChange={v => onChange({shadowRadius: v})}
+            />
+          </Section>
+
+          {/* Material, motion, scrim and stroke are frozen at the design look;
+              the shadow on tabs + white buttons is tunable above. */}
         </ScrollView>
       </View>
     </>
@@ -140,6 +165,58 @@ function Section({title, pal, children}: {title: string; pal: Palette; children:
       <Text style={[s.sectionTitle, {color: pal.sub}]}>{title}</Text>
       {children}
     </View>
+  );
+}
+
+function SliderRow({
+  label,
+  value,
+  min,
+  max,
+  step,
+  pal,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  pal: Palette;
+  onChange: (v: number) => void;
+}) {
+  const clamp = (v: number) => Math.min(max, Math.max(min, Number(v.toFixed(4))));
+  return (
+    <View style={s.row}>
+      <View style={s.rowHead}>
+        <Text style={[s.rowLabel, {color: pal.text}]}>{label}</Text>
+        <View style={s.stepper}>
+          <StepBtn label="−" pal={pal} onPress={() => onChange(clamp(value - step))} />
+          <Text style={[s.rowValue, {color: pal.text}]}>{value.toFixed(2)}</Text>
+          <StepBtn label="+" pal={pal} onPress={() => onChange(clamp(value + step))} />
+        </View>
+      </View>
+      <Slider
+        style={s.slider}
+        value={value}
+        minimumValue={min}
+        maximumValue={max}
+        step={step}
+        minimumTrackTintColor={ACCENT}
+        onValueChange={v => onChange(clamp(v))}
+      />
+    </View>
+  );
+}
+
+function StepBtn({label, pal, onPress}: {label: string; pal: Palette; onPress: () => void}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      style={({pressed}) => [s.stepBtn, {backgroundColor: pal.chip}, pressed && {opacity: 0.5}]}>
+      <Text style={[s.stepBtnTxt, {color: pal.text}]}>{label}</Text>
+    </Pressable>
   );
 }
 
