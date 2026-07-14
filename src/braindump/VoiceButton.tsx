@@ -1,15 +1,17 @@
 /**
- * Stage 41/42 — the vibrant voice-entry button (RN counterpart of
+ * Stage 41/42/43 — the vibrant voice-entry button (RN counterpart of
  * VoiceButton.swift): 115×80, radius 20 continuous, accent Liquid Glass with
  * the white inner glow and accent ring, three white voice-wave capsules.
- * Stage 42: NO glass stretch (interactive off per design) — tap-only
- * feedback: the PressFade dip (scale 0.96 / opacity 0.85) + ring hide.
+ * Stage 43: the ring is ALWAYS present and scales as ONE unit with the button
+ * inside the PressFade dip — no separate ring hide/return animation (that
+ * return re-rasterized the 2pt border into jagged pixels). Tap feedback is
+ * only the dip (scale 0.96 / opacity 0.85), fully vector.
  */
 import React from 'react';
 import {Pressable, StyleProp, View, ViewStyle} from 'react-native';
 import Animated, {useAnimatedStyle, useSharedValue, withSpring} from 'react-native-reanimated';
 
-import {GlassSurface, useGlassDecorPress} from './GlassSurface';
+import {GlassSurface} from './GlassSurface';
 import {pressSpring} from './motion';
 import {color, voice} from './tokens';
 
@@ -21,7 +23,6 @@ type Props = {
 };
 
 export function VoiceButton({onPress, glow, style}: Props) {
-  const decor = useGlassDecorPress();
   const pressed = useSharedValue(0);
   const dip = useAnimatedStyle(() => ({
     opacity: 1 - 0.15 * pressed.value,
@@ -29,20 +30,13 @@ export function VoiceButton({onPress, glow, style}: Props) {
   }));
   return (
     <Pressable
-      onPressIn={() => {
-        pressed.value = withSpring(1, pressSpring);
-        decor.onPressIn();
-      }}
-      onPressOut={() => {
-        pressed.value = withSpring(0, pressSpring);
-        decor.onPressOut();
-      }}
+      onPressIn={() => (pressed.value = withSpring(1, pressSpring))}
+      onPressOut={() => (pressed.value = withSpring(0, pressSpring))}
       onPress={onPress}>
       <Animated.View style={dip}>
         <GlassSurface
           kind="accent"
           radius={voice.radius}
-          decor={decor}
           glow={glow}
           style={[{width: voice.width, height: voice.height}, style]}>
         <View

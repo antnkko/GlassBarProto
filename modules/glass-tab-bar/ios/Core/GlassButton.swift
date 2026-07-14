@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UIKit.UIGestureRecognizerSubclass
 
 /// A matched-morph identity for a glass button (glassEffectID + namespace),
 /// so a caller can opt a button into a `GlassEffectContainer` morph.
@@ -115,13 +116,44 @@ public struct GlassButton<Label: View, S: InsettableShape>: View {
 
 // MARK: - UIKit press detection
 
-/// Touch-down/up reporting that works where SwiftUI gestures don't: a
-/// `UILongPressGestureRecognizer(minimumPressDuration: 0)` attached to the
-/// button's UIKit ANCESTOR (the recognizer fires for any touch in that
-/// subtree, so hit-testing and the interactive glass stretch stay untouched;
-/// `cancelsTouchesInView = false` keeps inner Buttons alive). The ancestor
-/// can be larger than the button, so began-events are gated to the marker
-/// view's own bounds (the `.background` sizes exactly to the button).
+/// A pure touch OBSERVER that can't be cancelled by arbitration. The
+/// interactive Liquid Glass claims stretch drags aggressively and would
+/// cancel a `UILongPressGestureRecognizer` mid-drag — that was the "decor
+/// returns while I'm still dragging, works only sometimes" bug (the standalone
+/// braindump chrome has no GlassEffectContainer to tame the glass's claim, so
+/// it's a coin-flip who wins). This recognizer neither prevents nor is
+/// prevented by anything and never enters the exclusive-arbitration pool, so
+/// its began→changed→ended stream survives the whole drag regardless.
+final class ImmediatePressGestureRecognizer: UIGestureRecognizer {
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+    super.touchesBegan(touches, with: event)
+    state = .began
+  }
+  override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+    super.touchesMoved(touches, with: event)
+    if state == .began || state == .changed { state = .changed }
+  }
+  override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+    super.touchesEnded(touches, with: event)
+    state = .ended
+  }
+  override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+    super.touchesCancelled(touches, with: event)
+    state = .cancelled
+  }
+  // Observe only — never win/lose arbitration against the glass, scroll views
+  // or inner Buttons.
+  override func canBePrevented(by other: UIGestureRecognizer) -> Bool { false }
+  override func canPrevent(_ other: UIGestureRecognizer) -> Bool { false }
+}
+
+/// Touch-down/up reporting that works where SwiftUI gestures don't: an
+/// `ImmediatePressGestureRecognizer` attached to the button's UIKit ANCESTOR
+/// (the recognizer fires for any touch in that subtree, so hit-testing and the
+/// interactive glass stretch stay untouched; `cancelsTouchesInView = false`
+/// keeps inner Buttons alive). The ancestor can be larger than the button, so
+/// began-events are gated to the marker view's own bounds (the `.background`
+/// sizes exactly to the button).
 private struct PressRecognizer: UIViewRepresentable {
   /// 0 = arm on touch-down (.tap); >0 = arm only after this travel (.group).
   let armDistance: CGFloat
@@ -147,7 +179,7 @@ private struct PressRecognizer: UIViewRepresentable {
     var onRelease: ((Bool) -> Void)?
 
     private weak var host: UIView?
-    private var recognizer: UILongPressGestureRecognizer?
+    private var recognizer: ImmediatePressGestureRecognizer?
     private var start: CGPoint = .zero
     private var armed = false
     private var tracking = false
@@ -161,8 +193,7 @@ private struct PressRecognizer: UIViewRepresentable {
         return
       }
       guard recognizer == nil, let ancestor = hostingAncestor() else { return }
-      let press = UILongPressGestureRecognizer(target: self, action: #selector(handle(_:)))
-      press.minimumPressDuration = 0
+      let press = ImmediatePressGestureRecognizer(target: self, action: #selector(handle(_:)))
       press.cancelsTouchesInView = false
       press.delaysTouchesBegan = false
       press.delaysTouchesEnded = false
@@ -192,7 +223,7 @@ private struct PressRecognizer: UIViewRepresentable {
       return candidate
     }
 
-    @objc private func handle(_ r: UILongPressGestureRecognizer) {
+    @objc private func handle(_ r: ImmediatePressGestureRecognizer) {
       switch r.state {
       case .began:
         // The host ancestor can span more than this button — only track
