@@ -5,7 +5,7 @@ import SwiftUI
 // `Text Dump Component Animations` project; everything else it needs already exists in this target.
 
 extension NumoColor {
-    static let vibrantDark      = Color(hex: 0x023281)  // blueRibbon vibrant dark: header + task title
+    static let vibrantDark      = Color(hex: 0x382312)  // blueRibbon vibrant dark: header + task title
     static let slackDark        = Color(hex: 0x580682)  // slack vibrant dark: routine title (purple)
     static let slackVibrant     = Color(hex: 0x7636A2)  // slack vibrant: routine glyph (lighter purple)
     static let slackHighlight   = Color(hex: 0x4EAC6C)  // slack highlight: routine when-tag (green)

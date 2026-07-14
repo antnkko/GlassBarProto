@@ -7,7 +7,20 @@ import SwiftUI
 // white layer above it, content (icons/highlight) on top, OUTSIDE the glass
 // view so Liquid Glass vibrancy can't shift its colors. Theme colors come
 // from the Numo palette library (OKLCH-Themes).
-struct GlassTabBarConfig: Equatable {
+public struct GlassTabBarConfig: Equatable {
+  public init() {}
+
+  /// The frozen design look (mirror of the JS toNativeConfig hardcodes) with
+  /// the blazeOrange accent — the preset the app-target braindump chrome uses
+  /// so donor screens share the exact bar/toolbar material.
+  public static let frozen: GlassTabBarConfig = {
+    var config = GlassTabBarConfig()
+    config.milkOpacity = 0.95
+    config.frost = 0.9
+    config.accentStrokeOpacity = 0.6
+    return config
+  }()
+
   // Material
   /// Opacity of the white tint blended INTO the glass material. 0 = raw glass.
   /// Kept in-material (Glass.tint) so edges, shimmer and the morph stay alive.
@@ -74,11 +87,11 @@ struct GlassTabBarConfig: Equatable {
 }
 
 extension GlassTabBarConfig {
-  var accent: Color { Color(hexString: accentHex) ?? .orange }
+  public var accent: Color { Color(hexString: accentHex) ?? .orange }
   var light: Color { Color(hexString: lightHex) ?? .orange.opacity(0.1) }
-  var mid: Color { Color(hexString: midHex) ?? .gray }
+  public var mid: Color { Color(hexString: midHex) ?? .gray }
 
-  var spring: Animation { .spring(duration: springDuration, bounce: springBounce) }
+  public var spring: Animation { .spring(duration: springDuration, bounce: springBounce) }
 
   var interfaceStyle: UIUserInterfaceStyle {
     appearance == "dark" ? .dark : .light
@@ -92,7 +105,7 @@ extension GlassTabBarConfig {
 
   /// The neutral pill material assembled from the panel's Liquid Glass
   /// controls: variant, milk tint and interactivity.
-  var pillGlass: Glass {
+  public var pillGlass: Glass {
     var glass = baseGlass
     if milkOpacity > 0.01 {
       glass = glass.tint(milkColor.opacity(milkOpacity))
@@ -102,7 +115,7 @@ extension GlassTabBarConfig {
 
   /// Accent-filled pill material (plus button, CTA): same variant and
   /// interactivity, accent tint instead of milk.
-  var accentGlass: Glass {
+  public var accentGlass: Glass {
     let glass = baseGlass.tint(accent)
     return glassInteractive ? glass.interactive() : glass
   }
@@ -112,7 +125,7 @@ extension GlassTabBarConfig {
   /// tight and a wide inner shadow). Lives IN the glass content, so the
   /// press stretch and the morph carry it — no feedback fade needed.
   /// Glow opacity is panel-controlled; 0 turns the glow off entirely.
-  var accentFill: AnyShapeStyle {
+  public var accentFill: AnyShapeStyle {
     guard accentGlowOpacity > 0.01 else { return AnyShapeStyle(accent) }
     return AnyShapeStyle(
       accent
@@ -129,7 +142,7 @@ extension GlassTabBarConfig {
 // MARK: - Stroke + shadow decoration (design experiment, panel-switchable)
 
 /// Which stroke/shadow recipe a glass element uses.
-enum GlassDecorKind {
+public enum GlassDecorKind {
   /// White pills: ring rgba(193,195,198,0.13), shadow 0 0 20 rgba(193,195,198,0.3).
   case neutral
   /// Accent-filled pills (plus, CTA): accent@0.7 stroke, shadow 0 0 16 black@0.2.
@@ -138,7 +151,7 @@ enum GlassDecorKind {
   case group
 }
 
-extension View {
+public extension View {
   /// Applies the outer stroke AFTER the glass so the material, press stretch,
   /// shimmer and morphs stay untouched. Off = nothing.
   @ViewBuilder

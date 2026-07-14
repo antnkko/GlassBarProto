@@ -14,9 +14,9 @@ extension Color {
 /// Source of truth: `../RN Codebase/src/features/theme/{palette,skins,lightTheme}.ts`.
 enum NumoColor {
     // blueRibbon skin
-    static let vibrant       = Color(hex: 0x0468FF)   // accent: bg, FAB, "Public"
-    static let vibrantLight  = Color(hex: 0x53ACFF)
-    static let skinLight     = Color(hex: 0xEFF6FF)   // skin "light": pill bg
+    static let vibrant       = Color(hex: 0xF65D00)   // accent: bg, FAB, "Public"
+    static let vibrantLight  = Color(hex: 0xFFB58A)
+    static let skinLight     = Color(hex: 0xFFF2ED)   // skin "light": pill bg
 
     // palette / semantic
     static let white         = Color.white

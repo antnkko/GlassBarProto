@@ -26,9 +26,8 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
   slack: {accent: '#7636A2', light: '#F8F3FD', darkLight: '#2A1C3E', mid: '#8B898E'},
 };
 
-/** Panel state: theme + material + motion + scrim. Layout values are frozen. */
+/** Panel state: toolbar + appearance. Material/motion/theme are frozen. */
 export interface AppConfig {
-  theme: ThemeName;
   milkOpacity: number;
   highlightBlend: HighlightBlend;
   highlightOpacity: number;
@@ -56,7 +55,6 @@ export interface AppConfig {
 }
 
 export const defaultConfig: AppConfig = {
-  theme: 'blazeOrange',
   milkOpacity: 0.95,
   // Figma: the active highlight is mix-blend-multiply, not a flat fill.
   highlightBlend: 'multiply',
@@ -94,7 +92,9 @@ const frozenLayout = {
 
 /** Resolve the panel state into the native GlassConfig record. */
 export function toNativeConfig(config: AppConfig): GlassConfig {
-  const palette = THEMES[config.theme] ?? THEMES.blazeOrange;
+  // The theme is frozen to blazeOrange (control removed; hardcoding also
+  // overrides any stored panel value).
+  const palette = THEMES.blazeOrange;
   return {
     milkOpacity: config.milkOpacity,
     accentHex: palette.accent,

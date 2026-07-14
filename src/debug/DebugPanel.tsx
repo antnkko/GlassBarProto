@@ -3,7 +3,7 @@ import React from 'react';
 import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 
 import type {ToolbarOption} from '../../modules/glass-tab-bar';
-import {THEMES, type AppConfig, type ThemeName} from './configSchema';
+import type {AppConfig} from './configSchema';
 
 interface Props {
   config: AppConfig;
@@ -14,7 +14,6 @@ interface Props {
   onFlowAction?: (mode: 'braindump' | 'dumped' | 'switch' | 'reset') => void;
 }
 
-const THEME_ORDER: ThemeName[] = ['blazeOrange', 'blueRibbon', 'jade', 'slack'];
 // Figma dev-spec toolbar rows; index === ToolbarOption, 0 = off.
 const TOOLBAR_LABELS = ['Off', '1', '2', '3', '4', '5', '6', '7', '8'];
 
@@ -44,26 +43,6 @@ export default function DebugPanel({config, dark = false, onChange, onClose, onF
         </View>
 
         <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
-          <Section pal={pal} title="Тема">
-            <View style={s.swatches}>
-              {THEME_ORDER.map(name => {
-                const selected = config.theme === name;
-                return (
-                  <Pressable key={name} style={s.swatchWrap} onPress={() => onChange({theme: name})}>
-                    <View style={[s.swatchRing, selected && {borderColor: THEMES[name].accent}]}>
-                      <View style={[s.swatch, {backgroundColor: THEMES[name].accent}]} />
-                    </View>
-                    <Text
-                      style={[s.swatchLabel, {color: pal.sub}, selected && {color: pal.text, fontWeight: '600'}]}
-                      numberOfLines={1}>
-                      {name}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </Section>
-
           <Section pal={pal} title="Тулбар">
             <SegmentedControl
               appearance={dark ? 'dark' : 'light'}

@@ -5,6 +5,10 @@ private typealias R = Metrics.Redesign
 /// "Public 👀 | 🏷" capsule — publicity selector + tags entry combined.
 /// Redesign counterpart of Stage 1's `PublicityPill` (Figma 1070:1720).
 struct PublicityTagsPill: View {
+    /// Bare = content only, no ghost surface — the Liquid Glass chrome in
+    /// `RedesignedScreen` owns the surface (material + stroke + shadow).
+    var bare: Bool = false
+
     @State private var isPublic = true
     @State private var tapCount = 0
 
@@ -12,7 +16,16 @@ struct PublicityTagsPill: View {
     /// tap only the eyes icon remains (it keeps toggling).
     private var labelShown: Bool { tapCount < 4 }
 
+    @ViewBuilder
     var body: some View {
+        if bare {
+            core
+        } else {
+            core.ghostSurface(Capsule())
+        }
+    }
+
+    private var core: some View {
         HStack(spacing: R.pillGap) {
             Button {
                 withAnimation(MorphChoreo.placeholderSwap) {
@@ -43,7 +56,6 @@ struct PublicityTagsPill: View {
         .padding(.leading, labelShown ? R.pillPadLeading : R.pillPadRetired)
         .padding(.trailing, R.pillPadTrailing)
         .frame(height: R.pillHeight)
-        .ghostSurface(Capsule())
     }
 
     private func iconBox(_ name: String) -> some View {
