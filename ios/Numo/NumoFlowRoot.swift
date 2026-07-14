@@ -98,9 +98,12 @@ struct NumoFlowRoot: View {
             if open {
                 wasOpen = true
             } else if wasOpen {
-                // Let the donor's goHome() fade (0.25s ease-out) finish before
-                // the Fabric side tears the hosting view down.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onClosed() }
+                // Report closed right after the slide-down finishes (it already
+                // set directOpen=false post-animation) — the old 0.3s linger
+                // kept the overlay mounted, swallowing an immediate re-tap on
+                // the plus. RN also guards against this instance's stale close
+                // landing after a reopen.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { onClosed() }
             }
         }
     }

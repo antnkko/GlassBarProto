@@ -138,7 +138,9 @@ function AppContent() {
 
   // Opens the native braindump overlay (or one of its demo modes). Each open
   // remounts the component (key below), so the flow always starts fresh.
+  const lastOpenAt = useRef(0);
   const openFlow = useCallback((mode: FlowMode) => {
+    lastOpenAt.current = Date.now();
     setPanelOpen(false);
     setFlowSeq(prev => prev + 1);
     setFlowMode(mode);
@@ -269,6 +271,12 @@ function AppContent() {
           shadowRadius={config.whiteShadowRadius}
           onFlowEvent={e => {
             if (e.nativeEvent.type === 'closed') {
+              // Ignore a stale close from the previous instance landing just
+              // after a fast reopen — a legit close can't happen this soon
+              // after opening (the open animation alone is ~0.5s).
+              if (Date.now() - lastOpenAt.current < 500) {
+                return;
+              }
               setFlowMode('none');
             }
           }}

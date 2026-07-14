@@ -331,52 +331,43 @@ struct RedesignedScreen: View {
                         whenPickerOpen ? MorphChoreo.placeholderSwap : .easeOut(duration: 0.18),
                         value: whenPickerOpen)
 
-                // The chrome is INSERTED, not alpha-faded: partial opacity over
-                // the glass+frost+ring+shadow stack composited darker (gray wash,
-                // heavier shadow) until the fade finished. The container mounts
-                // instantly (.identity) and each button materializes natively,
-                // so ring and shadow only ever render at their final strength.
-                //
-                // The picker header swap is the DONOR's cross-fade: both
-                // clusters are always laid out in the same slot and swap via
-                // blur+opacity (like the "When" title) — no matched glass
-                // morph between the states.
-                // NO GlassEffectContainer here: the container aggregates every
-                // glassEffect into one render layer (for merging/morphs), so a
-                // descendant .opacity can't fade the glass — the closed cluster
-                // stayed fully visible under the open one. Standalone glass
-                // effects composite normally and the donor cross-fade works.
-                if newChromeIn {
-                    ZStack {
-                        // CLOSED — ✕ + publicity/tags; blurs out in place.
-                        HStack {
-                            glassCloseButton(dropHeight: dropHeight)
-                            Spacer(minLength: 0)
-                            glassPublicityGroup
-                        }
-                        .opacity(whenPickerOpen ? 0 : 1)
-                        .blur(radius: whenPickerOpen ? Self.headerBlur : 0)
-                        .allowsHitTesting(!whenPickerOpen)
-
-                        // OPEN — Clear · ✓; blurs in at its final positions.
-                        HStack {
-                            glassClearButton
-                            Spacer(minLength: 0)
-                            glassConfirmButton
-                        }
-                        .opacity(whenPickerOpen ? 1 : 0)
-                        .blur(radius: whenPickerOpen ? 0 : Self.headerBlur)
-                        .allowsHitTesting(whenPickerOpen)
+                // The picker header swap is the DONOR's cross-fade: both clusters
+                // are always laid out in the same slot and swap via blur+opacity
+                // (like the "When" title) — no matched glass morph. The whole
+                // block ENTERS with the donor's opacity+offset drop (newChromeIn),
+                // exactly as it did on the first merge — no materialize.
+                // No GlassEffectContainer: it aggregates every glassEffect into
+                // one render layer, so a descendant .opacity can't fade the glass.
+                ZStack {
+                    // CLOSED — ✕ + publicity/tags; blurs out in place.
+                    HStack {
+                        glassCloseButton(dropHeight: dropHeight)
+                        Spacer(minLength: 0)
+                        glassPublicityGroup
                     }
-                    .animation(MorphChoreo.placeholderSwap, value: whenPickerOpen)
-                    .padding(.horizontal, R.WhenPicker.headerPadH)
-                    .padding(.vertical, R.WhenPicker.headerPadV)
-                    .transition(.identity)
+                    .opacity(whenPickerOpen ? 0 : 1)
+                    .blur(radius: whenPickerOpen ? Self.headerBlur : 0)
+                    .allowsHitTesting(!whenPickerOpen)
+
+                    // OPEN — Clear · ✓; blurs in at its final positions.
+                    HStack {
+                        glassClearButton
+                        Spacer(minLength: 0)
+                        glassConfirmButton
+                    }
+                    .opacity(whenPickerOpen ? 1 : 0)
+                    .blur(radius: whenPickerOpen ? 0 : Self.headerBlur)
+                    .allowsHitTesting(whenPickerOpen)
                 }
+                .animation(MorphChoreo.placeholderSwap, value: whenPickerOpen)
+                .padding(.horizontal, R.WhenPicker.headerPadH)
+                .padding(.vertical, R.WhenPicker.headerPadV)
             }
-            // Counter the sheet's close-translate so the chrome stays screen-pinned and is
-            // cropped (not moved) by the sheet's descending top edge as the canvas slides down.
-            .offset(y: -closeY)
+            .opacity(newChromeIn ? 1 : 0)
+            // Enter with the donor's drop, and counter the sheet's close-translate
+            // so the chrome stays screen-pinned and is cropped (not moved) by the
+            // sheet's descending top edge as the canvas slides down.
+            .offset(y: (newChromeIn ? 0 : MorphChoreo.newHeaderDrop) - closeY)
 
             ZStack(alignment: .top) {
                 VStack(spacing: 0) {
@@ -470,7 +461,6 @@ struct RedesignedScreen: View {
         }
         .frame(width: R.closeSize, height: R.closeSize)
         .glassEffect(glass.pillGlass, in: Circle())
-        .glassEffectTransition(.materialize)
         .glassDecoration(Circle(), kind: .neutral, config: glass, visible: chromeDecorVisible("close"))
         .glassShadow(Circle(), config: glass, visible: chromeDecorVisible("close"))
         .contentShape(Circle())
@@ -487,7 +477,6 @@ struct RedesignedScreen: View {
             .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
             .background(frostFill(Capsule(), config: glass))
             .glassEffect(glass.pillGlass, in: Capsule())
-            .glassEffectTransition(.materialize)
             .glassDecoration(Capsule(), kind: .neutral, config: glass, visible: chromeDecorVisible("clear"))
             .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("clear"))
             .contentShape(Capsule())
@@ -501,7 +490,6 @@ struct RedesignedScreen: View {
         PublicityTagsPill(bare: true)
             .background(frostFill(Capsule(), config: glass))
             .glassEffect(glass.pillGlass, in: Capsule())
-            .glassEffectTransition(.materialize)
             .glassDecoration(Capsule(), kind: .group, config: glass, visible: chromeDecorVisible("bd-group"))
             .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("bd-group"))
             // Press detection WITHOUT stealing the inner buttons' taps: the
@@ -530,7 +518,6 @@ struct RedesignedScreen: View {
         }
         .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
         .glassEffect(glass.accentGlass, in: Capsule())
-        .glassEffectTransition(.materialize)
         .glassDecoration(Capsule(), kind: .accent, config: glass, visible: chromeDecorVisible("confirm"))
         .contentShape(Capsule())
         .gesture(chromeTapPress("confirm") { closeWhenPicker() })
