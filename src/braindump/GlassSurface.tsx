@@ -72,17 +72,41 @@ type Props = {
   kind?: 'neutral' | 'accent';
   /** Corner radius (continuous). Animate via `glassStyle` for morphs. */
   radius: number;
+  /**
+   * Native glass touch effect (press stretch/shimmer). OFF by default — the
+   * braindump surfaces (shell, voice) use tap-only feedback per design;
+   * mount-time only in the underlying UIGlassEffect.
+   */
+  interactive?: boolean;
   /** Outer container style — position/size the surface here. */
   style?: StyleProp<AnimatedStyle<ViewStyle>>;
   /** Animated style applied to BOTH the glass and the ring (e.g. borderRadius morph). */
   glassStyle?: StyleProp<AnimatedStyle<ViewStyle>>;
   /** Decor visibility from useGlassDecorPress (defaults to always-on). */
   decor?: Pick<GlassDecor, 'ring' | 'shadow'>;
+  /**
+   * Accent inner white glow (dev-panel tunable): `radius` = outer blur pt
+   * (the native stack pairs it with a tighter 0.4× inner pass), `opacity` =
+   * white alpha. Defaults match the frozen native look scaled up (Stage 42).
+   */
+  glow?: {radius: number; opacity: number};
   children?: React.ReactNode;
 };
 
-export function GlassSurface({kind = 'neutral', radius, style, glassStyle, decor, children}: Props) {
+const defaultGlow = {radius: 16, opacity: 0.5};
+
+export function GlassSurface({
+  kind = 'neutral',
+  radius,
+  interactive = false,
+  style,
+  glassStyle,
+  decor,
+  glow,
+  children,
+}: Props) {
   const accent = kind === 'accent';
+  const g = glow ?? defaultGlow;
 
   const shadowAnim = useAnimatedStyle(() => ({
     shadowOpacity: (decor ? decor.shadow.value : 1) * glass.shadowOpacity,
@@ -108,7 +132,7 @@ export function GlassSurface({kind = 'neutral', radius, style, glassStyle, decor
       ]}>
       <AnimatedLiquidGlass
         effect="regular"
-        interactive
+        interactive={interactive}
         tintColor={accent ? color.vibrant : glass.milkTint}
         style={[
           StyleSheet.absoluteFill,
@@ -119,8 +143,9 @@ export function GlassSurface({kind = 'neutral', radius, style, glassStyle, decor
           <>
             {/* Solid accent under the glass shimmer (native accentFill base). */}
             <View style={[StyleSheet.absoluteFill, {backgroundColor: color.vibrant}]} />
-            {/* Inner glow — the native stacked inner shadows white@0.5 r4+r10.
-                Accent surfaces are static-radius (voice/✓), so no morph here. */}
+            {/* Inner glow — the native stacked inner shadows (tight 0.4×r +
+                wide r), white at `glow.opacity`. Accent surfaces are
+                static-radius (voice/✓), so no morph here. */}
             <View
               pointerEvents="none"
               style={[
@@ -128,8 +153,7 @@ export function GlassSurface({kind = 'neutral', radius, style, glassStyle, decor
                 {
                   borderRadius: radius,
                   borderCurve: 'continuous',
-                  boxShadow:
-                    'inset 0 0 4px rgba(255,255,255,0.5), inset 0 0 10px rgba(255,255,255,0.5)',
+                  boxShadow: `inset 0 0 ${Math.round(g.radius * 0.4)}px rgba(255,255,255,${g.opacity}), inset 0 0 ${Math.round(g.radius)}px rgba(255,255,255,${g.opacity})`,
                 },
               ]}
             />

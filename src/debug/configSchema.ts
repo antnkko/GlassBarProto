@@ -58,6 +58,10 @@ export interface AppConfig {
   whiteShadowOpacity: number;
   /** Design shadow radius 0–1 → 0–40pt. */
   whiteShadowRadius: number;
+  /** Braindump voice button inner white glow: blur radius pt (fresh key). */
+  voiceGlowRadius: number;
+  /** Braindump voice button inner white glow: alpha 0–1 (fresh key). */
+  voiceGlowOpacity: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -84,6 +88,9 @@ export const defaultConfig: AppConfig = {
   glassInteractive: true,
   whiteShadowOpacity: 0.2,
   whiteShadowRadius: 0.2,
+  // Stage 42: bigger, softer inner glow than the first RN port (was 10/0.5).
+  voiceGlowRadius: 16,
+  voiceGlowOpacity: 0.5,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */

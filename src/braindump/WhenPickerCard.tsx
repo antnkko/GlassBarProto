@@ -1,20 +1,32 @@
 /**
- * Stage 41 — the "When" picker card (WhenPicker.swift): an accordion of a
- * Date row (expands the week strip) and a Time row (expands the wheel). One
- * section open at a time; the swap glides on the native sectionResize spring.
+ * Stage 41/42 — the "When" picker card (WhenPicker.swift): an accordion of a
+ * Date row (expands the week strip) and a Time row (expands the wheel).
  *
- * The native version slides an opaque white cover over the days; here the
- * same read comes from height-collapsing containers (overflow hidden): the
- * closing block clips its static content while the opening one reveals it —
- * both driven by ONE `sectionP` progress so they move together. Disappearing
- * content fades fast (sectionDisappear 160ms), like the native wheel.
+ * Stage 42 restructure — the native COVER pattern, not height-clipping:
+ * the base (Date row + week strip) is ALWAYS laid out; an opaque white
+ * Time-section block slides OVER the days (translateY on sectionResize), so
+ * the hiding content physically disappears BEHIND the section, exactly like
+ * the native slide. Blur: RN's `filter: blur` doesn't exist on iOS
+ * (Android-only), so the native `.blurReplace`/covered-blur is reproduced
+ * with expo-blur BlurView OVERLAYS (real backdrop blur of the content under
+ * them) whose `intensity` animates via Reanimated `useAnimatedProps`:
+ * the days blur as the cover slides over them (native coveredBlur 9pt) and
+ * the wheel blurs-in on appear.
+ *
  * Block heights are deterministic: dateBlock = sep2 + strip(12+64+12) = 90,
- * timeBlock = sep2 + wheel(6+190+6) = 204.
+ * timeBlock = sep2 + wheel(6+190+6) = 204. Row heights are measured.
  */
 import React from 'react';
-import {Image, Pressable, Text, View} from 'react-native';
-import Animated, {SharedValue, useAnimatedStyle} from 'react-native-reanimated';
+import {Image, StyleSheet, Text, View} from 'react-native';
+import {BlurView} from 'expo-blur';
+import Animated, {
+  SharedValue,
+  useAnimatedProps,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 
+import {PressFade} from './PressFade';
 import {WeekStrip} from './WeekStrip';
 import {WheelTimePicker, WheelTime, formatWheelTime} from './WheelTimePicker';
 import {color, font, row, strip, wheel, wheelHeight} from './tokens';
@@ -23,6 +35,11 @@ export type WhenSection = 'date' | 'time';
 
 export const DATE_BLOCK_H = row.sepThickness + strip.pad * 2 + strip.cellHeight; // 90
 export const TIME_BLOCK_H = row.sepThickness + wheel.padV * 2 + wheelHeight; // 204
+
+/** Covered-days blur: native 9pt ≈ BlurView intensity ~25. */
+const COVER_BLUR_INTENSITY = 25;
+
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 function Separator() {
   return (
@@ -43,16 +60,20 @@ function PickerRow({
   value,
   expanded,
   onPress,
+  onLayout,
 }: {
   icon: string;
   label: string;
   value: string;
   expanded: boolean;
   onPress: () => void;
+  onLayout?: (h: number) => void;
 }) {
+  // PressFade — the same dip the Routine/When chip zones use (Stage 42).
   return (
-    <Pressable onPress={onPress}>
+    <PressFade onPress={onPress}>
       <View
+        onLayout={onLayout ? e => onLayout(e.nativeEvent.layout.height) : undefined}
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -91,7 +112,7 @@ function PickerRow({
           resizeMode="contain"
         />
       </View>
-    </Pressable>
+    </PressFade>
   );
 }
 
@@ -132,47 +153,92 @@ export function WhenPickerCard({
   onSelectDay,
   onTimeChange,
 }: Props) {
-  // Height-collapse + quick fade of the block being covered/revealed.
-  const dateBlockStyle = useAnimatedStyle(() => ({
-    height: sectionP.value * DATE_BLOCK_H,
-    opacity: Math.min(1, sectionP.value * 2),
+  // Measured row heights (fonts decide them); defaults keep the first frame
+  // sane until onLayout lands (same frame in practice).
+  const dateRowH = useSharedValue(59);
+  const timeRowH = useSharedValue(59);
+
+  // COVER position: right under the Date row (time open, days covered) ↔
+  // below the days (date open, days revealed).
+  const coverStyle = useAnimatedStyle(() => ({
+    top: dateRowH.value + sectionP.value * DATE_BLOCK_H,
   }));
+  // The wheel block collapses inside the cover as the days open.
   const timeBlockStyle = useAnimatedStyle(() => ({
     height: (1 - sectionP.value) * TIME_BLOCK_H,
     opacity: Math.min(1, (1 - sectionP.value) * 2),
   }));
+  // Explicit card height (the cover is absolute): base rows + open block.
+  const cardStyle = useAnimatedStyle(() => ({
+    height:
+      dateRowH.value +
+      sectionP.value * DATE_BLOCK_H +
+      row.sepThickness +
+      timeRowH.value +
+      (1 - sectionP.value) * TIME_BLOCK_H,
+  }));
+
+  // Blur overlays (see header comment): days blur under the cover; the wheel
+  // blurs-in as it appears.
+  const daysBlurProps = useAnimatedProps(() => ({
+    intensity: (1 - sectionP.value) * COVER_BLUR_INTENSITY,
+  }));
+  const wheelBlurProps = useAnimatedProps(() => ({
+    intensity: sectionP.value * COVER_BLUR_INTENSITY,
+  }));
 
   return (
-    <View>
+    <Animated.View style={[{overflow: 'hidden'}, cardStyle]}>
+      {/* BASE — Date row + days, always laid out (the cover slides over). */}
       <PickerRow
         icon="picker_calendar"
         label="Date"
         value={dayValueText(selectedDay)}
         expanded={section === 'date'}
         onPress={() => onSectionChange('date')}
+        onLayout={h => (dateRowH.value = h)}
       />
-      <Animated.View style={[{overflow: 'hidden'}, dateBlockStyle]}>
-        <View style={{height: DATE_BLOCK_H}}>
-          <Separator />
-          <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} />
-        </View>
-      </Animated.View>
-      <Separator />
-      <PickerRow
-        icon="picker_clock"
-        label="Time"
-        value={formatWheelTime(time)}
-        expanded={section === 'time'}
-        onPress={() => onSectionChange('time')}
-      />
-      <Animated.View style={[{overflow: 'hidden'}, timeBlockStyle]}>
-        <View style={{height: TIME_BLOCK_H}}>
-          <Separator />
-          <View style={{paddingVertical: wheel.padV}}>
-            <WheelTimePicker key={wheelKey} initial={time} onChange={onTimeChange} />
+      <View style={{height: DATE_BLOCK_H}}>
+        <Separator />
+        <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} />
+        <AnimatedBlurView
+          pointerEvents="none"
+          tint="light"
+          animatedProps={daysBlurProps}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+
+      {/* COVER — opaque white Time section sliding over/off the days. */}
+      <Animated.View
+        style={[
+          {position: 'absolute', left: 0, right: 0, backgroundColor: color.white},
+          coverStyle,
+        ]}>
+        <Separator />
+        <PickerRow
+          icon="picker_clock"
+          label="Time"
+          value={formatWheelTime(time)}
+          expanded={section === 'time'}
+          onPress={() => onSectionChange('time')}
+          onLayout={h => (timeRowH.value = h)}
+        />
+        <Animated.View style={[{overflow: 'hidden'}, timeBlockStyle]}>
+          <View style={{height: TIME_BLOCK_H}}>
+            <Separator />
+            <View style={{paddingVertical: wheel.padV}}>
+              <WheelTimePicker key={wheelKey} initial={time} onChange={onTimeChange} />
+            </View>
+            <AnimatedBlurView
+              pointerEvents="none"
+              tint="light"
+              animatedProps={wheelBlurProps}
+              style={StyleSheet.absoluteFill}
+            />
           </View>
-        </View>
+        </Animated.View>
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }

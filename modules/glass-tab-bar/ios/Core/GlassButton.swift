@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// A matched-morph identity for a glass button (glassEffectID + namespace),
 /// so a caller can opt a button into a `GlassEffectContainer` morph.
@@ -75,7 +76,22 @@ public struct GlassButton<Label: View, S: InsettableShape>: View {
       // Accent buttons carry no drop shadow — their look is the rim + glow.
       .modifier(GlassShadowModifier(shape: shape, config: config, visible: visible, enabled: !isAccent))
       .contentShape(shape)
-      .simultaneousGesture(pressGesture)
+      // UIKit-level press detection (see PressRecognizer): SwiftUI drag
+      // gestures never receive touch-DOWN on some hosting arrangements (the
+      // braindump header buffers touches until release — toolbar delivered
+      // fine), while UIKit recognizers get touches regardless of view
+      // delivery. The recognizer arms immediately for .tap and after ~8pt of
+      // travel for .group, and never blocks the glass stretch or inner taps.
+      .background(PressRecognizer(
+        armDistance: { if case .group = interaction { return 8 } else { return 0 } }(),
+        onPress: {
+          if !pressed { withAnimation(.easeInOut(duration: 0.12)) { pressed = true } }
+        },
+        onRelease: { isTap in
+          endPress()
+          if isTap, case .tap(let action) = interaction { action() }
+        }
+      ))
   }
 
   @ViewBuilder private var background: some View {
@@ -86,22 +102,6 @@ public struct GlassButton<Label: View, S: InsettableShape>: View {
     }
   }
 
-  private var pressGesture: some Gesture {
-    // .group presses only arm after real travel so inner taps pass through.
-    let minDistance: CGFloat = { if case .group = interaction { return 8 } else { return 0 } }()
-    return DragGesture(minimumDistance: minDistance)
-      .onChanged { _ in
-        if !pressed { withAnimation(.easeInOut(duration: 0.12)) { pressed = true } }
-      }
-      .onEnded { value in
-        endPress()
-        if case .tap(let action) = interaction,
-           hypot(value.translation.width, value.translation.height) < 12 {
-          action()
-        }
-      }
-  }
-
   private func endPress() {
     token += 1
     let current = token
@@ -110,6 +110,135 @@ public struct GlassButton<Label: View, S: InsettableShape>: View {
         withAnimation(.easeInOut(duration: 0.25)) { pressed = false }
       }
     }
+  }
+}
+
+// MARK: - UIKit press detection
+
+/// Touch-down/up reporting that works where SwiftUI gestures don't: a
+/// `UILongPressGestureRecognizer(minimumPressDuration: 0)` attached to the
+/// button's UIKit ANCESTOR (the recognizer fires for any touch in that
+/// subtree, so hit-testing and the interactive glass stretch stay untouched;
+/// `cancelsTouchesInView = false` keeps inner Buttons alive). The ancestor
+/// can be larger than the button, so began-events are gated to the marker
+/// view's own bounds (the `.background` sizes exactly to the button).
+private struct PressRecognizer: UIViewRepresentable {
+  /// 0 = arm on touch-down (.tap); >0 = arm only after this travel (.group).
+  let armDistance: CGFloat
+  let onPress: () -> Void
+  let onRelease: (_ isTap: Bool) -> Void
+
+  func makeUIView(context: Context) -> MarkerView {
+    let view = MarkerView()
+    view.isUserInteractionEnabled = false
+    view.backgroundColor = .clear
+    return view
+  }
+
+  func updateUIView(_ view: MarkerView, context: Context) {
+    view.armDistance = armDistance
+    view.onPress = onPress
+    view.onRelease = onRelease
+  }
+
+  final class MarkerView: UIView, UIGestureRecognizerDelegate {
+    var armDistance: CGFloat = 0
+    var onPress: (() -> Void)?
+    var onRelease: ((Bool) -> Void)?
+
+    private weak var host: UIView?
+    private var recognizer: UILongPressGestureRecognizer?
+    private var start: CGPoint = .zero
+    private var armed = false
+    private var tracking = false
+
+    override func didMoveToWindow() {
+      super.didMoveToWindow()
+      if window == nil {
+        if let recognizer { host?.removeGestureRecognizer(recognizer) }
+        recognizer = nil
+        host = nil
+        return
+      }
+      guard recognizer == nil, let ancestor = hostingAncestor() else { return }
+      let press = UILongPressGestureRecognizer(target: self, action: #selector(handle(_:)))
+      press.minimumPressDuration = 0
+      press.cancelsTouchesInView = false
+      press.delaysTouchesBegan = false
+      press.delaysTouchesEnded = false
+      press.delegate = self
+      ancestor.addGestureRecognizer(press)
+      recognizer = press
+      host = ancestor
+    }
+
+    /// The recognizer must live on an ANCESTOR of the views that actually
+    /// receive the touches. A `.background` representable is a SIBLING of the
+    /// content (its own superview chain doesn't contain the touched glass
+    /// views), so climb to the SwiftUI hosting root — the nearest ancestor
+    /// whose class is a hosting view — or, failing that, the topmost view
+    /// below the window. Touches anywhere in that subtree reach the
+    /// recognizer; `handle` gates them to this button's own frame.
+    private func hostingAncestor() -> UIView? {
+      var candidate: UIView? = nil
+      var node: UIView? = superview
+      while let current = node, !(current is UIWindow) {
+        candidate = current
+        if String(describing: type(of: current)).contains("HostingView") {
+          return current
+        }
+        node = current.superview
+      }
+      return candidate
+    }
+
+    @objc private func handle(_ r: UILongPressGestureRecognizer) {
+      switch r.state {
+      case .began:
+        // The host ancestor can span more than this button — only track
+        // touches that started inside the button's own frame (+2pt slack).
+        let local = r.location(in: self)
+        guard bounds.insetBy(dx: -2, dy: -2).contains(local) else {
+          tracking = false
+          return
+        }
+        tracking = true
+        start = r.location(in: nil)
+        armed = armDistance <= 0
+        if armed { onPress?() }
+      case .changed:
+        guard tracking, !armed else { return }
+        if distance(from: r) >= armDistance {
+          armed = true
+          onPress?()
+        }
+      case .ended:
+        guard tracking else { return }
+        tracking = false
+        let isTap = distance(from: r) < 12
+        if armed || isTap { onRelease?(isTap) }
+        armed = false
+      case .cancelled, .failed:
+        guard tracking else { return }
+        tracking = false
+        if armed { onRelease?(false) }
+        armed = false
+      default:
+        break
+      }
+    }
+
+    private func distance(from r: UIGestureRecognizer) -> CGFloat {
+      let p = r.location(in: nil)
+      return hypot(p.x - start.x, p.y - start.y)
+    }
+
+    // Coexist with everything: the glass's own interaction, inner Buttons,
+    // scroll views, RN's root touch handler.
+    func gestureRecognizer(
+      _ gestureRecognizer: UIGestureRecognizer,
+      shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
+    ) -> Bool { true }
   }
 }
 

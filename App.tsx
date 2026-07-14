@@ -311,6 +311,7 @@ function AppContent() {
           whenOpen={whenOpen}
           onWhenOpenChange={setWhenOpen}
           flowBus={flowBus}
+          voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
         />
       )}
 

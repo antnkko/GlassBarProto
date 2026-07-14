@@ -113,6 +113,27 @@ export default function DebugPanel({config, dark = false, onChange, onClose, onF
             />
           </Section>
 
+          <Section pal={pal} title="Voice glow">
+            <SliderRow
+              label="Glow radius"
+              value={config.voiceGlowRadius}
+              min={0}
+              max={40}
+              step={1}
+              pal={pal}
+              onChange={v => onChange({voiceGlowRadius: v})}
+            />
+            <SliderRow
+              label="Glow opacity"
+              value={config.voiceGlowOpacity}
+              min={0}
+              max={1}
+              step={0.01}
+              pal={pal}
+              onChange={v => onChange({voiceGlowOpacity: v})}
+            />
+          </Section>
+
           {/* Material, motion, scrim and stroke are frozen at the design look;
               the shadow on tabs + white buttons is tunable above. */}
         </ScrollView>

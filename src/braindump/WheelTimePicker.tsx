@@ -81,7 +81,10 @@ function WheelColumn({
   );
   return (
     <Animated.ScrollView
-      style={{width: wheel.colWidth, height: wheelHeight}}
+      // flexGrow 0: RN ScrollView's BASE style is flexGrow 1, which stretches
+      // the three columns across the row — that's why the wheel spread wide
+      // (Stage 42 fix; native columns are a shrink-wrapped 44pt each).
+      style={{width: wheel.colWidth, height: wheelHeight, flexGrow: 0, flexShrink: 0}}
       contentContainerStyle={{paddingVertical: wheelPadCenter}}
       contentOffset={{x: 0, y: initialIndex * wheel.rowHeight}}
       snapToInterval={wheel.rowHeight}
@@ -132,7 +135,9 @@ export function WheelTimePicker({initial, onChange}: Props) {
           opacity: wheel.bandOpacity,
         }}
       />
-      <View style={{flexDirection: 'row', justifyContent: 'center', gap: wheel.colGap}}>
+      {/* Shrink-wrapped, centered as ONE unit — the native HStack(spacing 28)
+          of three 44pt columns (total 188pt). */}
+      <View style={{flexDirection: 'row', alignSelf: 'center', gap: wheel.colGap}}>
         <WheelColumn
           labels={hourLabels}
           initialIndex={initial.hour - 1}

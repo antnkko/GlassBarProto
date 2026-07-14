@@ -65,6 +65,8 @@ PODS:
     - Yoga
   - ExpoAsset (57.0.3):
     - ExpoModulesCore
+  - ExpoBlur (15.0.8):
+    - ExpoModulesCore
   - ExpoClipboard (57.0.0):
     - ExpoModulesCore
   - ExpoDomWebView (57.0.0):
@@ -3047,6 +3049,7 @@ DEPENDENCIES:
   - EXConstants (from `../node_modules/expo/node_modules/expo-constants/ios`)
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo/node_modules/expo-asset/ios`)
+  - ExpoBlur (from `../node_modules/expo-blur/ios`)
   - ExpoClipboard (from `../node_modules/expo-clipboard/ios`)
   - "ExpoDomWebView (from `../node_modules/expo/node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../node_modules/expo/node_modules/expo-file-system/ios`)
@@ -3162,6 +3165,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo"
   ExpoAsset:
     :path: "../node_modules/expo/node_modules/expo-asset/ios"
+  ExpoBlur:
+    :path: "../node_modules/expo-blur/ios"
   ExpoClipboard:
     :path: "../node_modules/expo-clipboard/ios"
   ExpoDomWebView:
@@ -3361,6 +3366,7 @@ SPEC CHECKSUMS:
   EXConstants: d069b4a2dd469d5a3a4d3d7b09757e708fda8f64
   Expo: 557fa3bd873978ac52ffa981d0d6d174f98a00df
   ExpoAsset: 586e89aeaab2e23bfa90b9dce4d7d5e36815c039
+  ExpoBlur: b90747a3f22a8b6ceffd9cb0dc41a4184efdc656
   ExpoClipboard: 67d46a8be4a50ec610c7b2f4966c0475aec6d969
   ExpoDomWebView: 73ba90107a5acc0017a09b06e66d8eb238e089b8
   ExpoFileSystem: ffcd56066188802f263254b6b2e60f74b6a0bdae

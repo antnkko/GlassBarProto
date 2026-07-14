@@ -36,10 +36,17 @@ type Props = {
   whenOpen: boolean;
   onWhenOpenChange: (open: boolean) => void;
   onVoiceTap?: () => void;
+  voiceGlow?: {radius: number; opacity: number};
   shellRef?: React.MutableRefObject<MorphingShellHandle | null>;
 };
 
-export function MorphingShell({whenOpen, onWhenOpenChange, onVoiceTap, shellRef}: Props) {
+export function MorphingShell({
+  whenOpen,
+  onWhenOpenChange,
+  onVoiceTap,
+  voiceGlow,
+  shellRef,
+}: Props) {
   const {width: screenW} = useWindowDimensions();
   const pickerWidth = screenW - bar.padH * 2; // picker lays out at FINAL width
 
@@ -56,11 +63,10 @@ export function MorphingShell({whenOpen, onWhenOpenChange, onVoiceTap, shellRef}
   const contentOpacity = useSharedValue(0); // picker content
   const sectionP = useSharedValue(0); // 0 = time open, 1 = date open
 
-  // Natural picker height with the TIME section open, measured once at rest
-  // (the card mounts with section=time and no animation running). The date
-  // variant differs by the two deterministic block heights.
+  // Natural picker height with the TIME section open, tracked while CLOSED
+  // (the card's row heights settle over the first couple of layouts as the
+  // fonts measure; while open the height is animated, so don't remeasure).
   const pickerHTime = useRef(0);
-  const measured = useRef(false);
   const sectionRef = useRef<WhenSection>('time');
   const openRef = useRef(false);
 
@@ -133,7 +139,7 @@ export function MorphingShell({whenOpen, onWhenOpenChange, onVoiceTap, shellRef}
       <Animated.View
         style={[{position: 'absolute', right: 0, bottom: 0}, voiceStyle]}
         pointerEvents={whenOpen ? 'none' : 'auto'}>
-        <VoiceButton onPress={onVoiceTap} />
+        <VoiceButton onPress={onVoiceTap} glow={voiceGlow} />
       </Animated.View>
 
       <GlassSurface radius={shell.radiusClosed} style={shellStyle} glassStyle={glassRadius}>
@@ -167,8 +173,7 @@ export function MorphingShell({whenOpen, onWhenOpenChange, onVoiceTap, shellRef}
           ]}
           pointerEvents={whenOpen ? 'auto' : 'none'}
           onLayout={e => {
-            if (!measured.current) {
-              measured.current = true;
+            if (!openRef.current) {
               pickerHTime.current = e.nativeEvent.layout.height;
             }
           }}>

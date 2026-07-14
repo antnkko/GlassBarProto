@@ -25,10 +25,18 @@ type Props = {
   whenOpen: boolean;
   onWhenOpenChange: (open: boolean) => void;
   flowBus: FlowBus;
+  /** Voice button inner glow (dev-panel tunable). */
+  voiceGlow?: {radius: number; opacity: number};
   onVoiceTap?: () => void;
 };
 
-export function BraindumpBottomBar({whenOpen, onWhenOpenChange, flowBus, onVoiceTap}: Props) {
+export function BraindumpBottomBar({
+  whenOpen,
+  onWhenOpenChange,
+  flowBus,
+  voiceGlow,
+  onVoiceTap,
+}: Props) {
   // Keyboard top — the cluster sits right above it (the native bar used the
   // bottom safe-area inset, which the keyboard replaces wholesale).
   const kbH = useSharedValue(0);
@@ -115,6 +123,7 @@ export function BraindumpBottomBar({whenOpen, onWhenOpenChange, flowBus, onVoice
           whenOpen={whenOpen}
           onWhenOpenChange={onWhenOpenChange}
           onVoiceTap={onVoiceTap}
+          voiceGlow={voiceGlow}
           shellRef={shellRef}
         />
       </View>
