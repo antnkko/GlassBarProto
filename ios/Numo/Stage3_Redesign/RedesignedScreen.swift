@@ -75,7 +75,8 @@ struct RedesignedScreen: View {
     // Liquid Glass chrome (the bar/toolbar material from the GlassTabBar pod):
     // the ✕ and the publicity pill live in matched glass slots that morph into
     // the picker's Clear and ✓ — the same lead/trail mechanic as the toolbar.
-    private let glass = GlassTabBarConfig.frozen
+    // Injected so the RN dev panel's shadow slider drives it too.
+    @Environment(\.numoGlass) private var glass
     @Namespace private var chromeNS
     @State private var chromePressedID: String?
     @State private var chromeMorphing = false

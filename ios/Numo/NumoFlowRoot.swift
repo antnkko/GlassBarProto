@@ -1,4 +1,17 @@
+import GlassTabBar
 import SwiftUI
+
+// The braindump chrome's Liquid Glass config, injected so RedesignedScreen
+// (and any donor screen) reads the same material the RN dev panel drives.
+private struct NumoGlassKey: EnvironmentKey {
+    static let defaultValue = GlassTabBarConfig.frozen()
+}
+extension EnvironmentValues {
+    var numoGlass: GlassTabBarConfig {
+        get { self[NumoGlassKey.self] }
+        set { self[NumoGlassKey.self] = newValue }
+    }
+}
 
 // The RN-hosted replacement for the donor's RootView: renders the braindump
 // flow WITHOUT the SwiftUI HomeScreen (the React Native screen behind the
@@ -15,6 +28,7 @@ import SwiftUI
 struct NumoFlowRoot: View {
     let mode: String
     let onClosed: () -> Void
+    private let glass: GlassTabBarConfig
 
     @StateObject private var flow: AppFlowCoordinator
     @Namespace private var morph
@@ -23,9 +37,10 @@ struct NumoFlowRoot: View {
     // predicate, so an unlatched observer would close the overlay at mount.
     @State private var wasOpen = false
 
-    init(mode: String, onClosed: @escaping () -> Void) {
+    init(mode: String, shadowOpacity: Double = 0.35, shadowRadius: Double = 0.35, onClosed: @escaping () -> Void) {
         self.mode = mode
         self.onClosed = onClosed
+        self.glass = .frozen(shadowOpacity: shadowOpacity, shadowRadius: shadowRadius)
         // Configure the flow BEFORE the first body evaluation: no frame ever
         // exists in the closed state and the Stage1 entrance mounts fresh
         // (calling openFromPlus in onAppear would flash an empty frame and
@@ -59,6 +74,7 @@ struct NumoFlowRoot: View {
             }
         }
         .environmentObject(flow)
+        .environment(\.numoGlass, glass)
     }
 
     // The donor RootView's braindump portions, verbatim minus HomeScreen:

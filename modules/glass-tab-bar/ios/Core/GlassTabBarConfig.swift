@@ -13,13 +13,15 @@ public struct GlassTabBarConfig: Equatable {
   /// The frozen design look (mirror of the JS toNativeConfig hardcodes) with
   /// the blazeOrange accent — the preset the app-target braindump chrome uses
   /// so donor screens share the exact bar/toolbar material.
-  public static let frozen: GlassTabBarConfig = {
+  public static func frozen(shadowOpacity: Double = 0.35, shadowRadius: Double = 0.35) -> GlassTabBarConfig {
     var config = GlassTabBarConfig()
     config.milkOpacity = 0.95
     config.frost = 0.9
     config.accentStrokeOpacity = 0.6
+    config.shadowOpacityScale = shadowOpacity
+    config.shadowRadiusScale = shadowRadius
     return config
-  }()
+  }
 
   // Material
   /// Opacity of the white tint blended INTO the glass material. 0 = raw glass.

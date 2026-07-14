@@ -12,7 +12,10 @@
 // enough — the class itself lives in the app binary.
 @interface NumoFlowHostView : UIView
 @property (nonatomic, copy, nullable) void (^onFlowEvent)(NSString *_Nonnull);
-- (void)updateWithMode:(NSString *_Nonnull)mode seq:(NSInteger)seq;
+- (void)updateWithMode:(NSString *_Nonnull)mode
+                   seq:(NSInteger)seq
+         shadowOpacity:(double)shadowOpacity
+          shadowRadius:(double)shadowRadius;
 - (void)tearDown;
 @end
 
@@ -64,7 +67,10 @@ using namespace facebook::react;
 {
   const auto &newProps = *std::static_pointer_cast<const NumoFlowProps>(props);
 
-  [_hostView updateWithMode:RCTNSStringFromString(newProps.mode) seq:newProps.seq];
+  [_hostView updateWithMode:RCTNSStringFromString(newProps.mode)
+                        seq:newProps.seq
+              shadowOpacity:newProps.shadowOpacity
+               shadowRadius:newProps.shadowRadius];
 
   [super updateProps:props oldProps:oldProps];
 }

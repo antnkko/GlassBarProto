@@ -17,8 +17,16 @@ public final class NumoFlowHostView: UIView {
 
     private var mode = ""
     private var mounted = false
+    // The braindump chrome's glass shadow, mirrored from the dev panel. Only
+    // ever changes while the overlay is CLOSED (the open overlay swallows all
+    // touches, so the panel is unreachable), so the fresh values are read at
+    // the next mount — no live re-config needed.
+    private var shadowOpacity = 0.35
+    private var shadowRadius = 0.35
 
-    @objc public func update(mode: String, seq: Int) {
+    @objc public func update(mode: String, seq: Int, shadowOpacity: Double, shadowRadius: Double) {
+        self.shadowOpacity = shadowOpacity
+        self.shadowRadius = shadowRadius
         guard !mounted || mode != self.mode else { return }
         self.mode = mode
         remount()
@@ -27,7 +35,7 @@ public final class NumoFlowHostView: UIView {
     private func remount() {
         tearDownHost()
         guard !mode.isEmpty, mode != "none" else { return }
-        let root = NumoFlowRoot(mode: mode) { [weak self] in
+        let root = NumoFlowRoot(mode: mode, shadowOpacity: shadowOpacity, shadowRadius: shadowRadius) { [weak self] in
             self?.onFlowEvent?("closed")
         }
         let controller = UIHostingController(rootView: root)
