@@ -334,16 +334,41 @@ struct RedesignedScreen: View {
                 // The chrome is INSERTED, not alpha-faded: partial opacity over
                 // the glass+frost+ring+shadow stack composited darker (gray wash,
                 // heavier shadow) until the fade finished. The container mounts
-                // instantly (.identity) and each slot materializes natively, so
-                // the ring and shadow only ever render at their final strength.
+                // instantly (.identity) and each button materializes natively,
+                // so ring and shadow only ever render at their final strength.
+                //
+                // The picker header swap is the DONOR's cross-fade: both
+                // clusters are always laid out in the same slot and swap via
+                // blur+opacity (like the "When" title) — no matched glass
+                // morph between the states.
+                // NO GlassEffectContainer here: the container aggregates every
+                // glassEffect into one render layer (for merging/morphs), so a
+                // descendant .opacity can't fade the glass — the closed cluster
+                // stayed fully visible under the open one. Standalone glass
+                // effects composite normally and the donor cross-fade works.
                 if newChromeIn {
-                    GlassEffectContainer(spacing: 0) {
+                    ZStack {
+                        // CLOSED — ✕ + publicity/tags; blurs out in place.
                         HStack {
-                            chromeLead(dropHeight: dropHeight)
+                            glassCloseButton(dropHeight: dropHeight)
                             Spacer(minLength: 0)
-                            chromeTrail
+                            glassPublicityGroup
                         }
+                        .opacity(whenPickerOpen ? 0 : 1)
+                        .blur(radius: whenPickerOpen ? Self.headerBlur : 0)
+                        .allowsHitTesting(!whenPickerOpen)
+
+                        // OPEN — Clear · ✓; blurs in at its final positions.
+                        HStack {
+                            glassClearButton
+                            Spacer(minLength: 0)
+                            glassConfirmButton
+                        }
+                        .opacity(whenPickerOpen ? 1 : 0)
+                        .blur(radius: whenPickerOpen ? 0 : Self.headerBlur)
+                        .allowsHitTesting(whenPickerOpen)
                     }
+                    .animation(MorphChoreo.placeholderSwap, value: whenPickerOpen)
                     .padding(.horizontal, R.WhenPicker.headerPadH)
                     .padding(.vertical, R.WhenPicker.headerPadV)
                     .transition(.identity)
@@ -431,92 +456,84 @@ struct RedesignedScreen: View {
     /// Open the picker (only in the resting/idle state — never mid-morph). ONE spring drives
     /// the whole fluid morph: every property that reads `whenPickerOpen` (shell size/radius,
     /// content, chrome, voice, backdrop) animates together in this single transaction.
-    // MARK: - Liquid Glass chrome slots
+    // MARK: - Liquid Glass chrome buttons (donor cross-fade, no matched morph)
 
-    /// Lead slot: ✕ ghost (closed) ⇄ Clear pill (picker open), matched "bd-lead".
-    @ViewBuilder
-    private func chromeLead(dropHeight: CGFloat) -> some View {
-        if whenPickerOpen {
-            Text("Clear")
-                .font(NumoFont.obviouslySemibold(R.WhenPicker.clearLabel))
-                .foregroundStyle(NumoColor.neutralDark)
-                .padding(.bottom, R.WhenPicker.clearLabelLift)
-                .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
-                .background(frostFill(Capsule(), config: glass))
-                .glassEffect(glass.pillGlass, in: Capsule())
-                .glassEffectID("bd-lead", in: chromeNS)
-                .glassEffectTransition(.materialize)
-                .glassDecoration(Capsule(), kind: .neutral, config: glass, visible: chromeDecorVisible("clear"))
-                .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("clear"))
-                .contentShape(Capsule())
-                .gesture(chromeTapPress("clear") { clearWhenSelection(); closeWhenPicker() })
-        } else {
-            ZStack {
-                frostFill(Circle(), config: glass)
-                Image("cross")
-                    .renderingMode(.template)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: R.crossIcon, height: R.crossIcon)
-                    .foregroundStyle(NumoColor.grayNight)
-            }
-            .frame(width: R.closeSize, height: R.closeSize)
-            .glassEffect(glass.pillGlass, in: Circle())
-            .glassEffectID("bd-lead", in: chromeNS)
-            .glassEffectTransition(.materialize)
-            .glassDecoration(Circle(), kind: .neutral, config: glass, visible: chromeDecorVisible("close"))
-            .glassShadow(Circle(), config: glass, visible: chromeDecorVisible("close"))
-            .contentShape(Circle())
-            .gesture(chromeTapPress("close") {
-                if viaSlideUp { runSlideDownTimeline(height: dropHeight) } else { flow.goHome() }
-            })
+    private func glassCloseButton(dropHeight: CGFloat) -> some View {
+        ZStack {
+            frostFill(Circle(), config: glass)
+            Image("cross")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: R.crossIcon, height: R.crossIcon)
+                .foregroundStyle(NumoColor.grayNight)
         }
+        .frame(width: R.closeSize, height: R.closeSize)
+        .glassEffect(glass.pillGlass, in: Circle())
+        .glassEffectTransition(.materialize)
+        .glassDecoration(Circle(), kind: .neutral, config: glass, visible: chromeDecorVisible("close"))
+        .glassShadow(Circle(), config: glass, visible: chromeDecorVisible("close"))
+        .contentShape(Circle())
+        .gesture(chromeTapPress("close") {
+            if viaSlideUp { runSlideDownTimeline(height: dropHeight) } else { flow.goHome() }
+        })
     }
 
-    /// Trail slot: publicity/tags group (closed) ⇄ accent ✓ (picker open), matched "bd-trail".
-    /// The publicity content keeps its own internal buttons (word/eyes blur-swap + in-place
-    /// press scale), so the pill carries no tap gesture of its own — its decor hides only
-    /// during the slot morph.
-    @ViewBuilder
-    private var chromeTrail: some View {
-        if whenPickerOpen {
-            ZStack {
-                Capsule().fill(glass.accentFill)
-                Image("picker_checkmark")
-                    .renderingMode(.template)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: R.WhenPicker.checkIcon, height: R.WhenPicker.checkIcon)
-                    .foregroundStyle(NumoColor.white)
-            }
+    private var glassClearButton: some View {
+        Text("Clear")
+            .font(NumoFont.obviouslySemibold(R.WhenPicker.clearLabel))
+            .foregroundStyle(NumoColor.neutralDark)
+            .padding(.bottom, R.WhenPicker.clearLabelLift)
             .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
-            .glassEffect(glass.accentGlass, in: Capsule())
-            .glassEffectID("bd-trail", in: chromeNS)
+            .background(frostFill(Capsule(), config: glass))
+            .glassEffect(glass.pillGlass, in: Capsule())
             .glassEffectTransition(.materialize)
-            .glassDecoration(Capsule(), kind: .accent, config: glass, visible: chromeDecorVisible("confirm"))
+            .glassDecoration(Capsule(), kind: .neutral, config: glass, visible: chromeDecorVisible("clear"))
+            .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("clear"))
             .contentShape(Capsule())
-            .gesture(chromeTapPress("confirm") { closeWhenPicker() })
-        } else {
-            PublicityTagsPill(bare: true)
-                .background(frostFill(Capsule(), config: glass))
-                .glassEffect(glass.pillGlass, in: Capsule())
-                .glassEffectID("bd-trail", in: chromeNS)
-                .glassEffectTransition(.materialize)
-                .glassDecoration(Capsule(), kind: .group, config: glass, visible: chromeDecorVisible("bd-group"))
-                .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("bd-group"))
-                // Press detection WITHOUT stealing the inner buttons' taps: the
-                // drag arms only after 8pt of travel, so plain taps on the
-                // word/eyes/tag pass through while a real drag (the stretch
-                // that leaves the ring behind) hides the decor.
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 8)
-                        .onChanged { _ in
-                            if chromePressedID != "bd-group" {
-                                withAnimation(.easeInOut(duration: 0.12)) { chromePressedID = "bd-group" }
-                            }
+            .gesture(chromeTapPress("clear") { clearWhenSelection(); closeWhenPicker() })
+    }
+
+    /// The publicity content keeps its own internal buttons (word/eyes
+    /// blur-swap + in-place press scale), so the pill carries no tap gesture
+    /// of its own — only the drag-hide below.
+    private var glassPublicityGroup: some View {
+        PublicityTagsPill(bare: true)
+            .background(frostFill(Capsule(), config: glass))
+            .glassEffect(glass.pillGlass, in: Capsule())
+            .glassEffectTransition(.materialize)
+            .glassDecoration(Capsule(), kind: .group, config: glass, visible: chromeDecorVisible("bd-group"))
+            .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("bd-group"))
+            // Press detection WITHOUT stealing the inner buttons' taps: the
+            // drag arms only after 8pt of travel, so plain taps on the
+            // word/eyes/tag pass through while a real drag (the stretch
+            // that leaves the ring behind) hides the decor.
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 8)
+                    .onChanged { _ in
+                        if chromePressedID != "bd-group" {
+                            withAnimation(.easeInOut(duration: 0.12)) { chromePressedID = "bd-group" }
                         }
-                        .onEnded { _ in chromeEndPress() })
+                    }
+                    .onEnded { _ in chromeEndPress() })
+    }
+
+    private var glassConfirmButton: some View {
+        ZStack {
+            Capsule().fill(glass.accentFill)
+            Image("picker_checkmark")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: R.WhenPicker.checkIcon, height: R.WhenPicker.checkIcon)
+                .foregroundStyle(NumoColor.white)
         }
+        .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
+        .glassEffect(glass.accentGlass, in: Capsule())
+        .glassEffectTransition(.materialize)
+        .glassDecoration(Capsule(), kind: .accent, config: glass, visible: chromeDecorVisible("confirm"))
+        .contentShape(Capsule())
+        .gesture(chromeTapPress("confirm") { closeWhenPicker() })
     }
 
     // The toolbar's feedback recipe: one drag gesture per element does press
@@ -569,7 +586,6 @@ struct RedesignedScreen: View {
 
     private func openWhenPicker() {
         guard flow.morphPhase == .idle, !whenPickerOpen else { return }
-        chromeMorphStarted()
         withAnimation(PickerMorph.openSpring) { whenPickerOpen = true; pickerContentShown = true }
     }
 
@@ -577,7 +593,6 @@ struct RedesignedScreen: View {
     /// quicker fade so it's gone before the card finishes shrinking.
     private func closeWhenPicker() {
         guard whenPickerOpen else { return }
-        chromeMorphStarted()
         withAnimation(PickerMorph.contentFadeOut) { pickerContentShown = false }
         withAnimation(PickerMorph.closeSpring) { whenPickerOpen = false }
     }
