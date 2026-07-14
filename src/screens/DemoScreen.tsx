@@ -75,20 +75,11 @@ export default function DemoScreen({
             onScrolledChange?.(isScrolled);
           }
         }}>
-        <Text style={[styles.title, dark && styles.titleDark]}>{title}</Text>
-        {Array.from({length: 14}, (_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.card,
-              {backgroundColor: palette[i % palette.length]},
-              i % 3 === 0 && styles.cardTall,
-            ]}>
-            <Text style={[styles.cardLabel, dark && styles.cardLabelDark]}>
-              {title} · block {i + 1}
-            </Text>
-          </View>
-        ))}
+        {/* Clean white canvas: the demo blocks are gone — the screen is a
+            neutral home behind the glass chrome and the braindump overlay.
+            A tall spacer keeps the scroll alive so the bar minimize and the
+            top scrim still have something to react to. */}
+        <View style={styles.blank} />
       </ScrollView>
     </View>
   );
@@ -111,4 +102,5 @@ const styles = StyleSheet.create({
   },
   cardTall: {height: 180},
   cardLabel: {color: 'rgba(0,0,0,0.45)', fontWeight: '600'},
+  blank: {height: 1200},
 });

@@ -46,6 +46,18 @@
 	<string></string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>ObviouslyNarrow-Bold.ttf</string>
+		<string>ObviouslyNarrow-Semibold.ttf</string>
+		<string>ObviouslyNarrow-Medium.ttf</string>
+		<string>Obviously-Semibold.ttf</string>
+		<string>Obviously-Medium.ttf</string>
+		<string>Obviously-Bold.ttf</string>
+		<string>Inter-Medium.ttf</string>
+		<string>Inter-Regular.ttf</string>
+		<string>Inter-SemiBold.ttf</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

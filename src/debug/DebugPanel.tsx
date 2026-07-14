@@ -10,6 +10,8 @@ interface Props {
   dark?: boolean;
   onChange: (patch: Partial<AppConfig>) => void;
   onClose: () => void;
+  /** Opens a native braindump-flow mode (NumoPrototype merge). */
+  onFlowAction?: (mode: 'braindump' | 'dumped' | 'switch' | 'reset') => void;
 }
 
 const THEME_ORDER: ThemeName[] = ['blazeOrange', 'blueRibbon', 'jade', 'slack'];
@@ -26,8 +28,9 @@ interface Palette {
 const LIGHT_PALETTE: Palette = {bg: '#FFFFFF', text: '#1B1D21', sub: '#9A9CA1', chip: '#F2F2F4'};
 const DARK_PALETTE: Palette = {bg: '#1B1D21', text: '#F5F5F7', sub: '#8A8D93', chip: '#2A2D33'};
 
-export default function DebugPanel({config, dark = false, onChange, onClose}: Props) {
+export default function DebugPanel({config, dark = false, onChange, onClose, onFlowAction}: Props) {
   const pal = dark ? DARK_PALETTE : LIGHT_PALETTE;
+  const [didReset, setDidReset] = React.useState(false);
 
   return (
     <>
@@ -82,6 +85,30 @@ export default function DebugPanel({config, dark = false, onChange, onClose}: Pr
             />
           </Section>
 
+          <Section pal={pal} title="Braindump">
+            <ActionRow
+              pal={pal}
+              label={didReset ? 'Onboarding reset ✓' : 'Reset onboarding'}
+              hint="Наступний плюс програє онбординг і морф заново"
+              onPress={() => {
+                setDidReset(true);
+                onFlowAction?.('reset');
+              }}
+            />
+            <ActionRow
+              pal={pal}
+              label="Confirmation animation"
+              hint="Екран підтвердження голосового дампу (letter bounce)"
+              onPress={() => onFlowAction?.('dumped')}
+            />
+            <ActionRow
+              pal={pal}
+              label="Switch demo"
+              hint="Анімація сегментованого світчера"
+              onPress={() => onFlowAction?.('switch')}
+            />
+          </Section>
+
           {/* Material, motion, scrim, stroke and shadow are all frozen at the
               final design look. */}
         </ScrollView>
@@ -106,6 +133,27 @@ function toolbarHint(option: ToolbarOption): string {
 }
 
 // ---- primitives ----
+
+function ActionRow({
+  label,
+  hint,
+  pal,
+  onPress,
+}: {
+  label: string;
+  hint: string;
+  pal: Palette;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({pressed}) => [s.actionRow, {backgroundColor: pal.chip}, pressed && {opacity: 0.6}]}>
+      <Text style={[s.actionLabel, {color: pal.text}]}>{label}</Text>
+      <Text style={[s.hint, {color: pal.sub, textAlign: 'left'}]}>{hint}</Text>
+    </Pressable>
+  );
+}
 
 function Section({title, pal, children}: {title: string; pal: Palette; children: React.ReactNode}) {
   return (
@@ -191,4 +239,6 @@ const s = StyleSheet.create({
   swatch: {width: 32, height: 32, borderRadius: 16},
   swatchLabel: {fontSize: 11, color: '#9A9CA1'},
   hint: {fontSize: 12, color: '#9A9CA1', textAlign: 'center'},
+  actionRow: {borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, gap: 2},
+  actionLabel: {fontSize: 14, fontWeight: '600'},
 });

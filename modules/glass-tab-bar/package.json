@@ -11,7 +11,8 @@
       "componentProvider": {
         "GlassTabBar": "GlassTabBarComponentView",
         "GlassToolbar": "GlassToolbarComponentView",
-        "GlassEdgeBlur": "GlassEdgeBlurComponentView"
+        "GlassEdgeBlur": "GlassEdgeBlurComponentView",
+        "NumoFlow": "NumoFlowComponentView"
       }
     }
   }

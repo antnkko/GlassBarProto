@@ -5,7 +5,7 @@ import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-contex
 // Prototype: silence the dev warning toast so it doesn't cover the bottom bar.
 LogBox.ignoreAllLogs(true);
 
-import {GlassEdgeBlurView, GlassTabBarView, GlassToolbarView} from './modules/glass-tab-bar';
+import {GlassEdgeBlurView, GlassTabBarView, GlassToolbarView, NumoFlowView} from './modules/glass-tab-bar';
 import EdgeScrim from './src/components/EdgeScrim';
 import DebugPanel from './src/debug/DebugPanel';
 import {defaultConfig, toNativeConfig, type AppConfig} from './src/debug/configSchema';
@@ -21,6 +21,9 @@ const SCREEN_TITLES: Record<string, string> = {
   play: 'Play',
 };
 
+/** Native braindump overlay modes (NumoFlow Fabric component). */
+export type FlowMode = 'none' | 'braindump' | 'dumped' | 'switch' | 'reset';
+
 // Native strip height for the toolbar overlay: tall enough for the CTA pill
 // (60pt) in configuration 8, elements center vertically inside.
 const TOOLBAR_HEIGHT = 64;
@@ -34,6 +37,10 @@ function AppContent() {
   const [state, dispatch] = useReducer(tabReducer, initialTabState);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  // The braindump overlay: one immutable mode per mount (key includes seq so
+  // every open is a fresh native mount with a fresh flow coordinator).
+  const [flowMode, setFlowMode] = useState<FlowMode>('none');
+  const [flowSeq, setFlowSeq] = useState(0);
   const [barCollapsed, setBarCollapsed] = useState(false);
   const [scrolledTop, setScrolledTop] = useState(false);
   // The top scrim exists only once content scrolls under it, and it arrives
@@ -129,6 +136,14 @@ function AppContent() {
     }
   }, []);
 
+  // Opens the native braindump overlay (or one of its demo modes). Each open
+  // remounts the component (key below), so the flow always starts fresh.
+  const openFlow = useCallback((mode: FlowMode) => {
+    setPanelOpen(false);
+    setFlowSeq(prev => prev + 1);
+    setFlowMode(mode);
+  }, []);
+
   if (!config) {
     return <View style={styles.root} />;
   }
@@ -138,7 +153,8 @@ function AppContent() {
 
   return (
     <View style={[styles.root, dark && styles.rootDark]}>
-      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
+      {/* The braindump overlay owns the vibrant/dark canvas — force light. */}
+      <StatusBar barStyle={flowMode !== 'none' ? 'light-content' : dark ? 'light-content' : 'dark-content'} />
 
       <DemoScreen
         tab={state.activeTab}
@@ -168,7 +184,15 @@ function AppContent() {
           lastSeq={state.lastSeq}
           collapsed={barCollapsed}
           config={toNativeConfig(config)}
-          onTabPress={e => dispatch({type: 'tabPress', tab: e.nativeEvent.tab, seq: e.nativeEvent.seq})}
+          onTabPress={e => {
+            // Plus is an action button, not a tab — it opens the braindump
+            // overlay and must not enter the tab reducer.
+            if (e.nativeEvent.tab === 'plus') {
+              openFlow('braindump');
+              return;
+            }
+            dispatch({type: 'tabPress', tab: e.nativeEvent.tab, seq: e.nativeEvent.seq});
+          }}
           onSubTabPress={e => dispatch({type: 'subTabPress', tab: e.nativeEvent.tab, seq: e.nativeEvent.seq})}
           onExpandChange={e =>
             dispatch({type: 'expandChange', expanded: e.nativeEvent.expanded, seq: e.nativeEvent.seq})
@@ -223,7 +247,30 @@ function AppContent() {
       )}
 
       {panelOpen && (
-        <DebugPanel config={config} dark={dark} onChange={patchConfig} onClose={() => setPanelOpen(false)} />
+        <DebugPanel
+          config={config}
+          dark={dark}
+          onChange={patchConfig}
+          onClose={() => setPanelOpen(false)}
+          onFlowAction={openFlow}
+        />
+      )}
+
+      {/* Native braindump overlay (NumoPrototype merge): transparent host over
+          the whole app — the slide-up rise reveals the RN screen behind it.
+          key forces a fresh mount (fresh flow coordinator) per open. */}
+      {flowMode !== 'none' && (
+        <NumoFlowView
+          key={`${flowMode}:${flowSeq}`}
+          style={StyleSheet.absoluteFill}
+          mode={flowMode}
+          seq={flowSeq}
+          onFlowEvent={e => {
+            if (e.nativeEvent.type === 'closed') {
+              setFlowMode('none');
+            }
+          }}
+        />
       )}
 
       {DEV_AUTOPLAY && (
