@@ -113,6 +113,25 @@ public struct GlassButton<Label: View, S: InsettableShape>: View {
   }
 }
 
+public extension View {
+  /// The GlassButton material + decor as a PASSIVE surface for containers
+  /// (no gesture — the inner content owns its interactions, e.g. a picker
+  /// shell with scrolling/tappable content). Same look as the buttons; the
+  /// interactive glass still gives the touch shimmer for free.
+  @ViewBuilder
+  func glassSurface<S: InsettableShape>(
+    _ shape: S, kind: GlassDecorKind = .neutral,
+    config: GlassTabBarConfig, decorVisible: Bool = true
+  ) -> some View {
+    self
+      .background(kind == .accent ? AnyView(shape.fill(config.accentFill))
+                                  : AnyView(frostFill(shape, config: config)))
+      .glassEffect(kind == .accent ? config.accentGlass : config.pillGlass, in: shape)
+      .glassDecoration(shape, kind: kind, config: config, visible: decorVisible)
+      .modifier(GlassShadowModifier(shape: shape, config: config, visible: decorVisible, enabled: kind != .accent))
+  }
+}
+
 // glassEffectID / glassShadow are conditional; wrap them so the button body
 // stays a single expression (no ternary-of-different-View-types).
 private struct GlassIDModifier<S: InsettableShape>: ViewModifier {

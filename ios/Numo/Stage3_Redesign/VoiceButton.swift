@@ -1,14 +1,19 @@
+import GlassTabBar
 import SwiftUI
 
 private typealias R = Metrics.Redesign
 
 /// Vibrant voice-entry button in the redesign's bottom bar (Figma 1081:7464):
-/// three white voice-wave bars drawn natively. Decorative in the static prototype.
+/// three white voice-wave bars over the accent Liquid Glass material — the
+/// same GlassButton the plus/CTA use, so it stretches and its rim reacts on
+/// press identically. Keeps its 20pt rounded-rect shape and the white bars.
 struct VoiceButton: View {
+    let config: GlassTabBarConfig
     var action: () -> Void = {}
 
     var body: some View {
-        Button(action: action) {
+        GlassButton(RoundedRectangle(cornerRadius: R.voiceRadius, style: .continuous),
+                    kind: .accent, config: config, interaction: .tap(action)) {
             HStack(spacing: R.voiceBarSpacing) {
                 ForEach(Array(R.voiceBarHeights.enumerated()), id: \.offset) { _, height in
                     Capsule()
@@ -17,11 +22,6 @@ struct VoiceButton: View {
                 }
             }
             .frame(width: R.voiceSize.width, height: R.voiceSize.height)
-            .background(
-                RoundedRectangle(cornerRadius: R.voiceRadius, style: .continuous)
-                    .fill(NumoColor.vibrant)
-            )
         }
-        .buttonStyle(PressFadeStyle())
     }
 }

@@ -102,16 +102,28 @@ private struct WheelColumn<Value: Hashable>: View {
     @Binding var selection: Value?
     let label: (Value) -> String
 
+    // The scroll write-back lives in its OWN state, decoupled from the parent's
+    // authoritative `selection` (the intended time), so the two-way
+    // `.scrollPosition(id:)` can't clobber the intended value at first layout —
+    // that clobber was why the picker opened off the current time with gray
+    // (unmatched) digits until a scroll/AM-PM toggle. Color keys off the
+    // centered row (`scrollID`); `selection` is the stable output, synced only
+    // from real user scrolls once the initial centering is done.
+    @State private var scrollID: Value?
+    @State private var ready = false
+
     private var farScale: CGFloat { R.wheelFontFar / R.wheelFontCenter }
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
-                LazyVStack(spacing: 0) {
+                // A plain VStack (not Lazy): the wheel has ≤12 rows, render them
+                // all so the intended row is always laid out to center on.
+                VStack(spacing: 0) {
                     ForEach(items, id: \.self) { item in
                         Text(label(item))
                             .font(NumoFont.obviouslyMedium(R.wheelFontCenter))
-                            .foregroundStyle(item == selection ? NumoColor.vibrant : NumoColor.grayNight)
+                            .foregroundStyle(item == scrollID ? NumoColor.vibrant : NumoColor.grayNight)
                             .frame(maxWidth: .infinity)
                             .frame(height: R.wheelRowHeight)
                             .id(item)
@@ -125,17 +137,40 @@ private struct WheelColumn<Value: Hashable>: View {
                 }
                 .scrollTargetLayout()
             }
-            .scrollPosition(id: $selection, anchor: .center)
+            .scrollPosition(id: $scrollID, anchor: .center)
             .scrollTargetBehavior(.viewAligned(anchor: .center))
             .scrollIndicators(.hidden)
             .frame(width: R.wheelColWidth, height: R.wheelRowHeight * CGFloat(R.wheelVisibleRows))
             .contentMargins(.vertical, R.wheelRowHeight * CGFloat(R.wheelVisibleRows - 1) / 2, for: .scrollContent)
-            // Init-time scrollPosition is dropped before first layout — center the
-            // selected item explicitly once laid out.
-            .onAppear {
-                guard let sel = selection else { return }
-                DispatchQueue.main.async { proxy.scrollTo(sel, anchor: .center) }
+            .onAppear { centerOnIntended(proxy) }
+            .onChange(of: scrollID) { _, new in
+                if ready, let value = new { selection = value }
             }
         }
+    }
+
+    /// Center the wheel on the intended time. The Time section is INSERTED with a
+    /// blur-replace + spring, and the keyboard's safe-area shift relayouts the
+    /// sheet — so a single early scroll lands on the wrong row and never
+    /// re-asserts (that was the "opens off the current time, digits gray" bug).
+    /// Re-center across the settle window: `proxy.scrollTo` forces the move even
+    /// when the binding already equals the target (reliable for off-screen rows
+    /// AND the 2-row AM/PM column), and `scrollID` drives the accent color. Only
+    /// after it settles does scroll-driven selection (`ready`) turn on, so the
+    /// re-centers can't be mistaken for user scrolls.
+    private func centerOnIntended(_ proxy: ScrollViewProxy) {
+        guard let target = selection else { return }
+        scrollID = target
+        func center() {
+            var tx = Transaction(); tx.disablesAnimations = true
+            withTransaction(tx) {
+                proxy.scrollTo(target, anchor: .center)
+                scrollID = target
+            }
+        }
+        for delay in [0.0, 0.25, 0.5, 0.75] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: center)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { ready = true }
     }
 }

@@ -553,7 +553,7 @@ struct RedesignedScreen: View {
         return ZStack(alignment: .bottomTrailing) {
             // Voice CTA sits BEHIND the shell so the expanding picker renders on top and covers
             // it; it also fades out fast (chromeFadeOut) so it's gone before the picker arrives.
-            VoiceButton()
+            VoiceButton(config: glass)
                 .opacity(whenPickerOpen ? 0 : 1)
                 .animation(PickerMorph.chromeFadeOut, value: whenPickerOpen)
                 .allowsHitTesting(!whenPickerOpen)
@@ -588,7 +588,9 @@ struct RedesignedScreen: View {
             .frame(maxWidth: .infinity)
             .frame(height: shellHeight, alignment: .bottom)   // explicit + known → smooth grow
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .ghostSurface(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            // Same Liquid Glass material as the buttons (the container surface,
+            // no gesture — the inner chips/wheel own their interactions).
+            .glassSurface(RoundedRectangle(cornerRadius: radius, style: .continuous), config: glass)
             .padding(.trailing, whenPickerOpen ? 0 : R.voiceSize.width + R.barGap)
         }
         .padding(.horizontal, R.barPadH)
