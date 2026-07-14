@@ -80,6 +80,15 @@ struct RedesignedScreen: View {
     @State private var chromeMorphing = false
     @State private var chromeMorphToken = 0
 
+    // Stage 41: RN owns the bottom-bar cluster. `rnBridge.rnBottomBar` removes
+    // the native cluster (RN renders its own above the overlay); the RN-owned
+    // picker state mirrors in via `rnBridge.whenPickerOpen` (drives the header
+    // swap + backdrop on the SAME native springs), and picker intents flow
+    // back out through `emit` (clearWhen/confirmWhen/backdropTap + entry/exit
+    // beats) instead of mutating local state.
+    @EnvironmentObject private var rnBridge: NumoFlowPropsBridge
+    @Environment(\.numoFlowEmit) private var emit
+
     @State private var closing = false       // guards the close-down (direct overlay)
     @State private var closeY: CGFloat = 0   // canvas's downward translate during the close
     @State private var bgHidden = false      // fades the Figma bg image to opacity 0 on close
@@ -173,7 +182,22 @@ struct RedesignedScreen: View {
             }
             .ignoresSafeArea()   // full-bleed canvas; we inset the white's top via `safeTop`
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { bottomBar }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            // RN-owned cluster: no native bar, no bottom inset — the RN sibling
+            // rides the keyboard itself.
+            if !rnBridge.rnBottomBar { bottomBar }
+        }
+        // Mirror the RN-owned picker state onto the native springs so the
+        // header swap/backdrop run the exact same choreography as before.
+        .onChange(of: rnBridge.whenPickerOpen) { _, open in
+            guard rnBridge.rnBottomBar, open != whenPickerOpen else { return }
+            if open {
+                withAnimation(PickerMorph.openSpring) { whenPickerOpen = true; pickerContentShown = true }
+            } else {
+                withAnimation(PickerMorph.contentFadeOut) { pickerContentShown = false }
+                withAnimation(PickerMorph.closeSpring) { whenPickerOpen = false }
+            }
+        }
         // Hidden debug trigger (as on Stage 1): triple-tap cycles the stage.
         .contentShape(Rectangle())
         .simultaneousGesture(TapGesture(count: 3).onEnded { flow.debugAdvance() })
@@ -219,6 +243,10 @@ struct RedesignedScreen: View {
         let buttonsDelay = retractDelay + MorphChoreo.buttonsLead
         withAnimation(MorphChoreo.newHeaderSpring.delay(buttonsDelay)) { newChromeIn = true }   // drops in downward, with the canvas
         withAnimation(MorphChoreo.bottomBarSpring.delay(buttonsDelay + MorphChoreo.buttonsStagger)) { bottomBarIn = true }
+        // RN-owned cluster plays its entry rise on the exact same beat.
+        DispatchQueue.main.asyncAfter(deadline: .now() + buttonsDelay + MorphChoreo.buttonsStagger) { [emit] in
+            emit("barEnterMorph")
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + buttonsDelay + MorphChoreo.textAfterButtons) {
             withAnimation(MorphChoreo.placeholderSwap) { showsNewPlaceholder = true }
             inputFocused = true
@@ -242,6 +270,10 @@ struct RedesignedScreen: View {
         let chromeDelay = downDelay + MorphChoreo.slideButtonsLead
         withAnimation(MorphChoreo.newHeaderSpring.delay(chromeDelay)) { newChromeIn = true }
         withAnimation(MorphChoreo.bottomBarSpring.delay(MorphChoreo.slideBottomBarDelay)) { bottomBarIn = true }
+        // RN-owned cluster plays its entry rise on the exact same beat.
+        DispatchQueue.main.asyncAfter(deadline: .now() + MorphChoreo.slideBottomBarDelay) { [emit] in
+            emit("barEnterSlide")
+        }
     }
 
     /// Direct close — canvas-led downward slide: the canvas stretches up a hair (anticipation)
@@ -251,6 +283,7 @@ struct RedesignedScreen: View {
     private func runSlideDownTimeline(height: CGFloat) {
         guard !closing else { return }
         closing = true
+        emit("closing")                        // RN-owned cluster fades out with the bottom group
         inputFocused = false                   // keyboard dismisses NOW — simultaneous with the canvas
         withAnimation(MorphChoreo.slideCloseBottomFade) { bottomBarIn = false }                         // bottom group fades out fast as it goes
         withAnimation(MorphChoreo.slideCloseStretchSpring) { closeY = -MorphChoreo.slideCloseStretch }  // stretch up (anticipation)
@@ -406,7 +439,9 @@ struct RedesignedScreen: View {
                 if whenPickerOpen {
                     Color.clear
                         .contentShape(Rectangle())
-                        .onTapGesture { closeWhenPicker() }
+                        .onTapGesture {
+                            if rnBridge.rnBottomBar { emit("backdropTap") } else { closeWhenPicker() }
+                        }
                 }
             }
         }
@@ -453,7 +488,12 @@ struct RedesignedScreen: View {
     private func glassCloseButton(dropHeight: CGFloat) -> some View {
         GlassButton(Circle(), config: glass, morphing: chromeMorphing,
                     interaction: .tap {
-                        if viaSlideUp { runSlideDownTimeline(height: dropHeight) } else { flow.goHome() }
+                        if viaSlideUp {
+                            runSlideDownTimeline(height: dropHeight)
+                        } else {
+                            emit("closing")
+                            flow.goHome()
+                        }
                     }) {
             Image("cross")
                 .renderingMode(.template)
@@ -467,7 +507,10 @@ struct RedesignedScreen: View {
 
     private var glassClearButton: some View {
         GlassButton(Capsule(), config: glass, morphing: chromeMorphing,
-                    interaction: .tap { clearWhenSelection(); closeWhenPicker() }) {
+                    interaction: .tap {
+                        if rnBridge.rnBottomBar { emit("clearWhen") }
+                        else { clearWhenSelection(); closeWhenPicker() }
+                    }) {
             Text("Clear")
                 .font(NumoFont.obviouslySemibold(R.WhenPicker.clearLabel))
                 .foregroundStyle(NumoColor.neutralDark)
@@ -488,7 +531,9 @@ struct RedesignedScreen: View {
 
     private var glassConfirmButton: some View {
         GlassButton(Capsule(), kind: .accent, config: glass, morphing: chromeMorphing,
-                    interaction: .tap { closeWhenPicker() }) {
+                    interaction: .tap {
+                        if rnBridge.rnBottomBar { emit("confirmWhen") } else { closeWhenPicker() }
+                    }) {
             Image("picker_checkmark")
                 .renderingMode(.template)
                 .resizable()

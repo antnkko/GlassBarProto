@@ -6,6 +6,8 @@ import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-contex
 LogBox.ignoreAllLogs(true);
 
 import {GlassEdgeBlurView, GlassTabBarView, GlassToolbarView, NumoFlowView} from './modules/glass-tab-bar';
+import {BraindumpBottomBar} from './src/braindump/BraindumpBottomBar';
+import {createFlowBus} from './src/braindump/flowEvents';
 import EdgeScrim from './src/components/EdgeScrim';
 import DebugPanel from './src/debug/DebugPanel';
 import {defaultConfig, toNativeConfig, type AppConfig} from './src/debug/configSchema';
@@ -41,6 +43,11 @@ function AppContent() {
   // every open is a fresh native mount with a fresh flow coordinator).
   const [flowMode, setFlowMode] = useState<FlowMode>('none');
   const [flowSeq, setFlowSeq] = useState(0);
+  // Stage 41: RN owns the braindump bottom-bar cluster. `whenOpen` is the
+  // picker state (mirrored into the native header via the whenPickerOpen
+  // prop); the bus relays native beats (entry/exit, Clear/✓/backdrop).
+  const [whenOpen, setWhenOpen] = useState(false);
+  const flowBus = useRef(createFlowBus()).current;
   const [barCollapsed, setBarCollapsed] = useState(false);
   const [scrolledTop, setScrolledTop] = useState(false);
   // The top scrim exists only once content scrolls under it, and it arrives
@@ -142,6 +149,7 @@ function AppContent() {
   const openFlow = useCallback((mode: FlowMode) => {
     lastOpenAt.current = Date.now();
     setPanelOpen(false);
+    setWhenOpen(false);
     setFlowSeq(prev => prev + 1);
     setFlowMode(mode);
   }, []);
@@ -269,8 +277,11 @@ function AppContent() {
           seq={flowSeq}
           shadowOpacity={config.whiteShadowOpacity}
           shadowRadius={config.whiteShadowRadius}
+          rnBottomBar={flowMode === 'braindump'}
+          whenPickerOpen={whenOpen}
           onFlowEvent={e => {
-            if (e.nativeEvent.type === 'closed') {
+            const type = e.nativeEvent.type;
+            if (type === 'closed') {
               // Ignore a stale close from the previous instance landing just
               // after a fast reopen — a legit close can't happen this soon
               // after opening (the open animation alone is ~0.5s).
@@ -278,8 +289,28 @@ function AppContent() {
                 return;
               }
               setFlowMode('none');
+              setWhenOpen(false);
+              return;
             }
+            // Picker intents from the native header/backdrop close the
+            // RN-owned picker (Clear also resets it — handled in the cluster).
+            if (type === 'clearWhen' || type === 'confirmWhen' || type === 'backdropTap') {
+              setWhenOpen(false);
+            }
+            flowBus.emit(type);
           }}
+        />
+      )}
+
+      {/* Stage 41: the RN-owned bottom-bar cluster — a sibling AFTER the
+          NumoFlow overlay, so it paints above the transparent native canvas
+          and receives its own touches. Fresh mount per open (same key). */}
+      {flowMode === 'braindump' && (
+        <BraindumpBottomBar
+          key={`bar:${flowSeq}`}
+          whenOpen={whenOpen}
+          onWhenOpenChange={setWhenOpen}
+          flowBus={flowBus}
         />
       )}
 

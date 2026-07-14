@@ -13,6 +13,19 @@ extension EnvironmentValues {
     }
 }
 
+// Stage 41: upward event channel to RN (picker/entry/exit beats). Injected as
+// an environment value so any screen in the flow can emit without threading a
+// closure through every init.
+private struct NumoFlowEmitKey: EnvironmentKey {
+    static let defaultValue: (String) -> Void = { _ in }
+}
+extension EnvironmentValues {
+    var numoFlowEmit: (String) -> Void {
+        get { self[NumoFlowEmitKey.self] }
+        set { self[NumoFlowEmitKey.self] = newValue }
+    }
+}
+
 // The RN-hosted replacement for the donor's RootView: renders the braindump
 // flow WITHOUT the SwiftUI HomeScreen (the React Native screen behind the
 // transparent host plays that role). Owns the AppFlowCoordinator + the morph
@@ -29,6 +42,9 @@ struct NumoFlowRoot: View {
     let mode: String
     let onClosed: () -> Void
     private let glass: GlassTabBarConfig
+    // Stage 41: live RN props (RN-owned bottom bar) + upward event channel.
+    private let bridge: NumoFlowPropsBridge
+    private let onEvent: (String) -> Void
 
     @StateObject private var flow: AppFlowCoordinator
     @Namespace private var morph
@@ -37,9 +53,14 @@ struct NumoFlowRoot: View {
     // predicate, so an unlatched observer would close the overlay at mount.
     @State private var wasOpen = false
 
-    init(mode: String, shadowOpacity: Double = 0.35, shadowRadius: Double = 0.35, onClosed: @escaping () -> Void) {
+    init(mode: String, shadowOpacity: Double = 0.35, shadowRadius: Double = 0.35,
+         bridge: NumoFlowPropsBridge = NumoFlowPropsBridge(),
+         onEvent: @escaping (String) -> Void = { _ in },
+         onClosed: @escaping () -> Void) {
         self.mode = mode
         self.onClosed = onClosed
+        self.bridge = bridge
+        self.onEvent = onEvent
         self.glass = .frozen(shadowOpacity: shadowOpacity, shadowRadius: shadowRadius)
         // Configure the flow BEFORE the first body evaluation: no frame ever
         // exists in the closed state and the Stage1 entrance mounts fresh
@@ -74,7 +95,9 @@ struct NumoFlowRoot: View {
             }
         }
         .environmentObject(flow)
+        .environmentObject(bridge)
         .environment(\.numoGlass, glass)
+        .environment(\.numoFlowEmit, onEvent)
     }
 
     // The donor RootView's braindump portions, verbatim minus HomeScreen:

@@ -15,7 +15,9 @@
 - (void)updateWithMode:(NSString *_Nonnull)mode
                    seq:(NSInteger)seq
          shadowOpacity:(double)shadowOpacity
-          shadowRadius:(double)shadowRadius;
+          shadowRadius:(double)shadowRadius
+           rnBottomBar:(BOOL)rnBottomBar
+        whenPickerOpen:(BOOL)whenPickerOpen;
 - (void)tearDown;
 @end
 
@@ -70,7 +72,9 @@ using namespace facebook::react;
   [_hostView updateWithMode:RCTNSStringFromString(newProps.mode)
                         seq:newProps.seq
               shadowOpacity:newProps.shadowOpacity
-               shadowRadius:newProps.shadowRadius];
+               shadowRadius:newProps.shadowRadius
+                rnBottomBar:newProps.rnBottomBar
+             whenPickerOpen:newProps.whenPickerOpen];
 
   [super updateProps:props oldProps:oldProps];
 }
