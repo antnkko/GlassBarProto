@@ -265,8 +265,8 @@ function AppContent() {
           style={StyleSheet.absoluteFill}
           mode={flowMode}
           seq={flowSeq}
-          shadowOpacity={config.shadowOpacity}
-          shadowRadius={config.shadowRadius}
+          shadowOpacity={config.whiteShadowOpacity}
+          shadowRadius={config.whiteShadowRadius}
           onFlowEvent={e => {
             if (e.nativeEvent.type === 'closed') {
               setFlowMode('none');

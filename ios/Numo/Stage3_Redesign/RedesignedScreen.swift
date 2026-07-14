@@ -319,29 +319,39 @@ struct RedesignedScreen: View {
             // group into the accent ✓ via matched glassEffectIDs. The old manual
             // blur+opacity cross-fade is gone — the glass morph IS the transition.
             ZStack {
-                // Centered "When" title — non-glass content, plain fade.
+                // Centered "When" title — non-glass content, the donor's
+                // blur+opacity swap: eases in with the picker, leaves FAST.
                 Text("When")
                     .font(NumoFont.obviouslyNarrowBold(R.WhenPicker.titleSize))
                     .tracking(R.WhenPicker.titleTracking)
                     .foregroundStyle(NumoColor.black)
                     .opacity(whenPickerOpen ? 1 : 0)
-                    .animation(MorphChoreo.placeholderSwap, value: whenPickerOpen)
+                    .blur(radius: whenPickerOpen ? 0 : Self.headerBlur)
+                    .animation(
+                        whenPickerOpen ? MorphChoreo.placeholderSwap : .easeOut(duration: 0.18),
+                        value: whenPickerOpen)
 
-                GlassEffectContainer(spacing: 0) {
-                    HStack {
-                        chromeLead(dropHeight: dropHeight)
-                        Spacer(minLength: 0)
-                        chromeTrail
+                // The chrome is INSERTED, not alpha-faded: partial opacity over
+                // the glass+frost+ring+shadow stack composited darker (gray wash,
+                // heavier shadow) until the fade finished. The container mounts
+                // instantly (.identity) and each slot materializes natively, so
+                // the ring and shadow only ever render at their final strength.
+                if newChromeIn {
+                    GlassEffectContainer(spacing: 0) {
+                        HStack {
+                            chromeLead(dropHeight: dropHeight)
+                            Spacer(minLength: 0)
+                            chromeTrail
+                        }
                     }
+                    .padding(.horizontal, R.WhenPicker.headerPadH)
+                    .padding(.vertical, R.WhenPicker.headerPadV)
+                    .transition(.identity)
                 }
-                .padding(.horizontal, R.WhenPicker.headerPadH)
-                .padding(.vertical, R.WhenPicker.headerPadV)
             }
-            .onChange(of: whenPickerOpen) { _, _ in chromeMorphStarted() }
-            .opacity(newChromeIn ? 1 : 0)
             // Counter the sheet's close-translate so the chrome stays screen-pinned and is
             // cropped (not moved) by the sheet's descending top edge as the canvas slides down.
-            .offset(y: (newChromeIn ? 0 : MorphChoreo.newHeaderDrop) - closeY)
+            .offset(y: -closeY)
 
             ZStack(alignment: .top) {
                 VStack(spacing: 0) {
@@ -435,6 +445,7 @@ struct RedesignedScreen: View {
                 .background(frostFill(Capsule(), config: glass))
                 .glassEffect(glass.pillGlass, in: Capsule())
                 .glassEffectID("bd-lead", in: chromeNS)
+                .glassEffectTransition(.materialize)
                 .glassDecoration(Capsule(), kind: .neutral, config: glass, visible: chromeDecorVisible("clear"))
                 .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("clear"))
                 .contentShape(Capsule())
@@ -452,6 +463,7 @@ struct RedesignedScreen: View {
             .frame(width: R.closeSize, height: R.closeSize)
             .glassEffect(glass.pillGlass, in: Circle())
             .glassEffectID("bd-lead", in: chromeNS)
+            .glassEffectTransition(.materialize)
             .glassDecoration(Circle(), kind: .neutral, config: glass, visible: chromeDecorVisible("close"))
             .glassShadow(Circle(), config: glass, visible: chromeDecorVisible("close"))
             .contentShape(Circle())
@@ -480,6 +492,7 @@ struct RedesignedScreen: View {
             .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
             .glassEffect(glass.accentGlass, in: Capsule())
             .glassEffectID("bd-trail", in: chromeNS)
+            .glassEffectTransition(.materialize)
             .glassDecoration(Capsule(), kind: .accent, config: glass, visible: chromeDecorVisible("confirm"))
             .contentShape(Capsule())
             .gesture(chromeTapPress("confirm") { closeWhenPicker() })
@@ -488,8 +501,21 @@ struct RedesignedScreen: View {
                 .background(frostFill(Capsule(), config: glass))
                 .glassEffect(glass.pillGlass, in: Capsule())
                 .glassEffectID("bd-trail", in: chromeNS)
-                .glassDecoration(Capsule(), kind: .group, config: glass, visible: !chromeMorphing)
-                .glassShadow(Capsule(), config: glass, visible: !chromeMorphing)
+                .glassEffectTransition(.materialize)
+                .glassDecoration(Capsule(), kind: .group, config: glass, visible: chromeDecorVisible("bd-group"))
+                .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("bd-group"))
+                // Press detection WITHOUT stealing the inner buttons' taps: the
+                // drag arms only after 8pt of travel, so plain taps on the
+                // word/eyes/tag pass through while a real drag (the stretch
+                // that leaves the ring behind) hides the decor.
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 8)
+                        .onChanged { _ in
+                            if chromePressedID != "bd-group" {
+                                withAnimation(.easeInOut(duration: 0.12)) { chromePressedID = "bd-group" }
+                            }
+                        }
+                        .onEnded { _ in chromeEndPress() })
         }
     }
 
@@ -523,11 +549,18 @@ struct RedesignedScreen: View {
         chromePressedID != id && !chromeMorphing
     }
 
-    private func chromeMorphStarted() {
-        withAnimation(.easeInOut(duration: 0.12)) { chromeMorphing = true }
+    // Hides every slot's decor for the duration of a chrome morph. Called
+    // SYNCHRONOUSLY BEFORE the state flip so the incoming slot's very first
+    // frame is already decor-less (an onChange-driven hide runs after body —
+    // the fresh slot's ring would flash on the target frame ahead of the
+    // flying glass). The clear waits out the PickerMorph springs' settle
+    // (response 0.40, damping 0.82/0.90 → ~0.5s) so the ring never returns
+    // while the glass is still in flight.
+    private func chromeMorphStarted(clearAfter: TimeInterval = 0.5) {
+        chromeMorphing = true
         chromeMorphToken += 1
         let token = chromeMorphToken
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.33) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + clearAfter) {
             if chromeMorphToken == token {
                 withAnimation(.easeInOut(duration: 0.3)) { chromeMorphing = false }
             }
@@ -536,6 +569,7 @@ struct RedesignedScreen: View {
 
     private func openWhenPicker() {
         guard flow.morphPhase == .idle, !whenPickerOpen else { return }
+        chromeMorphStarted()
         withAnimation(PickerMorph.openSpring) { whenPickerOpen = true; pickerContentShown = true }
     }
 
@@ -543,6 +577,7 @@ struct RedesignedScreen: View {
     /// quicker fade so it's gone before the card finishes shrinking.
     private func closeWhenPicker() {
         guard whenPickerOpen else { return }
+        chromeMorphStarted()
         withAnimation(PickerMorph.contentFadeOut) { pickerContentShown = false }
         withAnimation(PickerMorph.closeSpring) { whenPickerOpen = false }
     }

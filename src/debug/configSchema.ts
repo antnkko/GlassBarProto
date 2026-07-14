@@ -52,10 +52,12 @@ export interface AppConfig {
   /** Max radius (pt) of the top progressive blur stack; 0 = gradient only. */
   edgeBlurMax: number;
   glassInteractive: boolean;
-  /** Design shadow on the white elements (tabs + white buttons): alpha 0–1. */
-  shadowOpacity: number;
+  /** Design shadow on the white elements (tabs + white buttons): alpha 0–1.
+   *  Fresh keys (were shadowOpacity/shadowRadius) so the 0.2 defaults land
+   *  over stored configs. */
+  whiteShadowOpacity: number;
   /** Design shadow radius 0–1 → 0–40pt. */
-  shadowRadius: number;
+  whiteShadowRadius: number;
 }
 
 export const defaultConfig: AppConfig = {
@@ -80,8 +82,8 @@ export const defaultConfig: AppConfig = {
   scrimSmoothness: 3,
   edgeBlurMax: 0,
   glassInteractive: true,
-  shadowOpacity: 0.35,
-  shadowRadius: 0.35,
+  whiteShadowOpacity: 0.2,
+  whiteShadowRadius: 0.2,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -123,8 +125,8 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     strokeOpacity: 0.13,
     shadowMode: 'design',
     // Historical bridge names — the native side reads absolute 0–1 knobs.
-    shadowOpacityScale: config.shadowOpacity,
-    shadowRadiusScale: config.shadowRadius,
+    shadowOpacityScale: config.whiteShadowOpacity,
+    shadowRadiusScale: config.whiteShadowRadius,
     // Frost, the accent ring and the inner glow are part of the final look —
     // frozen (controls removed; hardcoding also overrides stored values).
     frost: 0.9,

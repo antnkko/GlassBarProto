@@ -95,21 +95,21 @@ export default function DebugPanel({config, dark = false, onChange, onClose, onF
           <Section pal={pal} title="Shadow">
             <SliderRow
               label="Opacity"
-              value={config.shadowOpacity}
+              value={config.whiteShadowOpacity}
               min={0}
               max={1}
               step={0.01}
               pal={pal}
-              onChange={v => onChange({shadowOpacity: v})}
+              onChange={v => onChange({whiteShadowOpacity: v})}
             />
             <SliderRow
               label="Radius"
-              value={config.shadowRadius}
+              value={config.whiteShadowRadius}
               min={0}
               max={1}
               step={0.01}
               pal={pal}
-              onChange={v => onChange({shadowRadius: v})}
+              onChange={v => onChange({whiteShadowRadius: v})}
             />
           </Section>
 

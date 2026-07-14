@@ -13,7 +13,7 @@ public struct GlassTabBarConfig: Equatable {
   /// The frozen design look (mirror of the JS toNativeConfig hardcodes) with
   /// the blazeOrange accent — the preset the app-target braindump chrome uses
   /// so donor screens share the exact bar/toolbar material.
-  public static func frozen(shadowOpacity: Double = 0.35, shadowRadius: Double = 0.35) -> GlassTabBarConfig {
+  public static func frozen(shadowOpacity: Double = 0.2, shadowRadius: Double = 0.2) -> GlassTabBarConfig {
     var config = GlassTabBarConfig()
     config.milkOpacity = 0.95
     config.frost = 0.9
@@ -72,8 +72,8 @@ public struct GlassTabBarConfig: Equatable {
   /// Absolute 0–1 knobs (field names are historical bridge names): opacity is
   /// the shadow alpha, radius maps 0–1 → 0–40pt. Group keeps the design's
   /// proportions relative to neutral (×0.67 / ×0.8); accent has no shadow.
-  var shadowOpacityScale: Double = 0.35
-  var shadowRadiusScale: Double = 0.35
+  var shadowOpacityScale: Double = 0.2
+  var shadowRadiusScale: Double = 0.2
 
   /// Extra frost: an opaque tint layer inside the glass, under the content.
   /// Mattes the material AND covers the rim specular glints (0 = none).
