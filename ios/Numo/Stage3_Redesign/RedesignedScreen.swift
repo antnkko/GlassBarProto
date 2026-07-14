@@ -486,7 +486,12 @@ struct RedesignedScreen: View {
     // (Obviously); the toolbar CTA passes SF. `chromeMorphing` drives the
     // picker-swap decor hide.
     private func glassCloseButton(dropHeight: CGFloat) -> some View {
+        // pressEnabled: the two header clusters share one slot (opacity swap)
+        // and the UIKit press recognizer bypasses allowsHitTesting — only the
+        // VISIBLE cluster may track presses (a ✕ tap was silently firing the
+        // hidden Clear's clearWhen).
         GlassButton(Circle(), config: glass, morphing: chromeMorphing,
+                    pressEnabled: !whenPickerOpen,
                     interaction: .tap {
                         if viaSlideUp {
                             runSlideDownTimeline(height: dropHeight)
@@ -507,6 +512,7 @@ struct RedesignedScreen: View {
 
     private var glassClearButton: some View {
         GlassButton(Capsule(), config: glass, morphing: chromeMorphing,
+                    pressEnabled: whenPickerOpen,
                     interaction: .tap {
                         if rnBridge.rnBottomBar { emit("clearWhen") }
                         else { clearWhenSelection(); closeWhenPicker() }
@@ -524,6 +530,7 @@ struct RedesignedScreen: View {
     /// own — the `.group` interaction only hides the decor on a real drag.
     private var glassPublicityGroup: some View {
         GlassButton(Capsule(), kind: .group, config: glass, morphing: chromeMorphing,
+                    pressEnabled: !whenPickerOpen,
                     interaction: .group) {
             PublicityTagsPill(bare: true)
         }
@@ -531,6 +538,7 @@ struct RedesignedScreen: View {
 
     private var glassConfirmButton: some View {
         GlassButton(Capsule(), kind: .accent, config: glass, morphing: chromeMorphing,
+                    pressEnabled: whenPickerOpen,
                     interaction: .tap {
                         if rnBridge.rnBottomBar { emit("confirmWhen") } else { closeWhenPicker() }
                     }) {

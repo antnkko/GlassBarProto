@@ -46,3 +46,10 @@ export const contentScaleFrom = 0.96;
 
 /** UIKit keyboard curve approximation. */
 export const keyboardEasing = Easing.bezier(0.17, 0.59, 0.4, 0.77);
+
+/**
+ * The DumpedScreen title's `.contentTransition(.numericText())` spring —
+ * .spring(response 0.4, dampingFraction 0.6) (DumpedEntrance.titleResponse/
+ * titleDamping). Bouncy: chars roll in with a visible overshoot.
+ */
+export const numericSpring: WithSpringConfig = {mass: 1, stiffness: 246.74, damping: 18.85};

@@ -29,10 +29,12 @@ public struct GlassButtonID {
 /// Obviously face where the design uses it, otherwise the native font.
 public struct GlassButton<Label: View, S: InsettableShape>: View {
   public enum Interaction {
-    /// Whole-button tap + press-to-hide-decor (drag arms immediately).
+    /// Whole-button tap + press-to-hide-decor.
     case tap(() -> Void)
-    /// Decor-hide only, armed after 8pt of travel — for a pill whose inner
-    /// content owns the taps (a button group), so plain taps pass through.
+    /// Decor-hide only — for a pill whose inner content owns the taps (a
+    /// button group). The decor hides on touch-down exactly like .tap (Stage
+    /// 44: consistent press feedback everywhere); the passive recognizer
+    /// never steals the inner Buttons' taps.
     case group
   }
 
@@ -42,6 +44,12 @@ public struct GlassButton<Label: View, S: InsettableShape>: View {
   private let morphing: Bool
   private let glassID: GlassButtonID?
   private let interaction: Interaction
+  /// Whether this button should track presses at all. The braindump header
+  /// keeps BOTH clusters mounted in one slot (opacity swap) and the UIKit
+  /// press recognizer bypasses SwiftUI's allowsHitTesting — without this
+  /// gate the HIDDEN cluster's buttons would fire from touches on the
+  /// visible ones (a ✕ tap was silently triggering the hidden Clear).
+  private let pressEnabled: Bool
   private let label: Label
 
   @State private var pressed = false
@@ -53,6 +61,7 @@ public struct GlassButton<Label: View, S: InsettableShape>: View {
     config: GlassTabBarConfig,
     morphing: Bool = false,
     glassID: GlassButtonID? = nil,
+    pressEnabled: Bool = true,
     interaction: Interaction,
     @ViewBuilder label: () -> Label
   ) {
@@ -61,6 +70,7 @@ public struct GlassButton<Label: View, S: InsettableShape>: View {
     self.config = config
     self.morphing = morphing
     self.glassID = glassID
+    self.pressEnabled = pressEnabled
     self.interaction = interaction
     self.label = label()
   }
@@ -81,10 +91,11 @@ public struct GlassButton<Label: View, S: InsettableShape>: View {
       // gestures never receive touch-DOWN on some hosting arrangements (the
       // braindump header buffers touches until release — toolbar delivered
       // fine), while UIKit recognizers get touches regardless of view
-      // delivery. The recognizer arms immediately for .tap and after ~8pt of
-      // travel for .group, and never blocks the glass stretch or inner taps.
+      // delivery. The decor hides on touch-down for every kind (Stage 44),
+      // and the recognizer never blocks the glass stretch or inner taps.
       .background(PressRecognizer(
-        armDistance: { if case .group = interaction { return 8 } else { return 0 } }(),
+        enabled: pressEnabled,
+        armDistance: 0,
         onPress: {
           if !pressed { withAnimation(.easeInOut(duration: 0.12)) { pressed = true } }
         },
@@ -155,7 +166,10 @@ final class ImmediatePressGestureRecognizer: UIGestureRecognizer {
 /// began-events are gated to the marker view's own bounds (the `.background`
 /// sizes exactly to the button).
 private struct PressRecognizer: UIViewRepresentable {
-  /// 0 = arm on touch-down (.tap); >0 = arm only after this travel (.group).
+  /// Master switch — a disabled marker never starts tracking (used to mute
+  /// the header's HIDDEN cluster, which shares the slot with the visible one).
+  let enabled: Bool
+  /// 0 = arm on touch-down; >0 = arm only after this travel.
   let armDistance: CGFloat
   let onPress: () -> Void
   let onRelease: (_ isTap: Bool) -> Void
@@ -168,12 +182,14 @@ private struct PressRecognizer: UIViewRepresentable {
   }
 
   func updateUIView(_ view: MarkerView, context: Context) {
+    view.enabled = enabled
     view.armDistance = armDistance
     view.onPress = onPress
     view.onRelease = onRelease
   }
 
   final class MarkerView: UIView, UIGestureRecognizerDelegate {
+    var enabled = true
     var armDistance: CGFloat = 0
     var onPress: (() -> Void)?
     var onRelease: ((Bool) -> Void)?
@@ -227,9 +243,10 @@ private struct PressRecognizer: UIViewRepresentable {
       switch r.state {
       case .began:
         // The host ancestor can span more than this button — only track
-        // touches that started inside the button's own frame (+2pt slack).
+        // touches that started inside the button's own frame (+2pt slack),
+        // and only while this button is the ACTIVE one in its slot.
         let local = r.location(in: self)
-        guard bounds.insetBy(dx: -2, dy: -2).contains(local) else {
+        guard enabled, bounds.insetBy(dx: -2, dy: -2).contains(local) else {
           tracking = false
           return
         }

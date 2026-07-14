@@ -27,6 +27,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {PressFade} from './PressFade';
+import {RollingText} from './RollingText';
 import {WeekStrip} from './WeekStrip';
 import {WheelTimePicker, WheelTime, formatWheelTime} from './WheelTimePicker';
 import {color, font, row, strip, wheel, wheelHeight} from './tokens';
@@ -91,15 +92,15 @@ function PickerRow({
           <Text style={{fontFamily: font.medium, fontSize: row.labelSize, color: color.grayNight}}>
             {label}
           </Text>
-          <Text
-            style={{
-              marginTop: row.textGap,
-              fontFamily: font.semibold,
-              fontSize: row.valueSize,
-              color: color.neutralDark,
-            }}>
-            {value}
-          </Text>
+          {/* Value rolls per-character on change — the native numericText
+              (DumpedScreen title) recreated in RN (Stage 44). */}
+          <View style={{marginTop: row.textGap}}>
+            <RollingText
+              text={value}
+              fontSize={row.valueSize}
+              style={{fontFamily: font.semibold, color: color.neutralDark}}
+            />
+          </View>
         </View>
         <Image
           source={{uri: 'picker_chevron'}}
