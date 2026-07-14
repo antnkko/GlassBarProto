@@ -30,9 +30,7 @@ struct GlassToolbarView: View {
 
   // Feedback state: the pressed element and whether a morph is in flight —
   // the stroke hides during either and returns once settled.
-  @State private var pressedID: String?
   @State private var morphing = false
-  @State private var pressToken = 0
   @State private var morphToken = 0
 
   @Namespace private var glassNS
@@ -80,39 +78,10 @@ struct GlassToolbarView: View {
   }
 
   // MARK: - Feedback
-
-  // One gesture per element: press detection AND the tap action. A separate
-  // simultaneous press-detector next to .onTapGesture silenced the tap
-  // entirely (verified with real XCUITest taps), so the tap is the drag's
-  // release instead: near-zero translation on end = a tap.
-  private func tapPressGesture(_ id: String, onTap: @escaping () -> Void) -> some Gesture {
-    DragGesture(minimumDistance: 0)
-      .onChanged { _ in
-        if pressedID != id {
-          withAnimation(.easeInOut(duration: 0.12)) { pressedID = id }
-        }
-      }
-      .onEnded { value in
-        endPress()
-        if hypot(value.translation.width, value.translation.height) < 12 { onTap() }
-      }
-  }
-
-  // Clear the press a beat later so the stroke returns after the release
-  // bounce settles; a re-press bumps the token and cancels the pending clear.
-  private func endPress() {
-    pressToken += 1
-    let token = pressToken
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-      if pressToken == token {
-        withAnimation(.easeInOut(duration: 0.25)) { pressedID = nil }
-      }
-    }
-  }
-
-  private func decorVisible(_ id: String) -> Bool {
-    pressedID != id && !morphing
-  }
+  //
+  // Per-button press feedback (ring/shadow hide) now lives inside GlassButton.
+  // The toolbar only owns `morphing` — the shared morph hide passed to every
+  // button so the whole toolbar's decor fades together during a config swap.
 
   // MARK: - Material (same recipe as the bar pills)
 
@@ -126,11 +95,9 @@ struct GlassToolbarView: View {
   private var leadingElement: some View {
     switch localOption {
     case 2, 3, 4, 6, 7, 8:
-      ghostButton("tb_back", iconSize: 20, element: "back")
-        .glassEffectID("tb-lead", in: glassNS)
+      ghostButton("tb_back", iconSize: 20, element: "back", glassID: leadID)
     case 5:
-      ghostButton("tb_settings", iconSize: 24, element: "settings", color: neutralDark)
-        .glassEffectID("tb-lead", in: glassNS)
+      ghostButton("tb_settings", iconSize: 24, element: "settings", color: neutralDark, glassID: leadID)
     default:
       EmptyView()
     }
@@ -144,11 +111,9 @@ struct GlassToolbarView: View {
     case 1, 2:
       avatar
     case 3:
-      ghostButton("tb_translate", iconSize: 28, element: "translate")
-        .glassEffectID("tb-trail", in: glassNS)
+      ghostButton("tb_translate", iconSize: 28, element: "translate", glassID: trailID)
     case 5:
-      ghostButton("tb_close", iconSize: 20, element: "close")
-        .glassEffectID("tb-trail", in: glassNS)
+      ghostButton("tb_close", iconSize: 20, element: "close", glassID: trailID)
     case 6:
       buttonGroup
     case 8:
@@ -157,6 +122,9 @@ struct GlassToolbarView: View {
       EmptyView()
     }
   }
+
+  private var leadID: GlassButtonID { GlassButtonID("tb-lead", in: glassNS) }
+  private var trailID: GlassButtonID { GlassButtonID("tb-trail", in: glassNS) }
 
   // Center block sits on the backdrop without glass (as in the spec) — the
   // top scroll edge effect provides its legibility, like native nav titles.
@@ -177,58 +145,44 @@ struct GlassToolbarView: View {
   // MARK: - Pieces (content INSIDE the glass view — the v2.2 lesson)
 
   private func ghostButton(
-    _ iconName: String, iconSize: Double, element: String, color: Color? = nil
+    _ iconName: String, iconSize: Double, element: String, color: Color? = nil, glassID: GlassButtonID
   ) -> some View {
-    ZStack {
-      frostFill(Circle(), config: config)
+    GlassButton(Circle(), config: config, morphing: morphing, glassID: glassID,
+                interaction: .tap { pressed(element) }) {
       icon(iconName, size: iconSize, color: color ?? config.mid, multiply: useMultiply)
+        .frame(width: ghostSize, height: ghostSize)
     }
-    .frame(width: ghostSize, height: ghostSize)
-    .glassEffect(pillGlass, in: Circle())
-    .glassDecoration(Circle(), kind: .neutral, config: config, visible: decorVisible(element))
-    .glassShadow(Circle(), config: config, visible: decorVisible(element))
-    .contentShape(Circle())
-    .gesture(tapPressGesture(element) { pressed(element) })
   }
 
   private var avatar: some View {
-    ZStack {
-      frostFill(Circle(), config: config)
+    GlassButton(Circle(), config: config, morphing: morphing, glassID: trailID,
+                interaction: .tap { pressed("avatar") }) {
       Image("tb_avatar")
         .resizable()
         .scaledToFill()
         .frame(width: avatarPhotoSize, height: avatarPhotoSize)
         .clipShape(Circle())
+        .frame(width: ghostSize, height: ghostSize)
     }
-    .frame(width: ghostSize, height: ghostSize)
-    .glassEffect(pillGlass, in: Circle())
-    .glassEffectID("tb-trail", in: glassNS)
-    .glassDecoration(Circle(), kind: .neutral, config: config, visible: decorVisible("avatar"))
-    .glassShadow(Circle(), config: config, visible: decorVisible("avatar"))
-    .contentShape(Circle())
-    .gesture(tapPressGesture("avatar") { pressed("avatar") })
   }
 
   // Figma: pill h48, px 6, two 48pt icon zones with a 2×24 divider between.
-  // The frost lives in .background, NOT as a ZStack sibling — a bare
-  // Capsule().fill is greedy and stretched the pill across the free toolbar
-  // width once the frost default went above 0 (same lesson as the CTA).
+  // A button group: the pill's decor hides only on a real drag; each zone
+  // owns its own tap.
   private var buttonGroup: some View {
-    HStack(spacing: 3) {
-      groupZone("tb_aa", element: "aa")
-      Capsule()
-        .fill(dividerColor)
-        .frame(width: 2, height: 24)
-        .blendMode(useMultiply ? .multiply : .normal)
-      groupZone("tb_more", element: "more")
+    GlassButton(Capsule(), kind: .group, config: config, morphing: morphing, glassID: trailID,
+                interaction: .group) {
+      HStack(spacing: 3) {
+        groupZone("tb_aa", element: "aa")
+        Capsule()
+          .fill(dividerColor)
+          .frame(width: 2, height: 24)
+          .blendMode(useMultiply ? .multiply : .normal)
+        groupZone("tb_more", element: "more")
+      }
+      .padding(.horizontal, 6)
+      .frame(height: ghostSize)
     }
-    .padding(.horizontal, 6)
-    .frame(height: ghostSize)
-    .background(frostFill(Capsule(), config: config))
-    .glassEffect(pillGlass, in: Capsule())
-    .glassEffectID("tb-trail", in: glassNS)
-    .glassDecoration(Capsule(), kind: .group, config: config, visible: decorVisible("group"))
-    .glassShadow(Capsule(), config: config, visible: decorVisible("group"))
   }
 
   private func groupZone(_ iconName: String, element: String) -> some View {
@@ -237,9 +191,7 @@ struct GlassToolbarView: View {
     }
     .frame(width: groupZoneSize, height: groupZoneSize)
     .contentShape(Rectangle())
-    // The whole pill holds the press ("group" strokes as one), each zone taps
-    // its own element.
-    .gesture(tapPressGesture("group") { pressed(element) })
+    .onTapGesture { pressed(element) }
   }
 
   // Figma: accent pill h≈60, px 32, "Button" semibold 18 white. The solid
@@ -247,24 +199,17 @@ struct GlassToolbarView: View {
   // interactive stretch and the morph carry it; the glass rim replaces the
   // mock's inner white glow.
   private var ctaButton: some View {
-    // The fill is a BACKGROUND of the text, not a ZStack sibling: a bare
-    // Capsule shape is greedy and would stretch the pill across all the
-    // free toolbar width. Background sizes to the label (design: px 32).
-    Text("Button")
-      .font(.system(size: 18, weight: .semibold))
-      .tracking(0.18)
-      .foregroundStyle(.white)
-      // The mock's pb-4 compensates the Obviously font's baseline; SF
-      // centers optically without it.
-      .padding(.horizontal, 32)
-      .frame(height: ctaHeight)
-      .background(Capsule().fill(config.accentFill))
-      .glassEffect(config.accentGlass, in: Capsule())
-      .glassEffectID("tb-trail", in: glassNS)
-      // Accent = rim + inner glow only; the drop shadow is for white elements.
-      .glassDecoration(Capsule(), kind: .accent, config: config, visible: decorVisible("cta"))
-      .contentShape(Capsule())
-      .gesture(tapPressGesture("cta") { pressed("cta") })
+    // The accent fill + rim live in GlassButton; the label is just the text
+    // (SF here — the native font; the design uses Obviously only elsewhere).
+    GlassButton(Capsule(), kind: .accent, config: config, morphing: morphing, glassID: trailID,
+                interaction: .tap { pressed("cta") }) {
+      Text("Button")
+        .font(.system(size: 18, weight: .semibold))
+        .tracking(0.18)
+        .foregroundStyle(.white)
+        .padding(.horizontal, 32)
+        .frame(height: ctaHeight)
+    }
   }
 
   // Figma: title 28 Obviously Narrow Bold (SF condensed bold as surrogate),

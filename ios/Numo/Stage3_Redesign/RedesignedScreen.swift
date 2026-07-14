@@ -72,15 +72,12 @@ struct RedesignedScreen: View {
     @State private var text = ""
     @FocusState private var inputFocused: Bool
 
-    // Liquid Glass chrome (the bar/toolbar material from the GlassTabBar pod):
-    // the ✕ and the publicity pill live in matched glass slots that morph into
-    // the picker's Clear and ✓ — the same lead/trail mechanic as the toolbar.
-    // Injected so the RN dev panel's shadow slider drives it too.
+    // Liquid Glass chrome — the ✕/Clear/Confirm/publicity buttons are the same
+    // GlassButton component the toolbar uses (each owns its own press feedback).
+    // Injected config so the RN dev panel's shadow slider drives it too;
+    // `chromeMorphing` is the shared picker-swap decor hide passed to each.
     @Environment(\.numoGlass) private var glass
-    @Namespace private var chromeNS
-    @State private var chromePressedID: String?
     @State private var chromeMorphing = false
-    @State private var chromePressToken = 0
     @State private var chromeMorphToken = 0
 
     @State private var closing = false       // guards the close-down (direct overlay)
@@ -449,108 +446,57 @@ struct RedesignedScreen: View {
     /// content, chrome, voice, backdrop) animates together in this single transaction.
     // MARK: - Liquid Glass chrome buttons (donor cross-fade, no matched morph)
 
+    // The chrome buttons are the SAME GlassButton component the toolbar uses —
+    // identical material, decor and press feedback. Only the font is ours
+    // (Obviously); the toolbar CTA passes SF. `chromeMorphing` drives the
+    // picker-swap decor hide.
     private func glassCloseButton(dropHeight: CGFloat) -> some View {
-        ZStack {
-            frostFill(Circle(), config: glass)
+        GlassButton(Circle(), config: glass, morphing: chromeMorphing,
+                    interaction: .tap {
+                        if viaSlideUp { runSlideDownTimeline(height: dropHeight) } else { flow.goHome() }
+                    }) {
             Image("cross")
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
                 .frame(width: R.crossIcon, height: R.crossIcon)
                 .foregroundStyle(NumoColor.grayNight)
+                .frame(width: R.closeSize, height: R.closeSize)
         }
-        .frame(width: R.closeSize, height: R.closeSize)
-        .glassEffect(glass.pillGlass, in: Circle())
-        .glassDecoration(Circle(), kind: .neutral, config: glass, visible: chromeDecorVisible("close"))
-        .glassShadow(Circle(), config: glass, visible: chromeDecorVisible("close"))
-        .contentShape(Circle())
-        .gesture(chromeTapPress("close") {
-            if viaSlideUp { runSlideDownTimeline(height: dropHeight) } else { flow.goHome() }
-        })
     }
 
     private var glassClearButton: some View {
-        Text("Clear")
-            .font(NumoFont.obviouslySemibold(R.WhenPicker.clearLabel))
-            .foregroundStyle(NumoColor.neutralDark)
-            .padding(.bottom, R.WhenPicker.clearLabelLift)
-            .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
-            .background(frostFill(Capsule(), config: glass))
-            .glassEffect(glass.pillGlass, in: Capsule())
-            .glassDecoration(Capsule(), kind: .neutral, config: glass, visible: chromeDecorVisible("clear"))
-            .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("clear"))
-            .contentShape(Capsule())
-            .gesture(chromeTapPress("clear") { clearWhenSelection(); closeWhenPicker() })
+        GlassButton(Capsule(), config: glass, morphing: chromeMorphing,
+                    interaction: .tap { clearWhenSelection(); closeWhenPicker() }) {
+            Text("Clear")
+                .font(NumoFont.obviouslySemibold(R.WhenPicker.clearLabel))
+                .foregroundStyle(NumoColor.neutralDark)
+                .padding(.bottom, R.WhenPicker.clearLabelLift)
+                .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
+        }
     }
 
     /// The publicity content keeps its own internal buttons (word/eyes
-    /// blur-swap + in-place press scale), so the pill carries no tap gesture
-    /// of its own — only the drag-hide below.
+    /// blur-swap + in-place press scale), so the group carries no tap of its
+    /// own — the `.group` interaction only hides the decor on a real drag.
     private var glassPublicityGroup: some View {
-        PublicityTagsPill(bare: true)
-            .background(frostFill(Capsule(), config: glass))
-            .glassEffect(glass.pillGlass, in: Capsule())
-            .glassDecoration(Capsule(), kind: .group, config: glass, visible: chromeDecorVisible("bd-group"))
-            .glassShadow(Capsule(), config: glass, visible: chromeDecorVisible("bd-group"))
-            // Press detection WITHOUT stealing the inner buttons' taps: the
-            // drag arms only after 8pt of travel, so plain taps on the
-            // word/eyes/tag pass through while a real drag (the stretch
-            // that leaves the ring behind) hides the decor.
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 8)
-                    .onChanged { _ in
-                        if chromePressedID != "bd-group" {
-                            withAnimation(.easeInOut(duration: 0.12)) { chromePressedID = "bd-group" }
-                        }
-                    }
-                    .onEnded { _ in chromeEndPress() })
+        GlassButton(Capsule(), kind: .group, config: glass, morphing: chromeMorphing,
+                    interaction: .group) {
+            PublicityTagsPill(bare: true)
+        }
     }
 
     private var glassConfirmButton: some View {
-        ZStack {
-            Capsule().fill(glass.accentFill)
+        GlassButton(Capsule(), kind: .accent, config: glass, morphing: chromeMorphing,
+                    interaction: .tap { closeWhenPicker() }) {
             Image("picker_checkmark")
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
                 .frame(width: R.WhenPicker.checkIcon, height: R.WhenPicker.checkIcon)
                 .foregroundStyle(NumoColor.white)
+                .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
         }
-        .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
-        .glassEffect(glass.accentGlass, in: Capsule())
-        .glassDecoration(Capsule(), kind: .accent, config: glass, visible: chromeDecorVisible("confirm"))
-        .contentShape(Capsule())
-        .gesture(chromeTapPress("confirm") { closeWhenPicker() })
-    }
-
-    // The toolbar's feedback recipe: one drag gesture per element does press
-    // detection (decor hide) and the tap on release; the morph hides every
-    // slot's decor and returns it at the perceptual settle.
-    private func chromeTapPress(_ id: String, onTap: @escaping () -> Void) -> some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { _ in
-                if chromePressedID != id {
-                    withAnimation(.easeInOut(duration: 0.12)) { chromePressedID = id }
-                }
-            }
-            .onEnded { value in
-                chromeEndPress()
-                if hypot(value.translation.width, value.translation.height) < 12 { onTap() }
-            }
-    }
-
-    private func chromeEndPress() {
-        chromePressToken += 1
-        let token = chromePressToken
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-            if chromePressToken == token {
-                withAnimation(.easeInOut(duration: 0.25)) { chromePressedID = nil }
-            }
-        }
-    }
-
-    private func chromeDecorVisible(_ id: String) -> Bool {
-        chromePressedID != id && !chromeMorphing
     }
 
     // Hides every slot's decor for the duration of a chrome morph. Called
