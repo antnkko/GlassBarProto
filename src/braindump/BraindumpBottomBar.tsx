@@ -6,8 +6,9 @@
  * gradient and the tap-outside scrim. The morphing shell + picker + voice
  * live in MorphingShell.
  */
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Dimensions, Keyboard, Pressable, StyleSheet, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {LinearGradient} from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
@@ -19,7 +20,15 @@ import Animated, {
 import {FlowBus} from './flowEvents';
 import {MorphingShell, MorphingShellHandle} from './MorphingShell';
 import {bar, color, entry} from './tokens';
-import {entrySpring, fadeOut120, keyboardEasing} from './motion';
+import {closeSpring, entrySpring, fadeOut120, keyboardEasing, openSpring} from './motion';
+
+// Native header geometry (RedesignedScreen / Metrics.WhenPicker): the sheet
+// top is at the safe-area top, the header buttons sit headerPadV below it and
+// are closeSize tall. So the header BOTTOM = safeTop + headerPadV + closeSize,
+// and the header's own top gap = headerPadV. The open picker's top gap should
+// match that gap → picker top target = headerBottom + headerPadV.
+const HEADER_PAD_V = 20;
+const CLOSE_SIZE = 48;
 
 type Props = {
   whenOpen: boolean;
@@ -43,8 +52,20 @@ export function BraindumpBottomBar({
   // Entry/exit choreography (native MorphChoreo beats, event-driven).
   const entryY = useSharedValue<number>(entry.slideRise);
   const entryOpacity = useSharedValue(0);
+  // Open progress (0..1) — drives the symmetric-gap lift so the picker's top
+  // gap to the header matches the header's own top gap (device-independent).
+  const openP = useSharedValue(0);
+  const [openH, setOpenH] = useState(0); // measured open picker height
+
+  const insets = useSafeAreaInsets();
+  const screenH = Dimensions.get('window').height;
+  const pickerTopTarget = insets.top + HEADER_PAD_V + CLOSE_SIZE + HEADER_PAD_V;
 
   const shellRef = useRef<MorphingShellHandle | null>(null);
+
+  useEffect(() => {
+    openP.value = withSpring(whenOpen ? 1 : 0, whenOpen ? openSpring : closeSpring);
+  }, [whenOpen, openP]);
 
   useEffect(() => {
     const sub = Keyboard.addListener('keyboardWillChangeFrame', e => {
@@ -84,10 +105,17 @@ export function BraindumpBottomBar({
     [entryOpacity, entryY, flowBus],
   );
 
-  const clusterStyle = useAnimatedStyle(() => ({
-    opacity: entryOpacity.value,
-    transform: [{translateY: -kbH.value + entryY.value}],
-  }));
+  const clusterStyle = useAnimatedStyle(() => {
+    // When open, lift the cluster so the picker's top lands at pickerTopTarget
+    // (symmetric gap to the header). Only lifts UP (never pushes below the
+    // keyboard-anchored position); the freed space below is the white gradient.
+    const pickerTopNow = screenH - kbH.value - bar.padBottom - openH;
+    const lift = openH > 0 ? openP.value * Math.max(0, pickerTopNow - pickerTopTarget) : 0;
+    return {
+      opacity: entryOpacity.value,
+      transform: [{translateY: -kbH.value + entryY.value - lift}],
+    };
+  });
 
   return (
     <Animated.View
@@ -124,6 +152,7 @@ export function BraindumpBottomBar({
           onWhenOpenChange={onWhenOpenChange}
           onVoiceTap={onVoiceTap}
           voiceGlow={voiceGlow}
+          onOpenHeight={setOpenH}
           shellRef={shellRef}
         />
       </View>

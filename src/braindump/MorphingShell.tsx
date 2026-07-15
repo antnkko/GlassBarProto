@@ -37,6 +37,8 @@ type Props = {
   onWhenOpenChange: (open: boolean) => void;
   onVoiceTap?: () => void;
   voiceGlow?: {radius: number; opacity: number};
+  /** The measured time-open picker height (for the symmetric-gap lift). */
+  onOpenHeight?: (h: number) => void;
   shellRef?: React.MutableRefObject<MorphingShellHandle | null>;
 };
 
@@ -45,6 +47,7 @@ export function MorphingShell({
   onWhenOpenChange,
   onVoiceTap,
   voiceGlow,
+  onOpenHeight,
   shellRef,
 }: Props) {
   const {width: screenW} = useWindowDimensions();
@@ -63,9 +66,10 @@ export function MorphingShell({
   const contentOpacity = useSharedValue(0); // picker content
   const sectionP = useSharedValue(0); // 0 = time open, 1 = date open
 
-  // Natural picker height with the TIME section open, tracked while CLOSED
-  // (the card's row heights settle over the first couple of layouts as the
-  // fonts measure; while open the height is animated, so don't remeasure).
+  // Natural picker height with the TIME section open. Reported from the card's
+  // JS row measurements (onNaturalHeight) — NOT measured off the animated card
+  // via onLayout, because Reanimated height updates don't fire onLayout, which
+  // left `pickerHTime` stuck at ~0 and the shell opening cropped.
   const pickerHTime = useRef(0);
   const sectionRef = useRef<WhenSection>('time');
   const openRef = useRef(false);
@@ -171,12 +175,7 @@ export function MorphingShell({
             },
             pickerStyle,
           ]}
-          pointerEvents={whenOpen ? 'auto' : 'none'}
-          onLayout={e => {
-            if (!openRef.current) {
-              pickerHTime.current = e.nativeEvent.layout.height;
-            }
-          }}>
+          pointerEvents={whenOpen ? 'auto' : 'none'}>
           <WhenPickerCard
             section={section}
             sectionP={sectionP}
@@ -186,6 +185,15 @@ export function MorphingShell({
             onSectionChange={swapSection}
             onSelectDay={setSelectedDay}
             onTimeChange={t => setTime(prev => ({...prev, ...t}))}
+            onNaturalHeight={h => {
+              pickerHTime.current = h;
+              onOpenHeight?.(h);
+              // If the picker is already open when the measurement lands (or
+              // settles bigger), grow the shell to the corrected height.
+              if (openRef.current) {
+                shellH.value = withSpring(Math.max(pickerHeightFor(sectionRef.current), shell.heightClosed), openSpring);
+              }
+            }}
           />
         </Animated.View>
       </GlassSurface>

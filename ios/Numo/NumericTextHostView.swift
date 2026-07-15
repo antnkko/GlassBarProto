@@ -24,10 +24,12 @@ private struct NumericTextRootView: View {
             .foregroundStyle(model.color)
             .contentTransition(.numericText())
             .animation(.spring(response: 0.4, dampingFraction: 0.6), value: model.text)
-            // Vertically centered in the RN-given box (leading = centerY +
-            // leftX), so the caller sizes the line box and the glyph sits in
-            // the middle — matching a normal text line's position.
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            // Left-align horizontally (intrinsic height), THEN fill the box
+            // height — the outer maxHeight frame vertically centers the
+            // intrinsic-height text. (A single combined frame left the text
+            // pinned to the top, overlapping the label above.)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxHeight: .infinity)
     }
 }
 
@@ -41,12 +43,21 @@ public final class NumericTextHostView: UIView {
         let controller = UIHostingController(rootView: NumericTextRootView(model: model))
         controller.view.backgroundColor = .clear
         controller.view.frame = bounds
-        controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         addSubview(controller.view)
         host = controller
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    // Pin the hosting view to our bounds on every layout — Fabric sets our
+    // frame after init (bounds start 0), and autoresizingMask alone left the
+    // SwiftUI text mis-centered until a content change forced a re-layout
+    // (the "label overlaps until you tap it" bug). Re-framing here re-centers
+    // the text on the first real (non-zero) layout.
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        host?.view.frame = bounds
+    }
 
     @objc public func update(text: String, fontSize: Double, fontFamily: String,
                              colorHex: String, tracking: Double) {
@@ -58,6 +69,15 @@ public final class NumericTextHostView: UIView {
         // Assign text LAST and only on real change — SwiftUI animates the
         // numericText transition off this published mutation.
         if model.text != text { model.text = text }
+        // Force a layout pass once the props land: Fabric sets our real bounds
+        // AFTER init (they start 0), and the SwiftUI text was committed
+        // mis-centered against the 0-frame and never re-centered until a later
+        // relayout (the "label overlaps until tapped" bug). Re-laying-out here
+        // — when bounds are real — pins and re-centers it.
+        DispatchQueue.main.async { [weak self] in
+            self?.setNeedsLayout()
+            self?.layoutIfNeeded()
+        }
     }
 }
 

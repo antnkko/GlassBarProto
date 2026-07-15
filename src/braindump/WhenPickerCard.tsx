@@ -89,19 +89,27 @@ function PickerRow({
           resizeMode="contain"
         />
         <View style={{flex: 1}}>
-          <Text style={{fontFamily: font.medium, fontSize: row.labelSize, color: color.grayNight}}>
+          {/* Explicit lineHeight reserves the label's visual height — Obviously
+              reports a short RN line box, so without it the value leaf below
+              rode up and overlapped the label. */}
+          <Text
+            style={{
+              fontFamily: font.medium,
+              fontSize: row.labelSize,
+              lineHeight: Math.round(row.labelSize * 1.45),
+              color: color.grayNight,
+            }}>
             {label}
           </Text>
           {/* Value rolls per-glyph on change via SwiftUI's real
               .contentTransition(.numericText()) — Apple's roll + blur (Stage 45).
-              The leaf is a centered line box; size it so the glyph sits just
-              below the label (native gap), no negative offset. */}
+              The leaf is a centered line box below the label. */}
           <NumericLabel
             text={value}
             fontSize={row.valueSize}
             fontFamily={font.semibold}
             color={color.neutralDark}
-            height={Math.round(row.valueSize * 1.5)}
+            height={Math.round(row.valueSize * 1.4)}
           />
         </View>
         <Image
@@ -144,6 +152,12 @@ type Props = {
   onSectionChange: (s: WhenSection) => void;
   onSelectDay: (d: Date) => void;
   onTimeChange: (t: Partial<WheelTime>) => void;
+  /**
+   * The natural Time-section-open card height, reported from the JS row
+   * measurements (NOT from onLayout of the animated card — Reanimated height
+   * updates don't fire onLayout, which left the shell opening cropped).
+   */
+  onNaturalHeight?: (h: number) => void;
 };
 
 export function WhenPickerCard({
@@ -155,11 +169,22 @@ export function WhenPickerCard({
   onSectionChange,
   onSelectDay,
   onTimeChange,
+  onNaturalHeight,
 }: Props) {
   // Measured row heights (fonts decide them); defaults keep the first frame
   // sane until onLayout lands (same frame in practice).
   const dateRowH = useSharedValue(59);
   const timeRowH = useSharedValue(59);
+  // Same measurements on the JS side so the natural (time-open) height can be
+  // reported UP deterministically — the shell can't read it off the animated
+  // card height (Reanimated bypasses onLayout).
+  const dateRowJS = React.useRef(0);
+  const timeRowJS = React.useRef(0);
+  const reportHeight = React.useCallback(() => {
+    if (dateRowJS.current > 0 && timeRowJS.current > 0) {
+      onNaturalHeight?.(dateRowJS.current + row.sepThickness + timeRowJS.current + TIME_BLOCK_H);
+    }
+  }, [onNaturalHeight]);
 
   // COVER position: right under the Date row (time open, days covered) ↔
   // below the days (date open, days revealed).
@@ -199,7 +224,11 @@ export function WhenPickerCard({
         value={dayValueText(selectedDay)}
         expanded={section === 'date'}
         onPress={() => onSectionChange('date')}
-        onLayout={h => (dateRowH.value = h)}
+        onLayout={h => {
+          dateRowH.value = h;
+          dateRowJS.current = h;
+          reportHeight();
+        }}
       />
       <View style={{height: DATE_BLOCK_H}}>
         <Separator />
@@ -225,7 +254,11 @@ export function WhenPickerCard({
           value={formatWheelTime(time)}
           expanded={section === 'time'}
           onPress={() => onSectionChange('time')}
-          onLayout={h => (timeRowH.value = h)}
+          onLayout={h => {
+            timeRowH.value = h;
+            timeRowJS.current = h;
+            reportHeight();
+          }}
         />
         <Animated.View style={[{overflow: 'hidden'}, timeBlockStyle]}>
           <View style={{height: TIME_BLOCK_H}}>
