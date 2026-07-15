@@ -115,6 +115,9 @@ enum Metrics {
         // visual left inset matches the tag's right inset — the eyes glyph is wider than the
         // tag glyph, so equal pads would leave the eyes looking left-tight.
         static let pillPadRetired: CGFloat = 7.5
+        // Trailing inset when the auto-tag label is outermost — a text lead-out
+        // mirroring `pillPadLeading` (icon-only trailing stays `pillPadTrailing`).
+        static let pillTagPadTrailing: CGFloat = 18
         static let pillPadV: CGFloat = 4
         static let pillGap: CGFloat = 3
         static let pillIcon: CGFloat = 28

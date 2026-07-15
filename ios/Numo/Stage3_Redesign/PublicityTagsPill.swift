@@ -9,6 +9,12 @@ struct PublicityTagsPill: View {
     /// `RedesignedScreen` owns the surface (material + stroke + shadow).
     var bare: Bool = false
 
+    /// Auto-detected tag shown after the 🏷 icon (Figma 3787:9660). Owned by the
+    /// screen (typing-pause debounce); the pill only renders it. Toggle inside
+    /// `withAnimation(MorphChoreo.placeholderSwap)` so the blur-in and the
+    /// capsule's width growth ride the same spring as every other pill swap.
+    var tag: String? = nil
+
     @State private var isPublic = true
     @State private var tapCount = 0
 
@@ -71,12 +77,23 @@ struct PublicityTagsPill: View {
                 .fill(NumoColor.grayAlmost)
                 .frame(width: R.pillDividerSize.width, height: R.pillDividerSize.height)
             iconBox("tag")
+            if let tag {
+                Text(tag)
+                    .font(NumoFont.bodyWide16)
+                    .foregroundStyle(NumoColor.neutralDark)
+                    .fixedSize()                        // ideal width; no wrap mid-appear
+                    .padding(.bottom, 4)                // optical lift, same as PublicityWord
+                    .padding(.leading, R.pillLabelOverlap) // tuck toward the 🏷 box like word → eyes
+                    .transition(.blurReplace)
+            }
         }
         // `pillPadLeading` is tuned for the text label's lead-in; once the label retires, use
         // `pillPadRetired` so the lone eyes' left inset matches the tag's right inset (the wider
         // eyes glyph would otherwise read left-tight). Right-anchored pill → tucks in from the left.
         .padding(.leading, labelShown ? R.pillPadLeading : R.pillPadRetired)
-        .padding(.trailing, R.pillPadTrailing)
+        // With a tag label outboard of the 🏷 icon the trailing inset is a text lead-out,
+        // mirroring `pillPadLeading`; icon-only keeps the tight icon inset.
+        .padding(.trailing, tag == nil ? R.pillPadTrailing : R.pillTagPadTrailing)
         .frame(height: R.pillHeight)
     }
 

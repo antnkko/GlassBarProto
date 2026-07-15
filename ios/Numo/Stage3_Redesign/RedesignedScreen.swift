@@ -72,6 +72,13 @@ struct RedesignedScreen: View {
     @State private var text = ""
     @FocusState private var inputFocused: Bool
 
+    // Auto-detected tag demo: 2s after the last keystroke a random tag blur-appears
+    // in the publicity pill (one tag max); clearing the text blur-retires it.
+    // Same restart-token debounce idiom as `chromeMorphToken`.
+    @State private var dumpTag: String? = nil
+    @State private var dumpTagToken = 0
+    private static let sampleTags = ["House 01", "Work", "Ideas", "Groceries", "Trip"]
+
     // Liquid Glass chrome — the ✕/Clear/Confirm/publicity buttons are the same
     // GlassButton component the toolbar uses (each owns its own press feedback).
     // Injected config so the RN dev panel's shadow slider drives it too;
@@ -416,6 +423,7 @@ struct RedesignedScreen: View {
                             .foregroundStyle(NumoColor.text)
                             .tint(NumoColor.highlight)
                             .focused($inputFocused)
+                            .onChange(of: text) { dumpTextChanged() }
                     }
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                     .padding(.horizontal, R.inputPadH)
@@ -532,7 +540,7 @@ struct RedesignedScreen: View {
         GlassButton(Capsule(), kind: .group, config: glass, morphing: chromeMorphing,
                     pressEnabled: !whenPickerOpen,
                     interaction: .group) {
-            PublicityTagsPill(bare: true)
+            PublicityTagsPill(bare: true, tag: dumpTag)
         }
     }
 
@@ -549,6 +557,25 @@ struct RedesignedScreen: View {
                 .frame(width: R.WhenPicker.checkIcon, height: R.WhenPicker.checkIcon)
                 .foregroundStyle(NumoColor.white)
                 .frame(width: R.WhenPicker.clearWidth, height: R.WhenPicker.clearHeight)
+        }
+    }
+
+    // Auto-tag demo: every keystroke restarts the 2s pause timer (token bump kills the
+    // pending fire). Once one tag is up nothing more happens; emptying the field retires
+    // it on the same placeholderSwap spring the pill uses for all its swaps, so the
+    // capsule's width change and the label's blurReplace ride one animation.
+    private func dumpTextChanged() {
+        dumpTagToken += 1
+        if text.isEmpty {
+            withAnimation(MorphChoreo.placeholderSwap) { dumpTag = nil }
+        } else if dumpTag == nil {
+            let token = dumpTagToken
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                guard dumpTagToken == token, !text.isEmpty, dumpTag == nil else { return }
+                withAnimation(MorphChoreo.placeholderSwap) {
+                    dumpTag = Self.sampleTags.randomElement()
+                }
+            }
         }
     }
 

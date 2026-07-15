@@ -56,6 +56,11 @@ public final class NumericTextHostView: UIView {
         let controller = UIHostingController(rootView: NumericTextRootView(model: model))
         controller.view.backgroundColor = .clear
         controller.view.frame = bounds
+        // A text LEAF must never inherit safe-area/keyboard insets: the
+        // braindump keyboard is always up, and the hosting controller's
+        // keyboard avoidance pushed the stack UP inside the RN box — the
+        // hidden disturber behind every mis-centering since Stage 45.
+        controller.safeAreaRegions = []
         addSubview(controller.view)
         host = controller
     }
