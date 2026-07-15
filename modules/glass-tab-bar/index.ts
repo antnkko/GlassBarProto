@@ -5,3 +5,4 @@ export * from './src/GlassToolbarView.types';
 export {default as GlassEdgeBlurView} from './src/GlassEdgeBlurView';
 export type {GlassEdgeBlurProps} from './src/GlassEdgeBlurView';
 export {default as NumoFlowView} from './src/NumoFlowNativeComponent';
+export {default as NumericTextView} from './src/NumericTextNativeComponent';

@@ -26,8 +26,8 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 
+import {NumericLabel} from './NumericLabel';
 import {PressFade} from './PressFade';
-import {RollingText} from './RollingText';
 import {WeekStrip} from './WeekStrip';
 import {WheelTimePicker, WheelTime, formatWheelTime} from './WheelTimePicker';
 import {color, font, row, strip, wheel, wheelHeight} from './tokens';
@@ -92,15 +92,17 @@ function PickerRow({
           <Text style={{fontFamily: font.medium, fontSize: row.labelSize, color: color.grayNight}}>
             {label}
           </Text>
-          {/* Value rolls per-character on change — the native numericText
-              (DumpedScreen title) recreated in RN (Stage 44). */}
-          <View style={{marginTop: row.textGap}}>
-            <RollingText
-              text={value}
-              fontSize={row.valueSize}
-              style={{fontFamily: font.semibold, color: color.neutralDark}}
-            />
-          </View>
+          {/* Value rolls per-glyph on change via SwiftUI's real
+              .contentTransition(.numericText()) — Apple's roll + blur (Stage 45).
+              The leaf is a centered line box; size it so the glyph sits just
+              below the label (native gap), no negative offset. */}
+          <NumericLabel
+            text={value}
+            fontSize={row.valueSize}
+            fontFamily={font.semibold}
+            color={color.neutralDark}
+            height={Math.round(row.valueSize * 1.5)}
+          />
         </View>
         <Image
           source={{uri: 'picker_chevron'}}

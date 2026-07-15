@@ -62,12 +62,14 @@
 		C7C98D2919F004BA2E8E316E /* ObviouslyNarrow-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8C66691A245D67914F89083A /* ObviouslyNarrow-Bold.ttf */; };
 		D2AA0FC5389DA06433CB581B /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E24436C79CA762B1D4F8EBE /* FlowLayout.swift */; };
 		D493C4E4DA0264BD679C0781 /* NumoFlowHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7745909A4B03E6120E476D76 /* NumoFlowHostView.swift */; };
+		D5933F94F530C1538CB062E1 /* NumericTextComponentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = AB158219606E6F2DEDA6AD2B /* NumericTextComponentView.mm */; };
 		E078D4EDD84E26E72B1E5ED2 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C17B5614A88CF9F63B58ACC4 /* Inter-SemiBold.ttf */; };
 		E09AB7D76F894ADF303A4848 /* WheelTimePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EACEE2FC64819D370FEE908 /* WheelTimePicker.swift */; };
 		E37FA91B28D2BD2EBADCC1BD /* PublicityTagsPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD4DFA3EF01A9C185082B32 /* PublicityTagsPill.swift */; };
 		E5107007FFEA66A633C4E7B6 /* WhenBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = E85598990D54C1F62D1D2A32 /* WhenBubble.swift */; };
 		E9B15638104322264F0845E6 /* VoiceButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0415E7510371B703740014BC /* VoiceButton.swift */; };
 		F07166B5E78960A34667693A /* SegmentedSwitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0077D26209B7FA6F068FA873 /* SegmentedSwitch.swift */; };
+		F20CEF39F022B732F14CD1F1 /* NumericTextHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D609A3E94ADABD7F942DFB /* NumericTextHostView.swift */; };
 		F4260E6956026F86791DCED1 /* WeekStripDay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F088F168C3FBB3AAA4FC557 /* WeekStripDay.swift */; };
 		F8652C860EBCE370CC1F12D1 /* AppFlowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55CFC830AB455E91CFE3FF24 /* AppFlowCoordinator.swift */; };
 		FB586D13968420A23586EDCD /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 071654AAB1BBF9420B084129 /* ExpoModulesProvider.swift */; };
@@ -124,11 +126,14 @@
 		9F088F168C3FBB3AAA4FC557 /* WeekStripDay.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WeekStripDay.swift; path = Stage3_Redesign/WeekStripDay.swift; sourceTree = "<group>"; };
 		A28BAEAB3FC93752BF1ED081 /* RedesignedScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RedesignedScreen.swift; path = Stage3_Redesign/RedesignedScreen.swift; sourceTree = "<group>"; };
 		A437FAC34862362B0EA537FD /* VoiceBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceBanner.swift; path = Stage1_BrainDump/Sections/VoiceBanner.swift; sourceTree = "<group>"; };
+		AB158219606E6F2DEDA6AD2B /* NumericTextComponentView.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = NumericTextComponentView.mm; sourceTree = "<group>"; };
+		ABBC0E5AA7B84B9ABD61FFE4 /* NumericTextComponentView.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = NumericTextComponentView.h; sourceTree = "<group>"; };
 		B09EFB199AF916B0639F895B /* EffortSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = EffortSection.swift; path = Stage1_BrainDump/Sections/EffortSection.swift; sourceTree = "<group>"; };
 		B87D21A07851C47FD7FE9C99 /* BrainDumpScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BrainDumpScreen.swift; path = Stage1_BrainDump/BrainDumpScreen.swift; sourceTree = "<group>"; };
 		B95F261BB85A942E9DD26EE4 /* Morph.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Morph.swift; path = Morph/Morph.swift; sourceTree = "<group>"; };
 		C17B5614A88CF9F63B58ACC4 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Inter-SemiBold.ttf"; path = "Resources/Fonts/Inter-SemiBold.ttf"; sourceTree = "<group>"; };
 		C17F0EEF5D05A96597F3DD16 /* DumpedFAB.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DumpedFAB.swift; path = Stage4_Dumped/DumpedFAB.swift; sourceTree = "<group>"; };
+		C1D609A3E94ADABD7F942DFB /* NumericTextHostView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NumericTextHostView.swift; sourceTree = "<group>"; };
 		C98301FA08DFFE3AD9CBB716 /* ObviouslyNarrow-Medium.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "ObviouslyNarrow-Medium.ttf"; path = "Resources/Fonts/ObviouslyNarrow-Medium.ttf"; sourceTree = "<group>"; };
 		CEE7C79870440F727D3CD7A3 /* DumpedScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DumpedScreen.swift; path = Stage4_Dumped/DumpedScreen.swift; sourceTree = "<group>"; };
 		DBD4DFA3EF01A9C185082B32 /* PublicityTagsPill.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PublicityTagsPill.swift; path = Stage3_Redesign/PublicityTagsPill.swift; sourceTree = "<group>"; };
@@ -289,6 +294,9 @@
 				8C66691A245D67914F89083A /* ObviouslyNarrow-Bold.ttf */,
 				C98301FA08DFFE3AD9CBB716 /* ObviouslyNarrow-Medium.ttf */,
 				01FBC2BF9E862CF99CE0679F /* ObviouslyNarrow-Semibold.ttf */,
+				AB158219606E6F2DEDA6AD2B /* NumericTextComponentView.mm */,
+				C1D609A3E94ADABD7F942DFB /* NumericTextHostView.swift */,
+				ABBC0E5AA7B84B9ABD61FFE4 /* NumericTextComponentView.h */,
 			);
 			name = Numo;
 			path = Numo;
@@ -534,6 +542,8 @@
 				1ABEE9B8A51E6FEBE787CCAC /* DumpedScreen.swift in Sources */,
 				E5107007FFEA66A633C4E7B6 /* WhenBubble.swift in Sources */,
 				42F5297D7D213B73562D000A /* NumoFlowComponentView.mm in Sources */,
+				D5933F94F530C1538CB062E1 /* NumericTextComponentView.mm in Sources */,
+				F20CEF39F022B732F14CD1F1 /* NumericTextHostView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
