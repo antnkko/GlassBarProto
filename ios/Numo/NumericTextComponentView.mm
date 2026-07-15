@@ -14,7 +14,12 @@
               fontSize:(double)fontSize
             fontFamily:(NSString *_Nonnull)fontFamily
               colorHex:(NSString *_Nonnull)colorHex
-              tracking:(double)tracking;
+              tracking:(double)tracking
+                 label:(NSString *_Nonnull)label
+         labelFontSize:(double)labelFontSize
+       labelFontFamily:(NSString *_Nonnull)labelFontFamily
+         labelColorHex:(NSString *_Nonnull)labelColorHex
+               textGap:(double)textGap;
 @end
 
 using namespace facebook::react;
@@ -50,7 +55,12 @@ using namespace facebook::react;
                    fontSize:newProps.fontSize
                  fontFamily:RCTNSStringFromString(newProps.fontFamily)
                    colorHex:RCTNSStringFromString(newProps.colorHex)
-                   tracking:newProps.tracking];
+                   tracking:newProps.tracking
+                      label:RCTNSStringFromString(newProps.label)
+              labelFontSize:newProps.labelFontSize
+            labelFontFamily:RCTNSStringFromString(newProps.labelFontFamily)
+              labelColorHex:RCTNSStringFromString(newProps.labelColorHex)
+                    textGap:newProps.textGap];
 
   [super updateProps:props oldProps:oldProps];
 }

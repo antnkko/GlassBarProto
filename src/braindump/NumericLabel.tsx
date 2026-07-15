@@ -1,8 +1,10 @@
 /**
- * Stage 45 — a drop-in for RollingText backed by SwiftUI's real
- * `.contentTransition(.numericText())` (NumericText Fabric leaf): Apple's
- * per-glyph roll + blur on string change, 1:1. Sized by an explicit height
- * (the text left-aligns and vertically centers in the frame).
+ * Stage 45/47 — SwiftUI-backed text stack: optional small label over a value
+ * that changes through the real `.contentTransition(.numericText())` (Apple's
+ * per-glyph roll + blur). Both lines render in ONE SwiftUI VStack (native
+ * rowTextGap spacing) so their relative position is metric-exact — an RN Text
+ * label above the SwiftUI value never aligned reliably. Sized by an explicit
+ * height; the stack left-aligns and vertically centers in the frame.
  */
 import React from 'react';
 import {NumericTextView} from '../../modules/glass-tab-bar';
@@ -13,13 +15,30 @@ type Props = {
   fontFamily: string;
   color: string; // #RRGGBB
   tracking?: number;
-  /** Line box height — give it the value line height so the roll has room. */
+  /** Optional label line above the value ('' = value only). */
+  label?: string;
+  labelFontSize?: number;
+  labelFontFamily?: string;
+  labelColor?: string; // #RRGGBB
+  /** VStack spacing label→value (native rowTextGap = -3). */
+  textGap?: number;
+  /** Line-box height (two lines when label is set). */
   height: number;
 };
 
-export function NumericLabel({text, fontSize, fontFamily, color, tracking = 0, height}: Props) {
-  // No explicit width — a column child stretches to the parent (the flex value
-  // cell); the SwiftUI text left-aligns inside.
+export function NumericLabel({
+  text,
+  fontSize,
+  fontFamily,
+  color,
+  tracking = 0,
+  label = '',
+  labelFontSize = 14,
+  labelFontFamily = 'Obviously-Medium',
+  labelColor = '#888A8E',
+  textGap = -3,
+  height,
+}: Props) {
   return (
     <NumericTextView
       text={text}
@@ -27,6 +46,11 @@ export function NumericLabel({text, fontSize, fontFamily, color, tracking = 0, h
       fontFamily={fontFamily}
       colorHex={color}
       tracking={tracking}
+      label={label}
+      labelFontSize={labelFontSize}
+      labelFontFamily={labelFontFamily}
+      labelColorHex={labelColor}
+      textGap={textGap}
       style={{height, alignSelf: 'stretch'}}
     />
   );

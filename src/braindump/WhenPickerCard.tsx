@@ -89,27 +89,21 @@ function PickerRow({
           resizeMode="contain"
         />
         <View style={{flex: 1}}>
-          {/* Explicit lineHeight reserves the label's visual height — Obviously
-              reports a short RN line box, so without it the value leaf below
-              rode up and overlapped the label. */}
-          <Text
-            style={{
-              fontFamily: font.medium,
-              fontSize: row.labelSize,
-              lineHeight: Math.round(row.labelSize * 1.45),
-              color: color.grayNight,
-            }}>
-            {label}
-          </Text>
-          {/* Value rolls per-glyph on change via SwiftUI's real
-              .contentTransition(.numericText()) — Apple's roll + blur (Stage 45).
-              The leaf is a centered line box below the label. */}
+          {/* Label AND value render inside ONE SwiftUI leaf (native VStack
+              with rowTextGap) — a single font-metric system, so they can't
+              drift/overlap (Stage 47). Value rolls per-glyph on change via
+              the real .contentTransition(.numericText()). */}
           <NumericLabel
+            label={label}
+            labelFontSize={row.labelSize}
+            labelFontFamily={font.medium}
+            labelColor={color.grayNight}
+            textGap={row.textGap}
             text={value}
             fontSize={row.valueSize}
             fontFamily={font.semibold}
             color={color.neutralDark}
-            height={Math.round(row.valueSize * 1.4)}
+            height={44}
           />
         </View>
         <Image
