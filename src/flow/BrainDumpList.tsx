@@ -14,11 +14,16 @@
 import React, {useEffect} from 'react';
 import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import Animated, {useAnimatedStyle, useSharedValue, withSpring} from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  type SharedValue,
+} from 'react-native-reanimated';
 
 import {PressFade} from '../braindump/PressFade';
 import {color, font} from '../braindump/tokens';
-import {Entrance} from './choreo';
+import {Entrance, MorphChoreo} from './choreo';
 
 // ── Metrics.swift (Stage-1 block), 1:1 ──────────────────────────────────────
 const M = {
@@ -133,21 +138,58 @@ function VoiceBanner() {
   );
 }
 
+/** The Stage-1 console header (back + Public pill) — also reused by the
+ *  redesign's morph reconstruction as the "ghost" header (Stage 54). */
+export function Stage1Header({onBack}: {onBack?: () => void}) {
+  return (
+    <View style={styles.consoleHeader} pointerEvents="box-none">
+      <PressFade onPress={onBack ?? (() => {})}>
+        <View style={styles.backBtn}>
+          <Icon name="back" tint={grayDarkish} />
+        </View>
+      </PressFade>
+      <View style={styles.pill}>
+        <Icon name="announcement" tint={color.vibrant} />
+        <View style={styles.pillTextRow}>
+          <Text style={styles.pillLabel}>Public</Text>
+          <Icon name="downchevron" size={M.pillChevron} tint={color.vibrant} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Old console placeholder copy — the morph reconstruction cross-fades it
+ *  into the redesign's placeholder (Stage 54). */
+export const OLD_PLACEHOLDER = 'Brain dump your\ntasks…';
+
 function ConsoleCard({
   text,
   onChangeText,
   onBack,
+  stretchP,
 }: {
   text: string;
   onChangeText: (t: string) => void;
   onBack: () => void;
+  /** Morph Act I progress — grows the white card downward by consoleGrowth
+   *  via an absolute childless LEAF (its layout touches nothing else). */
+  stretchP: SharedValue<number>;
 }) {
+  const extensionStyle = useAnimatedStyle(() => ({
+    // 36 tucks under the card's own rounded corners at rest (invisible); the
+    // rounded bottom edge travels down with the growth, exactly like the
+    // native card's shape growing.
+    height: 36 + MorphChoreo.consoleGrowth * stretchP.value,
+  }));
   return (
     <View style={styles.console}>
+      {/* Growth extension — first child, drawn under the card content. */}
+      <Animated.View style={[styles.consoleExtension, extensionStyle]} />
       <View style={styles.consoleInputZone}>
         {text === '' && (
           <Text style={styles.consolePlaceholder} pointerEvents="none">
-            {'Brain dump your\ntasks…'}
+            {OLD_PLACEHOLDER}
           </Text>
         )}
         <TextInput
@@ -162,20 +204,7 @@ function ConsoleCard({
         />
       </View>
       {/* Header — absolute top 20 / sides 20, over the card. */}
-      <View style={styles.consoleHeader} pointerEvents="box-none">
-        <PressFade onPress={onBack}>
-          <View style={styles.backBtn}>
-            <Icon name="back" tint={grayDarkish} />
-          </View>
-        </PressFade>
-        <View style={styles.pill}>
-          <Icon name="announcement" tint={color.vibrant} />
-          <View style={styles.pillTextRow}>
-            <Text style={styles.pillLabel}>Public</Text>
-            <Icon name="downchevron" size={M.pillChevron} tint={color.vibrant} />
-          </View>
-        </View>
-      </View>
+      <Stage1Header onBack={onBack} />
     </View>
   );
 }
@@ -315,9 +344,15 @@ type Props = {
   onBack: () => void;
   /** Fired when the entrance release begins (the overlay reveal is timed off it). */
   onEntranceStart?: () => void;
+  /** Morph Act I progress (0→1 on the drawDown spring) — banner+console pull
+   *  down by consolePull, the console grows by consoleGrowth pushing all
+   *  sections down as ONE block. Owned by the flow. */
+  stretchP: SharedValue<number>;
+  /** Scroll is disabled for the stretch (flipped once at Act I start). */
+  scrollEnabled?: boolean;
 };
 
-export function BrainDumpList({onBack, onEntranceStart}: Props) {
+export function BrainDumpList({onBack, onEntranceStart, stretchP, scrollEnabled = true}: Props) {
   const insets = useSafeAreaInsets();
   const [text, setText] = React.useState('');
   // ONE spring drives every block; the cascade comes from the offsets.
@@ -334,21 +369,31 @@ export function BrainDumpList({onBack, onEntranceStart}: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const useSlide = (offset: number) =>
+  // Entrance offset + the Act-I stretch terms, combined in one worklet:
+  // banner/console ride the 30pt pull; the sections ride the 700pt growth.
+  const useSlide = (offset: number, pull: number, growth: number) =>
     useAnimatedStyle(() => ({
-      transform: [{translateY: (1 - enterP.value) * offset}],
+      transform: [
+        {
+          translateY:
+            (1 - enterP.value) * offset +
+            pull * stretchP.value +
+            growth * stretchP.value,
+        },
+      ],
     }));
-  const bannerSlide = useSlide(Entrance.banner);
-  const consoleSlide = useSlide(Entrance.console);
-  const subtasksSlide = useSlide(Entrance.subtasks);
-  const settingsSlide = useSlide(Entrance.settings);
-  const timeSlide = useSlide(Entrance.time);
+  const bannerSlide = useSlide(Entrance.banner, MorphChoreo.consolePull, 0);
+  const consoleSlide = useSlide(Entrance.console, MorphChoreo.consolePull, 0);
+  const subtasksSlide = useSlide(Entrance.subtasks, 0, MorphChoreo.consoleGrowth);
+  const settingsSlide = useSlide(Entrance.settings, 0, MorphChoreo.consoleGrowth);
+  const timeSlide = useSlide(Entrance.time, 0, MorphChoreo.consoleGrowth);
 
   return (
     <View style={styles.root}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="interactive"
+        scrollEnabled={scrollEnabled}
         contentContainerStyle={{paddingTop: insets.top, paddingBottom: M.fabClearance}}>
         {/* The banner overlaps the console by 64; the console (a LATER
             sibling) draws on top, exactly like the SwiftUI VStack order. */}
@@ -356,7 +401,7 @@ export function BrainDumpList({onBack, onEntranceStart}: Props) {
           <VoiceBanner />
         </Animated.View>
         <Animated.View style={[{marginTop: M.cardTopMargin}, consoleSlide]}>
-          <ConsoleCard text={text} onChangeText={setText} onBack={onBack} />
+          <ConsoleCard text={text} onChangeText={setText} onBack={onBack} stretchP={stretchP} />
         </Animated.View>
         <Animated.View style={[{marginTop: M.sectionGap}, subtasksSlide]}>
           <SubtasksSection />
@@ -418,6 +463,17 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     padding: M.cardPadding,
     minHeight: M.cardMinHeight,
+  },
+  consoleExtension: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: '100%',
+    marginTop: -36,
+    backgroundColor: color.white,
+    borderBottomLeftRadius: M.cardRadius,
+    borderBottomRightRadius: M.cardRadius,
+    borderCurve: 'continuous',
   },
   consoleInputZone: {
     marginTop: M.inputTopMargin,

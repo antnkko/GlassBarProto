@@ -159,11 +159,15 @@ function AppContent() {
       return;
     }
     patchConfig({rnFlow: true});
+    // Always replay the full onboarding (reset the seen flag), then exercise
+    // the picker + close. Timings leave room for the morph (~4.8s).
+    resetOnboarding();
+    setSeenOnboarding(false);
     const timers = [
       setTimeout(() => openFlow('braindump'), 2000),
-      setTimeout(() => setWhenOpen(true), 3800), // picker morph open
-      setTimeout(() => setWhenOpen(false), 5600), // picker morph close
-      setTimeout(() => setCloseSeq(prev => prev + 1), 6800),
+      setTimeout(() => setWhenOpen(true), 12000), // picker morph open
+      setTimeout(() => setWhenOpen(false), 13800), // picker morph close
+      setTimeout(() => setCloseSeq(prev => prev + 1), 15000),
     ];
     return () => timers.forEach(clearTimeout);
     // Run once after config hydration.
@@ -321,6 +325,8 @@ function AppContent() {
         <BraindumpFlow
           key={`rnflow:${flowSeq}`}
           onboarding={!seenOnboarding}
+          onOnboardingComplete={() => setSeenOnboarding(true)}
+          autoMorphAfterMs={DEV_FLOW_AUTOPLAY ? 2500 : undefined}
           whenOpen={whenOpen}
           onWhenOpenChange={setWhenOpen}
           closeSeq={closeSeq}

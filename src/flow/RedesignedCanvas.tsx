@@ -6,7 +6,7 @@
  * The parent (BraindumpFlow) owns the sheet's position/clip and the timelines.
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Pressable, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 import {BlurView} from 'expo-blur';
 import Animated, {
   useAnimatedStyle,
@@ -18,6 +18,8 @@ import Animated, {
 import {NumoChromeView} from '../../modules/glass-tab-bar';
 import {openSpring, closeSpring} from '../braindump/motion';
 import {color, font} from '../braindump/tokens';
+import {OLD_PLACEHOLDER, Stage1Header} from './BrainDumpList';
+import {MorphChoreo} from './choreo';
 
 // Native geometry (Metrics.Redesign / Metrics.WhenPicker).
 const HEADER_PAD_V = 20;
@@ -52,6 +54,10 @@ type Props = {
   /** The sheet's close translate — the chrome counter-translates by −closeY
    *  so it stays screen-pinned and the descending sheet edge CROPS it. */
   closeY: SharedValue<number>;
+  /** Morph (viaMorph) reconstruction (Stage 54): the ghost Stage-1 header
+   *  flies up (0→1 on the rise spring) and the placeholder cross-fades
+   *  old→new with tracking 0.2→0.8 (0→1 on placeholderSwap). */
+  morph?: {ghost: SharedValue<number>; placeholderP: SharedValue<number>};
   inputRef?: React.RefObject<TextInput | null>;
 };
 
@@ -64,6 +70,7 @@ export function RedesignedCanvas({
   shadow,
   chromeIn,
   closeY,
+  morph,
   inputRef,
 }: Props) {
   const [text, setText] = useState('');
@@ -105,6 +112,22 @@ export function RedesignedCanvas({
     transform: [{translateY: (1 - chromeIn.value) * NEW_HEADER_DROP - closeY.value}],
   }));
 
+  // Morph reconstruction (fallback shared value keeps the hooks unconditional;
+  // the morph prop is stable for the life of the mount).
+  const settled = useSharedValue(1);
+  const ghostSV = morph?.ghost ?? settled;
+  const placeSV = morph?.placeholderP ?? settled;
+  const ghostStyle = useAnimatedStyle(() => ({
+    opacity: 1 - ghostSV.value,
+    transform: [{translateY: -MorphChoreo.ghostRise * ghostSV.value}],
+  }));
+  const oldPlaceholderStyle = useAnimatedStyle(() => ({opacity: 1 - placeSV.value}));
+  const newPlaceholderStyle = useAnimatedStyle(() => ({
+    opacity: placeSV.value,
+    // Native placeholderSwap animates tracking 0.2 → 0.8 with the cross-fade.
+    letterSpacing: 0.2 + (INPUT_TRACKING - 0.2) * placeSV.value,
+  }));
+
   return (
     <View style={styles.fill} pointerEvents="box-none">
       {/* Top chrome — the native Fabric leaf; the cluster swap runs on native
@@ -131,10 +154,19 @@ export function RedesignedCanvas({
 
       {/* Input zone with the custom placeholder (exact 46pt line height). */}
       <View style={styles.inputZone}>
+        {text === '' && morph && (
+          <Animated.Text
+            style={[styles.placeholder, styles.oldTracking, oldPlaceholderStyle]}
+            pointerEvents="none">
+            {OLD_PLACEHOLDER}
+          </Animated.Text>
+        )}
         {text === '' && (
-          <Text style={styles.placeholder} pointerEvents="none">
+          <Animated.Text
+            style={[styles.placeholder, morph ? newPlaceholderStyle : null]}
+            pointerEvents="none">
             {NEW_PLACEHOLDER}
-          </Text>
+          </Animated.Text>
         )}
         <TextInput
           ref={inputRef}
@@ -156,6 +188,15 @@ export function RedesignedCanvas({
           <Pressable style={StyleSheet.absoluteFill} onPress={onBackdropTap} />
         </Animated.View>
       </View>
+
+      {/* Ghost Stage-1 header (viaMorph): reconstructs the stretched console's
+          back + Public pill so nothing vanishes at the swap; flies up + fades
+          during the rise, cropped by the sheet's clipped top. */}
+      {morph && (
+        <Animated.View style={[styles.ghostHeader, ghostStyle]} pointerEvents="none">
+          <Stage1Header />
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -187,4 +228,6 @@ const styles = StyleSheet.create({
     color: color.ink,
   },
   backdropDim: {backgroundColor: `rgba(255,255,255,${BACKDROP_DIM})`},
+  oldTracking: {letterSpacing: 0.2}, // Metrics.inputTracking (Stage-1 console)
+  ghostHeader: {position: 'absolute', top: 0, left: 0, right: 0, height: 88},
 });
