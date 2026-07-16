@@ -151,12 +151,13 @@ function AppContent() {
       return;
     }
     patchConfig({rnFlow: true});
-    const t1 = setTimeout(() => openFlow('braindump'), 2000);
-    const t2 = setTimeout(() => setCloseSeq(prev => prev + 1), 4500);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    const timers = [
+      setTimeout(() => openFlow('braindump'), 2000),
+      setTimeout(() => setWhenOpen(true), 3800), // picker morph open
+      setTimeout(() => setWhenOpen(false), 5600), // picker morph close
+      setTimeout(() => setCloseSeq(prev => prev + 1), 6800),
+    ];
+    return () => timers.forEach(clearTimeout);
     // Run once after config hydration.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config !== null]);
@@ -311,6 +312,8 @@ function AppContent() {
       {flowMode === 'braindump' && config.rnFlow && (
         <BraindumpFlow
           key={`rnflow:${flowSeq}`}
+          whenOpen={whenOpen}
+          onWhenOpenChange={setWhenOpen}
           closeSeq={closeSeq}
           shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
           voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}

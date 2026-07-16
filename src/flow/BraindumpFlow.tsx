@@ -13,7 +13,7 @@
  * The chrome counter-translates by −closeY inside the clipped sheet, so the
  * descending top edge CROPS it in place (the native header-crop mechanism).
  */
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 import {Keyboard, StyleSheet, TextInput, View, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Animated, {
@@ -38,6 +38,10 @@ const CARD_RADIUS = 36; // Metrics.cardRadius — kept through the flight
 interface Props {
   /** The flow finished closing — unmount the overlay. */
   onClosed: () => void;
+  /** When-picker state — owned by App (single source for native + RN paths,
+   *  and drivable by the dev autoplay). */
+  whenOpen: boolean;
+  onWhenOpenChange: (open: boolean) => void;
   /** Dev hook (glassbar://closeflow): a bump runs the close timeline —
    *  headless capture of the slide-down, mirroring the native NUMO_WHEN=anim. */
   closeSeq?: number;
@@ -47,12 +51,18 @@ interface Props {
   voiceGlow: {radius: number; opacity: number};
 }
 
-export function BraindumpFlow({onClosed, closeSeq = 0, shadow, voiceGlow}: Props) {
+export function BraindumpFlow({
+  onClosed,
+  whenOpen,
+  onWhenOpenChange,
+  closeSeq = 0,
+  shadow,
+  voiceGlow,
+}: Props) {
   const insets = useSafeAreaInsets();
   const {height: windowH, width: windowW} = useWindowDimensions();
   const flowBus = useRef(createFlowBus()).current;
   const inputRef = useRef<TextInput | null>(null);
-  const [whenOpen, setWhenOpen] = useState(false);
   const closing = useRef(false);
 
   // The animated surfaces. Initial values = the parked slide-up state
@@ -150,10 +160,10 @@ export function BraindumpFlow({onClosed, closeSeq = 0, shadow, voiceGlow}: Props
           onCloseTap={close}
           onClearTap={() => {
             flowBus.emit('clearWhen');
-            setWhenOpen(false);
+            onWhenOpenChange(false);
           }}
-          onConfirmTap={() => setWhenOpen(false)}
-          onBackdropTap={() => setWhenOpen(false)}
+          onConfirmTap={() => onWhenOpenChange(false)}
+          onBackdropTap={() => onWhenOpenChange(false)}
         />
       </Animated.View>
 
@@ -161,7 +171,7 @@ export function BraindumpFlow({onClosed, closeSeq = 0, shadow, voiceGlow}: Props
           the keyboard — enters on the 'barEnterSlide' beat. */}
       <BraindumpBottomBar
         whenOpen={whenOpen}
-        onWhenOpenChange={setWhenOpen}
+        onWhenOpenChange={onWhenOpenChange}
         flowBus={flowBus}
         voiceGlow={voiceGlow}
       />

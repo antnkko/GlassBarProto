@@ -6,7 +6,7 @@
  * gradient and the tap-outside scrim. The morphing shell + picker + voice
  * live in MorphingShell.
  */
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {Dimensions, Keyboard, Pressable, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {LinearGradient} from 'expo-linear-gradient';
@@ -55,7 +55,10 @@ export function BraindumpBottomBar({
   // Open progress (0..1) — drives the symmetric-gap lift so the picker's top
   // gap to the header matches the header's own top gap (device-independent).
   const openP = useSharedValue(0);
-  const [openH, setOpenH] = useState(0); // measured open picker height
+  // Measured open picker height — a shared value, NOT React state: the
+  // cluster worklet reads it, and a setState here re-rendered the cluster
+  // mid-open when the measurement landed (Stage 55).
+  const openH = useSharedValue(0);
 
   const insets = useSafeAreaInsets();
   const screenH = Dimensions.get('window').height;
@@ -109,8 +112,9 @@ export function BraindumpBottomBar({
     // When open, lift the cluster so the picker's top lands at pickerTopTarget
     // (symmetric gap to the header). Only lifts UP (never pushes below the
     // keyboard-anchored position); the freed space below is the white gradient.
-    const pickerTopNow = screenH - kbH.value - bar.padBottom - openH;
-    const lift = openH > 0 ? openP.value * Math.max(0, pickerTopNow - pickerTopTarget) : 0;
+    const pickerTopNow = screenH - kbH.value - bar.padBottom - openH.value;
+    const lift =
+      openH.value > 0 ? openP.value * Math.max(0, pickerTopNow - pickerTopTarget) : 0;
     return {
       opacity: entryOpacity.value,
       transform: [{translateY: -kbH.value + entryY.value - lift}],
@@ -152,7 +156,9 @@ export function BraindumpBottomBar({
           onWhenOpenChange={onWhenOpenChange}
           onVoiceTap={onVoiceTap}
           voiceGlow={voiceGlow}
-          onOpenHeight={setOpenH}
+          onOpenHeight={h => {
+            openH.value = h;
+          }}
           shellRef={shellRef}
         />
       </View>

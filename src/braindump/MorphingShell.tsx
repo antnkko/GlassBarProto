@@ -9,7 +9,7 @@
  * collapse). The voice button sits BEHIND the shell and fades with the chip.
  */
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {StyleSheet, useWindowDimensions, View} from 'react-native';
+import {useWindowDimensions, View} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -54,7 +54,8 @@ export function MorphingShell({
   const pickerWidth = screenW - bar.padH * 2; // picker lays out at FINAL width
 
   // Picker state — RN-owned (the native screen no longer consumes it).
-  const [section, setSection] = useState<WhenSection>('time');
+  // The current section lives in a ref + the sectionP shared value ONLY: a
+  // React section state re-rendered the whole card mid-swap (Stage 55).
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [time, setTime] = useState<WheelTime>(() => wheelTimeFromDate(new Date()));
   const [wheelKey, setWheelKey] = useState(0);
@@ -106,7 +107,6 @@ export function MorphingShell({
     (s: WhenSection) => {
       if (sectionRef.current === s) return;
       sectionRef.current = s;
-      setSection(s);
       sectionP.value = withSpring(s === 'date' ? 1 : 0, sectionResize);
       shellH.value = withSpring(pickerHeightFor(s), sectionResize);
     },
@@ -147,9 +147,21 @@ export function MorphingShell({
       </Animated.View>
 
       <GlassSurface radius={shell.radiusClosed} style={shellStyle} glassStyle={glassRadius}>
-        {/* Chip layer — fades out fast as the picker arrives. */}
+        {/* Chip layer — fades out fast as the picker arrives. FIXED closed-
+            state geometry (not absoluteFill): sizing it off the resizing
+            shell re-laid the chip rows on every frame of the morph
+            (Stage 55); it only shows closed, so it never needs to stretch. */}
         <Animated.View
-          style={[StyleSheet.absoluteFill, chipStyle]}
+          style={[
+            {
+              position: 'absolute',
+              left: 0,
+              bottom: 0,
+              width: pickerWidth - VOICE_SLOT,
+              height: shell.heightClosed,
+            },
+            chipStyle,
+          ]}
           pointerEvents={whenOpen ? 'none' : 'auto'}>
           <RoutineWhenChip
             onWhenTap={() => {
@@ -177,7 +189,6 @@ export function MorphingShell({
           ]}
           pointerEvents={whenOpen ? 'auto' : 'none'}>
           <WhenPickerCard
-            section={section}
             sectionP={sectionP}
             selectedDay={selectedDay}
             time={time}
