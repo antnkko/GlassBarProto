@@ -102,7 +102,7 @@ User-confirmed decisions:
 - [ ] Kill the 500ms stale-close guard for the RN path (clean lifecycle).
 - [ ] Verify side-by-side vs native toggle, frame-by-frame.
 
-### Stage 52 — Stage-1 braindump list + entrance cascade
+### Stage 52 — Stage-1 braindump list + entrance cascade ✅ (6352199, sim-verified)
 - [ ] `src/flow/BrainDumpList.tsx` — banner, console card (placeholder "Brain
       dump your tasks…"), section cards (subtasks, effort, settings, time,
       order, tags, notes), submit FAB — geometry from `Metrics.swift` +
@@ -111,7 +111,7 @@ User-confirmed decisions:
       per-block start translateY 30/30/50/70/90 → 0 on ONE spring
       {stiffness:416, damping:24.3}; transform-only.
 
-### Stage 53 — Onboarding overlay + morph Act I (stretch)
+### Stage 53 — Onboarding overlay + morph Act I (stretch) ✅ (d20e9d3, sim-verified)
 - [ ] `src/flow/OnboardingOverlay.tsx` — white vertical gradient scrim
       (transparent@0.072 → white@0.615, expo-linear-gradient), title, "See how"
       capsule CTA; fade-in at +120ms after entrance (easeOut 300); fade-out
@@ -123,7 +123,7 @@ User-confirmed decisions:
       only; fallback: pure-transform clip-slide with fixed top-cap if profiling
       shows commit cost); FAB rides the section block; scroll disabled.
 
-### Stage 54 — Morph Acts II + III (release + landing)
+### Stage 54 — Morph Acts II + III (release + landing) ✅ (d20e9d3, sim-verified)
 - [ ] Pre-mount `RedesignedCanvas` (hidden, reconstructed frame: sheetTop=250,
       radius 36, blue bg + banner reconstruction, ghost old header) during the
       1.5s hold → swap at 1500ms is a pure opacity flip, zero React commit.
@@ -175,3 +175,29 @@ Animation FPS, Hangs), RN perf monitor for JS-thread idleness.
   defer, mirroring the native `DispatchQueue.main.async` idiom.
 - Monthly API spend limit was hit mid-planning (Plan subagent died) — work
   inline, no subagents, commit stage-by-stage so progress survives.
+
+## Review (session 1, 2026-07-16)
+
+Stages 49–55 done and committed; every timeline verified in the simulator via
+recorded video + frame extraction (DEV_FLOW_AUTOPLAY + `simctl io recordVideo`
++ an AVFoundation frame dumper — see Stage 51b commit). The full cycle
+(onboarding cascade → overlay → 3-act morph → picker morph → slide close →
+home) plays end-to-end in one run with zero JS-thread work during timelines.
+
+### Left for Stage 56 (needs a human eye / device)
+- [ ] Side-by-side vs native via the debug toggle (Glass tuner → Braindump →
+      Native/RN) on a ProMotion device; frame-by-frame vs the reference videos.
+- [ ] Date↔Time accordion swap needs a tap test (headless couldn't tap rows).
+- [ ] Keyboard beats (sim had a hardware keyboard — no on-screen keyboard).
+- [ ] Instruments run for FPS/hitches; tune `dampingRatio` first if any spring
+      reads off (see handoff constants.md note).
+- [ ] Eventually: default `rnFlow: true`, remove the native flow + the 500ms
+      stale-close guard once the RN port is accepted.
+
+### Notes
+- Monthly API spend limit was hit during planning (Plan agent died) — the rest
+  was done inline, no subagents.
+- The worktree had no node_modules until this session (`npm ci` added it);
+  Metro must run FROM the worktree or it serves the parent repo's bundle.
+- `simctl openurl` pops a confirm dialog (same reason DEV_AUTOPLAY exists) —
+  use DEV_FLOW_AUTOPLAY for headless capture, not the glassbar:// URLs.
