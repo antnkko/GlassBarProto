@@ -17,7 +17,8 @@
          shadowOpacity:(double)shadowOpacity
           shadowRadius:(double)shadowRadius
            rnBottomBar:(BOOL)rnBottomBar
-        whenPickerOpen:(BOOL)whenPickerOpen;
+        whenPickerOpen:(BOOL)whenPickerOpen
+     routinePickerOpen:(BOOL)routinePickerOpen;
 - (void)tearDown;
 @end
 
@@ -74,7 +75,8 @@ using namespace facebook::react;
               shadowOpacity:newProps.shadowOpacity
                shadowRadius:newProps.shadowRadius
                 rnBottomBar:newProps.rnBottomBar
-             whenPickerOpen:newProps.whenPickerOpen];
+             whenPickerOpen:newProps.whenPickerOpen
+          routinePickerOpen:newProps.routinePickerOpen];
 
   [super updateProps:props oldProps:oldProps];
 }

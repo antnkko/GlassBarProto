@@ -72,7 +72,7 @@ struct RedesignedScreen: View {
     @State private var text = ""
     @FocusState private var inputFocused: Bool
 
-    // Auto-detected tag demo: 2s after the last keystroke a random tag blur-appears
+    // Auto-detected tag demo: 0.5s after the last keystroke a random tag blur-appears
     // in the publicity pill (one tag max); clearing the text blur-retires it.
     // Same restart-token debounce idiom as `chromeMorphToken`.
     @State private var dumpTag: String? = nil
@@ -115,6 +115,11 @@ struct RedesignedScreen: View {
     @State private var whenSection: WhenSection           // opens on the time wheel by default
     @State private var selectedDay: Date? = nil           // nil ⇒ today
     @State private var selectedTime: Date = Date()
+    /// Header title of the open picker ("When" | "Routine") — latched on open so it never
+    /// flashes while the header fades out during the close. `whenPickerOpen` itself now means
+    /// "a picker is open" (When or Routine): the header swap, backdrop blur/dim and tap-catcher
+    /// run identically for both; RN drives which one via the two mirrored props.
+    @State private var pickerTitle = "When"
 
     // Morph state — initialized to the resting/final values unless arriving via the
     // morph, so the first frame is correct in both entry modes (no pop-in).
@@ -194,17 +199,15 @@ struct RedesignedScreen: View {
             // rides the keyboard itself.
             if !rnBridge.rnBottomBar { bottomBar }
         }
-        // Mirror the RN-owned picker state onto the native springs so the
+        // Mirror the RN-owned picker states onto the native springs so the
         // header swap/backdrop run the exact same choreography as before.
-        .onChange(of: rnBridge.whenPickerOpen) { _, open in
-            guard rnBridge.rnBottomBar, open != whenPickerOpen else { return }
-            if open {
-                withAnimation(PickerMorph.openSpring) { whenPickerOpen = true; pickerContentShown = true }
-            } else {
-                withAnimation(PickerMorph.contentFadeOut) { pickerContentShown = false }
-                withAnimation(PickerMorph.closeSpring) { whenPickerOpen = false }
-            }
-        }
+        // Full-state sync (not per-prop deltas): onChange misses transitions
+        // that land before this view exists — e.g. a fast Release launch where
+        // the prop is already true at mount — so every signal re-derives the
+        // native state from BOTH props, and onAppear covers the initial pose.
+        .onChange(of: rnBridge.whenPickerOpen) { _, _ in syncPickerMirror() }
+        .onChange(of: rnBridge.routinePickerOpen) { _, _ in syncPickerMirror() }
+        .onAppear { syncPickerMirror() }
         // Hidden debug trigger (as on Stage 1): triple-tap cycles the stage.
         .contentShape(Rectangle())
         .simultaneousGesture(TapGesture(count: 3).onEnded { flow.debugAdvance() })
@@ -236,6 +239,24 @@ struct RedesignedScreen: View {
     /// Acts II (the reconstructed console flies up to full cover, then retracts back to its
     /// resting position) + III (the button groups, then text+keyboard, launch off the
     /// canvas's landing — follow-through inertia). See `MorphChoreo`.
+    /// Reconcile the native header/backdrop choreography with the RN picker
+    /// props. Idempotent: reads BOTH props and drives `whenPickerOpen` (the
+    /// internal "a picker is open" state) toward them, so a missed transition
+    /// self-heals on the next signal.
+    private func syncPickerMirror() {
+        guard rnBridge.rnBottomBar else { return }
+        let open = rnBridge.whenPickerOpen || rnBridge.routinePickerOpen
+        if open {
+            pickerTitle = rnBridge.routinePickerOpen ? "Routine" : "When"
+            guard !whenPickerOpen else { return }
+            withAnimation(PickerMorph.openSpring) { whenPickerOpen = true; pickerContentShown = true }
+        } else {
+            guard whenPickerOpen else { return }
+            withAnimation(PickerMorph.contentFadeOut) { pickerContentShown = false }
+            withAnimation(PickerMorph.closeSpring) { whenPickerOpen = false }
+        }
+    }
+
     private func runReleaseTimeline() {
         // II: fly up from `.start` to full cover (explicit → always animates), old header
         // flying out; swap the bg blue+banner→Figma under cover; then retract to reveal it.
@@ -356,9 +377,10 @@ struct RedesignedScreen: View {
             // group into the accent ✓ via matched glassEffectIDs. The old manual
             // blur+opacity cross-fade is gone — the glass morph IS the transition.
             ZStack {
-                // Centered "When" title — non-glass content, the donor's
-                // blur+opacity swap: eases in with the picker, leaves FAST.
-                Text("When")
+                // Centered picker title ("When" | "Routine") — non-glass
+                // content, the donor's blur+opacity swap: eases in with the
+                // picker, leaves FAST.
+                Text(pickerTitle)
                     .font(NumoFont.obviouslyNarrowBold(R.WhenPicker.titleSize))
                     .tracking(R.WhenPicker.titleTracking)
                     .foregroundStyle(NumoColor.black)
@@ -560,7 +582,7 @@ struct RedesignedScreen: View {
         }
     }
 
-    // Auto-tag demo: every keystroke restarts the 2s pause timer (token bump kills the
+    // Auto-tag demo: every keystroke restarts the 0.5s pause timer (token bump kills the
     // pending fire). Once one tag is up nothing more happens; emptying the field retires
     // it on the same placeholderSwap spring the pill uses for all its swaps, so the
     // capsule's width change and the label's blurReplace ride one animation.
@@ -570,7 +592,7 @@ struct RedesignedScreen: View {
             withAnimation(MorphChoreo.placeholderSwap) { dumpTag = nil }
         } else if dumpTag == nil {
             let token = dumpTagToken
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 guard dumpTagToken == token, !text.isEmpty, dumpTag == nil else { return }
                 withAnimation(MorphChoreo.placeholderSwap) {
                     dumpTag = Self.sampleTags.randomElement()

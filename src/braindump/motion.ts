@@ -41,6 +41,12 @@ export const ringShow: WithTimingConfig = {duration: 400, easing: Easing.out(Eas
 export const ringShowDelay = 100;
 export const ringShowScaleFrom = 0.94;
 
+/**
+ * SegSwitch.spring — .snappy(duration 0.35, extraBounce 0.12): snappy's base
+ * bounce 0.15 + 0.12 → dampingRatio ≈ 1 − 0.27. Reserved for the thumb slide.
+ */
+export const segSpring: WithSpringConfig = {duration: 350, dampingRatio: 0.73};
+
 /** Picker content grows from this bottom-anchored scale. */
 export const contentScaleFrom = 0.96;
 

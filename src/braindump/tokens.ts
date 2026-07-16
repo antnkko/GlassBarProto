@@ -17,6 +17,12 @@ export const color = {
   highlight: '#DB7732',
 } as const;
 
+/** #RRGGBB → rgba() string (design tint fills/borders carry their own alpha). */
+export function rgba(hex: string, alpha: number): string {
+  const v = parseInt(hex.slice(1), 16);
+  return `rgba(${(v >> 16) & 0xff},${(v >> 8) & 0xff},${v & 0xff},${alpha})`;
+}
+
 /** Obviously faces registered in UIAppFonts — PostScript name == basename. */
 export const font = {
   medium: 'Obviously-Medium',
@@ -99,6 +105,50 @@ export const strip = {
   daySize: 17,
   todayDot: 6,
   todayDotOffset: 3,
+} as const;
+
+/** Segmented pill switch (SegmentedSwitch.swift SegSwitch, Figma 1112:8687). */
+export const seg = {
+  thumbHeight: 38,
+  pad: 3, // → track height 44
+  fontSize: 16,
+  lineHeight: 22,
+  textLift: 4, // optical centering (Figma chip pb-4)
+  radius: 100,
+  thumbShadowOpacity: 0.1,
+  thumbShadowRadius: 5,
+} as const;
+
+/** Routine picker card (Figma 1122:11791 Routines, accents mapped to vibrant). */
+export const routine = {
+  switchPadH: 16,
+  switchPadV: 20,
+  bottomSwitchPadBottom: 18,
+  stripPadH: 12,
+  stripPadV: 14,
+  tileW: 48,
+  tileH: 64,
+  tileRadius: 14,
+  tileBorder: 2,
+  tileBorderOpacity: 0.25, // of vibrantLight
+  gridPadV: 8,
+  gridRowPadH: 18,
+  gridRowGap: 3,
+  gridCell: 44,
+  gridCellRadius: 14,
+  gridDaySize: 16,
+  gridDayTracking: -0.45,
+  gridDayPadBottom: 3,
+  repeatPadTop: 20,
+  repeatPadBottom: 12,
+  repeatPadLeft: 20,
+  repeatGap: 6,
+  repeatLabelSize: 17,
+  /** Lifts the SwiftUI numeric value onto the RN label's baseline (the leaf
+   *  centers its layout bounds; RN baselines within lineHeight differ). */
+  repeatValueNudge: -2,
+  dotSize: 6,
+  dotOffset: 2,
 } as const;
 
 export const wheel = {
