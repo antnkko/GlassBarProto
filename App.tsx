@@ -12,6 +12,8 @@ import EdgeScrim from './src/components/EdgeScrim';
 import DebugPanel from './src/debug/DebugPanel';
 import {defaultConfig, toNativeConfig, type AppConfig} from './src/debug/configSchema';
 import {loadConfig, saveConfigDebounced} from './src/debug/persist';
+import {BraindumpFlow} from './src/flow/BraindumpFlow';
+import {resetOnboarding} from './src/flow/flowState';
 import DemoScreen from './src/screens/DemoScreen';
 import {initialTabState, tabReducer} from './src/state/tabState';
 import {bar} from './src/theme/tokens';
@@ -152,6 +154,11 @@ function AppContent() {
     setWhenOpen(false);
     setFlowSeq(prev => prev + 1);
     setFlowMode(mode);
+    // Stage 49: the RN flow keeps its own onboarding flag — the debug reset
+    // clears both worlds (the native mode:'reset' mount clears UserDefaults).
+    if (mode === 'reset') {
+      resetOnboarding();
+    }
   }, []);
 
   if (!config) {
@@ -266,10 +273,23 @@ function AppContent() {
         />
       )}
 
+      {/* Stage 49: the RN Reanimated flow (debug toggle) — replaces the native
+          overlay for the "+" braindump only; the dev-panel demo modes
+          (dumped/switch/reset) always run native. */}
+      {flowMode === 'braindump' && config.rnFlow && (
+        <BraindumpFlow
+          key={`rnflow:${flowSeq}`}
+          onClosed={() => {
+            setFlowMode('none');
+            setWhenOpen(false);
+          }}
+        />
+      )}
+
       {/* Native braindump overlay (NumoPrototype merge): transparent host over
           the whole app — the slide-up rise reveals the RN screen behind it.
           key forces a fresh mount (fresh flow coordinator) per open. */}
-      {flowMode !== 'none' && (
+      {flowMode !== 'none' && !(flowMode === 'braindump' && config.rnFlow) && (
         <NumoFlowView
           key={`${flowMode}:${flowSeq}`}
           style={StyleSheet.absoluteFill}
@@ -304,8 +324,9 @@ function AppContent() {
 
       {/* Stage 41: the RN-owned bottom-bar cluster — a sibling AFTER the
           NumoFlow overlay, so it paints above the transparent native canvas
-          and receives its own touches. Fresh mount per open (same key). */}
-      {flowMode === 'braindump' && (
+          and receives its own touches. Fresh mount per open (same key).
+          Native path only — the RN flow mounts its own cluster (Stage 50). */}
+      {flowMode === 'braindump' && !config.rnFlow && (
         <BraindumpBottomBar
           key={`bar:${flowSeq}`}
           whenOpen={whenOpen}

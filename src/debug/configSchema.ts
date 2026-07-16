@@ -62,6 +62,9 @@ export interface AppConfig {
   voiceGlowRadius: number;
   /** Braindump voice button inner white glow: alpha 0–1 (fresh key). */
   voiceGlowOpacity: number;
+  /** Stage 49: braindump flow implementation — native SwiftUI (NumoFlowView)
+   *  vs the RN Reanimated port. Debug toggle for side-by-side comparison. */
+  rnFlow: boolean;
 }
 
 export const defaultConfig: AppConfig = {
@@ -91,6 +94,8 @@ export const defaultConfig: AppConfig = {
   // Stage 42: bigger, softer inner glow than the first RN port (was 10/0.5).
   voiceGlowRadius: 16,
   voiceGlowOpacity: 0.5,
+  // Native stays the default until the RN port is accepted (tasks/todo.md).
+  rnFlow: false,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */

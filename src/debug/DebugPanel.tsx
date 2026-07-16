@@ -69,6 +69,15 @@ export default function DebugPanel({config, dark = false, onChange, onClose, onF
           </Section>
 
           <Section pal={pal} title="Braindump">
+            <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
+              values={['Native (SwiftUI)', 'RN (Reanimated)']}
+              selectedIndex={config.rnFlow ? 1 : 0}
+              onChange={e => onChange({rnFlow: e.nativeEvent.selectedSegmentIndex === 1})}
+            />
+            <Text style={[s.hint, {color: pal.sub}]}>
+              Імплементація флоу для «+» — порівняння side-by-side (Stage 49)
+            </Text>
             <ActionRow
               pal={pal}
               label={didReset ? 'Onboarding reset ✓' : 'Reset onboarding'}
