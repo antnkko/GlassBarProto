@@ -13,7 +13,7 @@ import DebugPanel from './src/debug/DebugPanel';
 import {defaultConfig, toNativeConfig, type AppConfig} from './src/debug/configSchema';
 import {loadConfig, saveConfigDebounced} from './src/debug/persist';
 import {BraindumpFlow} from './src/flow/BraindumpFlow';
-import {resetOnboarding} from './src/flow/flowState';
+import {hasSeenOnboarding, resetOnboarding} from './src/flow/flowState';
 import DemoScreen from './src/screens/DemoScreen';
 import {initialTabState, tabReducer} from './src/state/tabState';
 import {bar} from './src/theme/tokens';
@@ -83,6 +83,13 @@ function AppContent() {
     loadConfig().then(setConfig);
   }, []);
 
+  // Stage 52: the RN flow's onboarding flag (native keeps its own in
+  // UserDefaults). Loaded once; reset/completion update it in place.
+  const [seenOnboarding, setSeenOnboarding] = useState(true);
+  useEffect(() => {
+    hasSeenOnboarding().then(setSeenOnboarding);
+  }, []);
+
   const patchConfig = useCallback((patch: Partial<AppConfig>) => {
     setConfig(prev => {
       if (!prev) {
@@ -107,6 +114,7 @@ function AppContent() {
     // clears both worlds (the native mode:'reset' mount clears UserDefaults).
     if (mode === 'reset') {
       resetOnboarding();
+      setSeenOnboarding(false);
     }
   }, []);
 
@@ -312,6 +320,7 @@ function AppContent() {
       {flowMode === 'braindump' && config.rnFlow && (
         <BraindumpFlow
           key={`rnflow:${flowSeq}`}
+          onboarding={!seenOnboarding}
           whenOpen={whenOpen}
           onWhenOpenChange={setWhenOpen}
           closeSeq={closeSeq}

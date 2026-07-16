@@ -29,6 +29,7 @@ import Animated, {
 import {BraindumpBottomBar} from '../braindump/BraindumpBottomBar';
 import {createFlowBus} from '../braindump/flowEvents';
 import {color} from '../braindump/tokens';
+import {BrainDumpList} from './BrainDumpList';
 import {MorphChoreo, Slide} from './choreo';
 import {RedesignedCanvas} from './RedesignedCanvas';
 
@@ -38,6 +39,11 @@ const CARD_RADIUS = 36; // Metrics.cardRadius — kept through the flight
 interface Props {
   /** The flow finished closing — unmount the overlay. */
   onClosed: () => void;
+  /** First run (onboarding unseen): mount the Stage-1 brain dump with the
+   *  entrance cascade instead of the direct slide-up (AppFlowCoordinator's
+   *  openFromPlus vs openRedesignedDirect). Stages 53–54 add the overlay and
+   *  the 3-act morph on this path. */
+  onboarding?: boolean;
   /** When-picker state — owned by App (single source for native + RN paths,
    *  and drivable by the dev autoplay). */
   whenOpen: boolean;
@@ -53,6 +59,7 @@ interface Props {
 
 export function BraindumpFlow({
   onClosed,
+  onboarding = false,
   whenOpen,
   onWhenOpenChange,
   closeSeq = 0,
@@ -76,7 +83,11 @@ export function BraindumpFlow({
   // OPEN — runSlideUpTimeline: keyboard rises with the canvas; the white
   // canvas rises to touch the top (bg unseen), the artwork is set under full
   // cover, then the canvas drops to rest with a bounce — revealing it.
+  // The onboarding path never runs it (Stage-1 mounts with its own entrance).
   useEffect(() => {
+    if (onboarding) {
+      return;
+    }
     inputRef.current?.focus();
     const downDelay = Slide.riseDur + Slide.coverHold;
     sheetTop.value = withSequence(
@@ -136,6 +147,16 @@ export function BraindumpFlow({
     borderTopLeftRadius: radius.value,
     borderTopRightRadius: radius.value,
   }));
+
+  // First run: the Stage-1 brain dump with the entrance cascade (Stage 52).
+  // The onboarding overlay + the 3-act morph land in Stages 53–54.
+  if (onboarding) {
+    return (
+      <View style={styles.root}>
+        <BrainDumpList onBack={onClosed} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>

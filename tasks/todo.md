@@ -76,7 +76,7 @@ User-confirmed decisions:
 - [x] Extract `redesign_bg` from the Xcode asset catalog into `src/assets/`
       (cross/picker_checkmark not needed — the chrome stays native).
 
-### Stage 50 — Redesigned canvas screen, static, in RN
+### Stage 50 — Redesigned canvas screen, static, in RN ✅ (cf30d61)
 - [ ] New Fabric leaf **`NumoChrome`** (pattern of `NumericText`: codegen spec in
       `modules/glass-tab-bar/src/`, ComponentView + host in `ios/Numo/`),
       hosting the existing SwiftUI chrome verbatim (GlassButton ✕ +
@@ -89,7 +89,7 @@ User-confirmed decisions:
       `BraindumpBottomBar` cluster + `NumoChrome`.
 - [ ] Pixel-compare the static resting state vs native cold boot (debug toggle).
 
-### Stage 51 — Open/close slide animations (RN)
+### Stage 51 — Open/close slide animations (RN) ✅ (cf30d61 + e69116d, sim-verified)
 - [ ] Shared values: `sheetTop` (screenH→0→safeTop), `closeY` (0→−24→dropHeight),
       `bgShown` (0|1 flip under cover — no setState), `bgFade`, `chromeIn`, `barIn`.
 - [ ] OPEN: focus at t=0; rise 180ms flat; bg flip at 180ms (worklet); drop with
@@ -135,7 +135,7 @@ User-confirmed decisions:
       (opacity + letterSpacing 0.2→0.8 on leaf Texts) + focus + morphPhase→idle;
       persist `hasSeenOnboarding`.
 
-### Stage 55 — Picker cluster jank fixes (`src/braindump/`)
+### Stage 55 — Picker cluster jank fixes (`src/braindump/`) ✅ (ee4037c, done EARLY before 52-54; sim-verified except date↔time tap swap)
 - [ ] `WhenPickerCard.tsx`: fixed-intensity BlurViews cross-faded via opacity
       (kill per-frame `intensity`); date↔time accordion → pre-render both
       sections absolute, transform+opacity swap; animate only a childless
