@@ -38,13 +38,16 @@ const CARD_RADIUS = 36; // Metrics.cardRadius — kept through the flight
 interface Props {
   /** The flow finished closing — unmount the overlay. */
   onClosed: () => void;
+  /** Dev hook (glassbar://closeflow): a bump runs the close timeline —
+   *  headless capture of the slide-down, mirroring the native NUMO_WHEN=anim. */
+  closeSeq?: number;
   /** Glass shadow knobs (dev-panel), same values the native flow receives. */
   shadow: {opacity: number; radius: number};
   /** Voice button inner glow (dev-panel). */
   voiceGlow: {radius: number; opacity: number};
 }
 
-export function BraindumpFlow({onClosed, shadow, voiceGlow}: Props) {
+export function BraindumpFlow({onClosed, closeSeq = 0, shadow, voiceGlow}: Props) {
   const insets = useSafeAreaInsets();
   const {height: windowH, width: windowW} = useWindowDimensions();
   const flowBus = useRef(createFlowBus()).current;
@@ -109,6 +112,13 @@ export function BraindumpFlow({onClosed, shadow, voiceGlow}: Props) {
       }),
     );
   }, [bgOpacity, closeY, flowBus, onClosed, windowH]);
+
+  // Dev hook: glassbar://closeflow bumps closeSeq → run the close timeline.
+  useEffect(() => {
+    if (closeSeq > 0) {
+      close();
+    }
+  }, [closeSeq, close]);
 
   const bgStyle = useAnimatedStyle(() => ({opacity: bgOpacity.value}));
   const sheetStyle = useAnimatedStyle(() => ({

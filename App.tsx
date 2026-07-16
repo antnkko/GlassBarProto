@@ -36,6 +36,11 @@ const TOOLBAR_HEIGHT = 64;
 // headlessly (no tapping / no openurl confirm dialog). Keep false otherwise.
 const DEV_AUTOPLAY = false;
 
+// Dev-only (Stage 51): auto-play the RN braindump open → close once after
+// launch so the slide timelines can be recorded headlessly (same reason as
+// DEV_AUTOPLAY — simctl openurl pops a confirm dialog). Keep false otherwise.
+const DEV_FLOW_AUTOPLAY = false;
+
 function AppContent() {
   const insets = useSafeAreaInsets();
   const [state, dispatch] = useReducer(tabReducer, initialTabState);
@@ -45,6 +50,8 @@ function AppContent() {
   // every open is a fresh native mount with a fresh flow coordinator).
   const [flowMode, setFlowMode] = useState<FlowMode>('none');
   const [flowSeq, setFlowSeq] = useState(0);
+  // Dev hook (glassbar://closeflow): bumping this runs the RN close timeline.
+  const [closeSeq, setCloseSeq] = useState(0);
   // Stage 41: RN owns the braindump bottom-bar cluster. `whenOpen` is the
   // picker state (mirrored into the native header via the whenPickerOpen
   // prop); the bus relays native beats (entry/exit, Clear/✓/backdrop).
@@ -87,13 +94,39 @@ function AppContent() {
     });
   }, []);
 
+  // Opens the braindump overlay (or one of its demo modes). Each open
+  // remounts the component (key below), so the flow always starts fresh.
+  const lastOpenAt = useRef(0);
+  const openFlow = useCallback((mode: FlowMode) => {
+    lastOpenAt.current = Date.now();
+    setPanelOpen(false);
+    setWhenOpen(false);
+    setFlowSeq(prev => prev + 1);
+    setFlowMode(mode);
+    // Stage 49: the RN flow keeps its own onboarding flag — the debug reset
+    // clears both worlds (the native mode:'reset' mount clears UserDefaults).
+    if (mode === 'reset') {
+      resetOnboarding();
+    }
+  }, []);
+
   // Dev hook: drive the bar from outside for scripted testing —
   //   xcrun simctl openurl booted "glassbar://expand" | "glassbar://collapse" |
   //   "glassbar://sub/chat" | "glassbar://toolbar/5"
+  //   Stage 51: "glassbar://plus" (open braindump) | "glassbar://closeflow"
+  //   (run the RN close timeline) | "glassbar://flow/rn" | "glassbar://flow/native"
   // Exercises the RN-controlled-props path (native applies them once lastSeq catches up).
   useEffect(() => {
     const handleUrl = ({url}: {url: string}) => {
-      if (url.includes('expand')) {
+      if (url.includes('plus')) {
+        openFlow('braindump');
+      } else if (url.includes('closeflow')) {
+        setCloseSeq(prev => prev + 1);
+      } else if (url.includes('flow/rn')) {
+        patchConfig({rnFlow: true});
+      } else if (url.includes('flow/native')) {
+        patchConfig({rnFlow: false});
+      } else if (url.includes('expand')) {
         dispatch({type: 'forceExpand'});
       } else if (url.includes('collapse')) {
         dispatch({type: 'forceCollapse'});
@@ -111,7 +144,22 @@ function AppContent() {
     };
     const sub = Linking.addEventListener('url', handleUrl);
     return () => sub.remove();
-  }, [patchConfig]);
+  }, [openFlow, patchConfig]);
+
+  useEffect(() => {
+    if (!DEV_FLOW_AUTOPLAY || !config) {
+      return;
+    }
+    patchConfig({rnFlow: true});
+    const t1 = setTimeout(() => openFlow('braindump'), 2000);
+    const t2 = setTimeout(() => setCloseSeq(prev => prev + 1), 4500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+    // Run once after config hydration.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config !== null]);
 
   useEffect(() => {
     if (!DEV_AUTOPLAY) {
@@ -142,22 +190,6 @@ function AppContent() {
       setPanelOpen(true);
     } else if (element === 'back') {
       dispatch({type: 'forceCollapse'});
-    }
-  }, []);
-
-  // Opens the native braindump overlay (or one of its demo modes). Each open
-  // remounts the component (key below), so the flow always starts fresh.
-  const lastOpenAt = useRef(0);
-  const openFlow = useCallback((mode: FlowMode) => {
-    lastOpenAt.current = Date.now();
-    setPanelOpen(false);
-    setWhenOpen(false);
-    setFlowSeq(prev => prev + 1);
-    setFlowMode(mode);
-    // Stage 49: the RN flow keeps its own onboarding flag — the debug reset
-    // clears both worlds (the native mode:'reset' mount clears UserDefaults).
-    if (mode === 'reset') {
-      resetOnboarding();
     }
   }, []);
 
@@ -279,6 +311,7 @@ function AppContent() {
       {flowMode === 'braindump' && config.rnFlow && (
         <BraindumpFlow
           key={`rnflow:${flowSeq}`}
+          closeSeq={closeSeq}
           shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
           voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
           onClosed={() => {
