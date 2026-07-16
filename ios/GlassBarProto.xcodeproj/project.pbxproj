@@ -59,6 +59,7 @@
 		C1F2CE06F559263F80D2D129 /* UpArrowShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3A47F8B82741A1DF8AACA8 /* UpArrowShape.swift */; };
 		C2F7EC5BC362922506414493 /* BrainDumpScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B87D21A07851C47FD7FE9C99 /* BrainDumpScreen.swift */; };
 		C43ABB53D61653710575D932 /* Metrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E82BFFD72DBFAD2A29BDE3E /* Metrics.swift */; };
+		C7A3F3EB77A07DC0DA9B979B /* NumoChromeComponentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0979CC3E60923D27EEDA255D /* NumoChromeComponentView.mm */; };
 		C7C98D2919F004BA2E8E316E /* ObviouslyNarrow-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8C66691A245D67914F89083A /* ObviouslyNarrow-Bold.ttf */; };
 		D2AA0FC5389DA06433CB581B /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E24436C79CA762B1D4F8EBE /* FlowLayout.swift */; };
 		D493C4E4DA0264BD679C0781 /* NumoFlowHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7745909A4B03E6120E476D76 /* NumoFlowHostView.swift */; };
@@ -68,6 +69,7 @@
 		E37FA91B28D2BD2EBADCC1BD /* PublicityTagsPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD4DFA3EF01A9C185082B32 /* PublicityTagsPill.swift */; };
 		E5107007FFEA66A633C4E7B6 /* WhenBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = E85598990D54C1F62D1D2A32 /* WhenBubble.swift */; };
 		E9B15638104322264F0845E6 /* VoiceButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0415E7510371B703740014BC /* VoiceButton.swift */; };
+		EA73349D17D5995A8303D5CA /* NumoChromeHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E687094C1FBE05EBE53839 /* NumoChromeHostView.swift */; };
 		F07166B5E78960A34667693A /* SegmentedSwitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0077D26209B7FA6F068FA873 /* SegmentedSwitch.swift */; };
 		F20CEF39F022B732F14CD1F1 /* NumericTextHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D609A3E94ADABD7F942DFB /* NumericTextHostView.swift */; };
 		F4260E6956026F86791DCED1 /* WeekStripDay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F088F168C3FBB3AAA4FC557 /* WeekStripDay.swift */; };
@@ -77,12 +79,14 @@
 
 /* Begin PBXFileReference section */
 		0077D26209B7FA6F068FA873 /* SegmentedSwitch.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SegmentedSwitch.swift; path = Components/SegmentedSwitch.swift; sourceTree = "<group>"; };
+		01140249973237D0C02B5585 /* NumoChromeComponentView.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = NumoChromeComponentView.h; sourceTree = "<group>"; };
 		01FBC2BF9E862CF99CE0679F /* ObviouslyNarrow-Semibold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "ObviouslyNarrow-Semibold.ttf"; path = "Resources/Fonts/ObviouslyNarrow-Semibold.ttf"; sourceTree = "<group>"; };
 		0415E7510371B703740014BC /* VoiceButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VoiceButton.swift; path = Stage3_Redesign/VoiceButton.swift; sourceTree = "<group>"; };
 		06CDB01EFF173BABB6E82392 /* Inter-Medium.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Inter-Medium.ttf"; path = "Resources/Fonts/Inter-Medium.ttf"; sourceTree = "<group>"; };
 		06F585F676884F496CC92DEF /* DumpItem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DumpItem.swift; path = Stage4_Dumped/DumpItem.swift; sourceTree = "<group>"; };
 		071654AAB1BBF9420B084129 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-GlassBarProto/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		08E85515F6CF1494FCDF0DCB /* TagsSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TagsSection.swift; path = Stage1_BrainDump/Sections/TagsSection.swift; sourceTree = "<group>"; };
+		0979CC3E60923D27EEDA255D /* NumoChromeComponentView.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = NumoChromeComponentView.mm; sourceTree = "<group>"; };
 		0BF52697A77076B20C1863FA /* CloseButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CloseButton.swift; path = Stage3_Redesign/CloseButton.swift; sourceTree = "<group>"; };
 		0E7EDFAE6A1E85FC7305D97C /* MorphChoreo.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MorphChoreo.swift; path = Morph/MorphChoreo.swift; sourceTree = "<group>"; };
 		0F0F59436D3C1A06A82F6D76 /* GhostSurface.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GhostSurface.swift; path = Stage3_Redesign/GhostSurface.swift; sourceTree = "<group>"; };
@@ -137,6 +141,7 @@
 		C98301FA08DFFE3AD9CBB716 /* ObviouslyNarrow-Medium.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "ObviouslyNarrow-Medium.ttf"; path = "Resources/Fonts/ObviouslyNarrow-Medium.ttf"; sourceTree = "<group>"; };
 		CEE7C79870440F727D3CD7A3 /* DumpedScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DumpedScreen.swift; path = Stage4_Dumped/DumpedScreen.swift; sourceTree = "<group>"; };
 		DBD4DFA3EF01A9C185082B32 /* PublicityTagsPill.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PublicityTagsPill.swift; path = Stage3_Redesign/PublicityTagsPill.swift; sourceTree = "<group>"; };
+		E3E687094C1FBE05EBE53839 /* NumoChromeHostView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NumoChromeHostView.swift; sourceTree = "<group>"; };
 		E484E549D930F64748EE0114 /* OrderSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrderSection.swift; path = Stage1_BrainDump/Sections/OrderSection.swift; sourceTree = "<group>"; };
 		E85598990D54C1F62D1D2A32 /* WhenBubble.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WhenBubble.swift; path = Stage4_Dumped/WhenBubble.swift; sourceTree = "<group>"; };
 		E9E8A94D529EC2FADE700B7F /* Obviously-Semibold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Obviously-Semibold.ttf"; path = "Resources/Fonts/Obviously-Semibold.ttf"; sourceTree = "<group>"; };
@@ -297,6 +302,9 @@
 				AB158219606E6F2DEDA6AD2B /* NumericTextComponentView.mm */,
 				C1D609A3E94ADABD7F942DFB /* NumericTextHostView.swift */,
 				ABBC0E5AA7B84B9ABD61FFE4 /* NumericTextComponentView.h */,
+				0979CC3E60923D27EEDA255D /* NumoChromeComponentView.mm */,
+				01140249973237D0C02B5585 /* NumoChromeComponentView.h */,
+				E3E687094C1FBE05EBE53839 /* NumoChromeHostView.swift */,
 			);
 			name = Numo;
 			path = Numo;
@@ -544,6 +552,8 @@
 				42F5297D7D213B73562D000A /* NumoFlowComponentView.mm in Sources */,
 				D5933F94F530C1538CB062E1 /* NumericTextComponentView.mm in Sources */,
 				F20CEF39F022B732F14CD1F1 /* NumericTextHostView.swift in Sources */,
+				C7A3F3EB77A07DC0DA9B979B /* NumoChromeComponentView.mm in Sources */,
+				EA73349D17D5995A8303D5CA /* NumoChromeHostView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -687,7 +697,7 @@
 					"-DRCT_REMOVE_LEGACY_ARCH=1",
 				);
 				PODFILE_DIR = "$(SRCROOT)";
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
@@ -762,7 +772,7 @@
 					"-DRCT_REMOVE_LEGACY_ARCH=1",
 				);
 				PODFILE_DIR = "$(SRCROOT)";
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;

@@ -13,7 +13,8 @@
         "GlassToolbar": "GlassToolbarComponentView",
         "GlassEdgeBlur": "GlassEdgeBlurComponentView",
         "NumoFlow": "NumoFlowComponentView",
-        "NumericText": "NumericTextComponentView"
+        "NumericText": "NumericTextComponentView",
+        "NumoChrome": "NumoChromeComponentView"
       }
     }
   }

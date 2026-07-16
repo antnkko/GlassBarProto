@@ -279,6 +279,8 @@ function AppContent() {
       {flowMode === 'braindump' && config.rnFlow && (
         <BraindumpFlow
           key={`rnflow:${flowSeq}`}
+          shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
+          voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
           onClosed={() => {
             setFlowMode('none');
             setWhenOpen(false);

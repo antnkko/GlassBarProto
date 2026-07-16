@@ -54,8 +54,8 @@ User-confirmed decisions:
 
 ## Stages
 
-### Stage 49 — Foundation + debug toggle
-- [ ] `src/flow/choreo.ts` — mirror `MorphChoreo.swift` 1:1 (names preserved):
+### Stage 49 — Foundation + debug toggle ✅ (commit 5fb9001)
+- [x] `src/flow/choreo.ts` — mirror `MorphChoreo.swift` 1:1 (names preserved):
       drawDown, consolePull=30, consoleGrowth=700, stretchDuration=1500,
       overlayFadeOut=180, coverStart≈250, riseSpring {d:380, ratio:0.88},
       coverHold=200, retractSpring {d:600, ratio:0.82}, ghostRise=120,
@@ -67,14 +67,14 @@ User-confirmed decisions:
       slideCloseStretch=24, stretchSpring {d:100, ratio:0.8}, dropSpring {d:320, ratio:1.0},
       bgFade easeOut 180, bottomFade easeOut 120; entrance cascade spring
       {mass:1, stiffness:416, damping:24.3} + offsets 30/30/50/70/90.
-- [ ] `src/flow/flowState.ts` — RN flow state machine (route/stage/morphPhase),
+- [x] `src/flow/flowState.ts` — RN flow state machine (route/stage/morphPhase),
       `numo.hasSeenOnboarding` via AsyncStorage; "reset onboarding" clears both
       AsyncStorage and the native UserDefaults (existing `mode:'reset'` path).
-- [ ] Debug toggle `flowImpl: 'native' | 'rn'` (persisted, switch in
-      `src/debug/DebugPanel.tsx`); `App.tsx` branches the "+" open between
+- [x] Debug toggle `rnFlow: boolean` in AppConfig (persisted, segmented switch
+      in `src/debug/DebugPanel.tsx`); `App.tsx` branches the "+" open between
       `NumoFlowView` (unchanged) and the new RN flow root.
-- [ ] Extract `redesign_bg` (+ `cross`, `picker_checkmark` if needed by RN) from
-      the Xcode asset catalog into `src/assets/`.
+- [x] Extract `redesign_bg` from the Xcode asset catalog into `src/assets/`
+      (cross/picker_checkmark not needed — the chrome stays native).
 
 ### Stage 50 — Redesigned canvas screen, static, in RN
 - [ ] New Fabric leaf **`NumoChrome`** (pattern of `NumericText`: codegen spec in

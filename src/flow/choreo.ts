@@ -7,12 +7,18 @@
  *   .spring(duration: d, bounce: b)          → {duration: d*1000, dampingRatio: 1 − b}
  *   .spring(response: r, dampingFraction: f) → {mass: 1, stiffness: (2π/r)², damping: f·2·√stiffness}
  *   .smooth(duration: d)                     → {duration: d*1000, dampingRatio: 1}
- *   .easeOut(duration: d)                    → withTiming {duration: d*1000, Easing.out(Easing.quad)}
+ *   .easeOut(duration: d)                    → withTiming {duration: d*1000, bezier(0, 0, 0.58, 1)}
  *
  * Keep names identical to the Swift constants so the two files diff cleanly.
  */
 import {Easing} from 'react-native-reanimated';
 import type {WithSpringConfig, WithTimingConfig} from 'react-native-reanimated';
+
+/** SwiftUI `.easeOut` is exactly cubic-bezier(0, 0, 0.58, 1). */
+const easeOut = (duration: number): WithTimingConfig => ({
+  duration,
+  easing: Easing.bezier(0, 0, 0.58, 1),
+});
 
 // ── Entrance cascade (BrainDumpEntrance.swift) ──────────────────────────────
 // All blocks release SIMULTANEOUSLY one frame after mount; the cascade look
@@ -30,7 +36,7 @@ export const Entrance = {
   /** Overlay fade-in starts this long after the entrance begins. */
   overlayRevealDelay: 120,
   /** Overlay fade-in duration (opacity 0→1). */
-  overlayFade: {duration: 300, easing: Easing.out(Easing.quad)} as WithTimingConfig,
+  overlayFade: easeOut(300),
 } as const;
 
 // ── MorphChoreo — Acts I / II / III (the "See how" morph) ───────────────────
@@ -38,7 +44,7 @@ export const MorphChoreo = {
   // Act I — stretch (the drawn bow: DOWN only, no rebound)
   /** How long the draw-down is held before the release fires. */
   stretchDuration: 1500,
-  overlayFadeOut: {duration: 180, easing: Easing.out(Easing.quad)} as WithTimingConfig,
+  overlayFadeOut: easeOut(180),
   /** .spring(duration: 0.7, bounce: 0) — smooth, non-overshooting draw-down. */
   drawDown: {duration: 700, dampingRatio: 1} as WithSpringConfig,
   /** Tension pull: banner + console drawn down a touch (down only). */
@@ -101,8 +107,8 @@ export const Slide = {
   closeDropSpring: {duration: 320, dampingRatio: 1} as WithSpringConfig,
   closeDropDur: 320,
   /** Bg fades faster than the drop → reveals home early. */
-  closeBgFade: {duration: 180, easing: Easing.out(Easing.quad)} as WithTimingConfig,
-  closeBottomFade: {duration: 120, easing: Easing.out(Easing.quad)} as WithTimingConfig,
+  closeBgFade: easeOut(180),
+  closeBottomFade: easeOut(120),
 } as const;
 
 // ── Onboarding overlay scrim (OnboardingOverlay.swift) ──────────────────────
