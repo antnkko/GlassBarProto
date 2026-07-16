@@ -201,3 +201,18 @@ home) plays end-to-end in one run with zero JS-thread work during timelines.
   Metro must run FROM the worktree or it serves the parent repo's bundle.
 - `simctl openurl` pops a confirm dialog (same reason DEV_AUTOPLAY exists) —
   use DEV_FLOW_AUTOPLAY for headless capture, not the glassbar:// URLs.
+
+### Stage 57 — device-feedback fixes (slide-up cover + glass spawn)
+- [x] Rise overshoot (−12) in both timelines — the duration-spring asymptote
+      left the canvas visibly short of the physical top before the retract.
+- [x] Artwork flip via useAnimatedReaction on ACTUAL coverage (sheetTop ≤ 0),
+      not a blind 180/380ms timer — no more early-artwork pop / "black" sliver.
+- [x] Opacity-free glass spawns (alpha over UIGlassEffect renders broken/black
+      on device — the black blobs at the canvas top + the dirty dark entrance
+      shadow): 'clip' (slide through the sheet clip / from behind the
+      keyboard) and 'pop' (scale 0.9→1 + native drop distances), switchable in
+      the dev panel (Braindump → Clip reveal / Scale pop). Gradient backdrop
+      still fades (plain view); glass alpha never animates. Scale must never
+      hit 0 (degenerate matrix permanently broke the hosted ✕ glyph).
+- [ ] Device check: both spawn modes vs native; confirm the black/dirty-shadow
+      artifacts are gone (sim renders a glass fallback — device is the proof).

@@ -65,6 +65,11 @@ export interface AppConfig {
   /** Stage 49: braindump flow implementation — native SwiftUI (NumoFlowView)
    *  vs the RN Reanimated port. Debug toggle for side-by-side comparison. */
   rnFlow: boolean;
+  /** Stage 57: how the Liquid Glass groups (top chrome + bottom cluster)
+   *  spawn. Opacity over UIGlassEffect renders broken/black on device, so
+   *  both variants are transform-only: 'clip' slides in through the sheet's
+   *  clip edges; 'pop' scales 0.9→1 with the native drop distances. */
+  glassSpawn: 'clip' | 'pop';
 }
 
 export const defaultConfig: AppConfig = {
@@ -96,6 +101,7 @@ export const defaultConfig: AppConfig = {
   voiceGlowOpacity: 0.5,
   // Native stays the default until the RN port is accepted (tasks/todo.md).
   rnFlow: false,
+  glassSpawn: 'clip',
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */

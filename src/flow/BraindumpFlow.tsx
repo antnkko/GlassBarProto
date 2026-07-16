@@ -18,6 +18,7 @@ import {Keyboard, StyleSheet, TextInput, View, useWindowDimensions} from 'react-
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Animated, {
   runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -42,6 +43,11 @@ const CARD_RADIUS = 36; // Metrics.cardRadius — kept through the flight
  *  position): (bannerHeight − bannerOverlap) + cardTopMargin + consolePull. */
 const CONSOLE_TOP = 128 - 64 + 3 + MorphChoreo.consolePull; // 97
 
+/** Stage 57: the rise targets a few px ABOVE the top edge — the duration
+ *  spring's asymptote left the sheet visibly short of y=0 before the retract
+ *  pulled it back (the canvas never touched the physical top). */
+const COVER_OVERSHOOT = 12;
+
 interface Props {
   /** The flow finished closing — unmount the overlay. */
   onClosed: () => void;
@@ -53,6 +59,9 @@ interface Props {
   onOnboardingComplete?: () => void;
   /** Dev-only (autoplay): trigger "See how" this long after mount. */
   autoMorphAfterMs?: number;
+  /** Stage 57: transform-only spawn mechanic for the Liquid Glass groups
+   *  (alpha over UIGlassEffect renders broken/black on device). */
+  glassSpawn?: 'clip' | 'pop';
   /** When-picker state — owned by App (single source for native + RN paths,
    *  and drivable by the dev autoplay). */
   whenOpen: boolean;
@@ -71,6 +80,7 @@ export function BraindumpFlow({
   onboarding = false,
   onOnboardingComplete,
   autoMorphAfterMs,
+  glassSpawn = 'clip',
   whenOpen,
   onWhenOpenChange,
   closeSeq = 0,
@@ -111,12 +121,12 @@ export function BraindumpFlow({
     }
     inputRef.current?.focus();
     const downDelay = Slide.riseDur + Slide.coverHold;
+    // Rise past the top edge (COVER_OVERSHOOT) so the cover is real; the bg
+    // flips via the sheetTop reaction below the moment coverage happens.
     sheetTop.value = withSequence(
-      withSpring(0, Slide.riseSpring),
+      withSpring(-COVER_OVERSHOOT, Slide.riseSpring),
       withSpring(insets.top, Slide.retractSpring),
     );
-    // Set the Figma bg under full cover — an instant flip, never animated.
-    bgOpacity.value = withDelay(Slide.riseDur, withTiming(1, {duration: 1}));
     // Corner radius stays 36 through the flight; only the resting sheet is 48.
     radius.value = withDelay(downDelay, withSpring(SHEET_TOP_RADIUS, Slide.retractSpring));
     // Chrome lands after the bg is revealed; the bottom group launches early
@@ -182,15 +192,15 @@ export function BraindumpFlow({
       // old placeholder) — flipping its opacity commits NOTHING.
       canvasOpacity.value = 1;
 
-      // Act II — fly up to full cover; ghost header out on the same spring;
-      // bg swaps to the artwork UNDER the cover; hold; retract to rest.
+      // Act II — fly up to full cover (past the top edge, see COVER_OVERSHOOT);
+      // ghost header out on the same spring; the bg swaps to the artwork the
+      // moment coverage is REAL (sheetTop reaction); hold; retract to rest.
       const retractDelay = MorphChoreo.riseDur + MorphChoreo.coverHold;
       sheetTop.value = withSequence(
-        withSpring(0, MorphChoreo.riseSpring),
+        withSpring(-COVER_OVERSHOOT, MorphChoreo.riseSpring),
         withDelay(MorphChoreo.coverHold, withSpring(insets.top, MorphChoreo.retractSpring)),
       );
       ghost.value = withSpring(1, MorphChoreo.riseSpring);
-      bgOpacity.value = withDelay(MorphChoreo.riseDur, withTiming(1, {duration: 1}));
       radius.value = withDelay(
         retractDelay,
         withSpring(SHEET_TOP_RADIUS, MorphChoreo.retractSpring),
@@ -213,7 +223,6 @@ export function BraindumpFlow({
 
     return release;
   }, [
-    bgOpacity,
     canvasOpacity,
     chromeIn,
     flowBus,
@@ -235,6 +244,19 @@ export function BraindumpFlow({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The bg flips to the artwork the FIRST moment the sheet actually covers
+  // the screen (top edge at/past y=0) — never on a blind timer, which used to
+  // pop the artwork in while the rise was still a few px short (Stage 57).
+  // One-way: the retract/rest never brings sheetTop back to ≤0.
+  useAnimatedReaction(
+    () => sheetTop.value,
+    v => {
+      if (v <= 0 && bgOpacity.value < 1) {
+        bgOpacity.value = 1;
+      }
+    },
+  );
 
   const bgStyle = useAnimatedStyle(() => ({opacity: bgOpacity.value}));
   const sheetStyle = useAnimatedStyle(() => ({
@@ -287,6 +309,7 @@ export function BraindumpFlow({
           inputRef={inputRef}
           chromeIn={chromeIn}
           closeY={closeY}
+          glassSpawn={glassSpawn}
           morph={onboarding ? {ghost, placeholderP} : undefined}
           onCloseTap={close}
           onClearTap={() => {
@@ -305,6 +328,7 @@ export function BraindumpFlow({
         onWhenOpenChange={onWhenOpenChange}
         flowBus={flowBus}
         voiceGlow={voiceGlow}
+        glassSpawn={glassSpawn}
       />
     </View>
   );

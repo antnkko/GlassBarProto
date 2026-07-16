@@ -7,7 +7,7 @@
  * live in MorphingShell.
  */
 import React, {useEffect, useRef} from 'react';
-import {Dimensions, Keyboard, Pressable, StyleSheet, View} from 'react-native';
+import {Dimensions, Keyboard, Pressable, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {LinearGradient} from 'expo-linear-gradient';
 import Animated, {
@@ -30,12 +30,20 @@ import {closeSpring, entrySpring, fadeOut120, keyboardEasing, openSpring} from '
 const HEADER_PAD_V = 20;
 const CLOSE_SIZE = 48;
 
+/** Stage 57 'clip' spawn park: the glass content sits fully below the screen
+ *  bottom / behind the keyboard (content ≈142 + shadow bleed) pre-beat. */
+const BAR_PARK = 180;
+
 type Props = {
   whenOpen: boolean;
   onWhenOpenChange: (open: boolean) => void;
   flowBus: FlowBus;
   /** Voice button inner glow (dev-panel tunable). */
   voiceGlow?: {radius: number; opacity: number};
+  /** Stage 57: transform-only spawn for the glass content (alpha over
+   *  UIGlassEffect renders broken/black on device); the white gradient
+   *  backdrop still fades — it's a plain RN view. */
+  glassSpawn?: 'clip' | 'pop';
   onVoiceTap?: () => void;
 };
 
@@ -44,13 +52,19 @@ export function BraindumpBottomBar({
   onWhenOpenChange,
   flowBus,
   voiceGlow,
+  glassSpawn = 'clip',
   onVoiceTap,
 }: Props) {
   // Keyboard top — the cluster sits right above it (the native bar used the
   // bottom safe-area inset, which the keyboard replaces wholesale).
   const kbH = useSharedValue(0);
-  // Entry/exit choreography (native MorphChoreo beats, event-driven).
-  const entryY = useSharedValue<number>(entry.slideRise);
+  // Entry/exit choreography (native MorphChoreo beats, event-driven). The
+  // glass content hides pre-beat by TRANSFORM only: parked behind the
+  // keyboard/bottom edge in BOTH modes (scale must never hit 0 — a degenerate
+  // matrix breaks hosted native rendering).
+  const entryY = useSharedValue<number>(BAR_PARK);
+  const contentScale = useSharedValue(1);
+  // The gradient backdrop's fade (plain RN view — alpha is safe here).
   const entryOpacity = useSharedValue(0);
   // Open progress (0..1) — drives the symmetric-gap lift so the picker's top
   // gap to the header matches the header's own top gap (device-independent).
@@ -85,29 +99,44 @@ export function BraindumpBottomBar({
       flowBus.on(type => {
         switch (type) {
           case 'barEnterSlide':
-            // +40pt rise + fade-in, both on the entry spring (native applies
-            // one withAnimation to opacity and offset together).
-            entryY.value = entry.slideRise;
+            // Glass content: transform-only spawn (Stage 57). 'pop' = the
+            // native +40 rise with a 0.9→1 scale pop; 'clip' = rise from
+            // behind the keyboard/bottom edge. The gradient fades as before.
+            if (glassSpawn === 'pop') {
+              entryY.value = entry.slideRise;
+              contentScale.value = 0.9;
+              contentScale.value = withSpring(1, entrySpring);
+            } else {
+              entryY.value = BAR_PARK;
+            }
             entryY.value = withSpring(0, entrySpring);
             entryOpacity.value = withSpring(1, entrySpring);
             break;
           case 'barEnterMorph':
             // +280pt rise, no fade (the morph variant enters fully opaque).
             entryOpacity.value = 1;
+            contentScale.value = 1;
             entryY.value = entry.morphRise;
             entryY.value = withSpring(0, entrySpring);
             break;
           case 'closing':
+            // Gradient fades out (native); the glass content slides down
+            // behind the keyboard on the same quick ease — alpha never
+            // touches the glass (Stage 57).
             entryOpacity.value = withTiming(0, fadeOut120);
+            entryY.value = withTiming(BAR_PARK, fadeOut120);
             break;
           case 'clearWhen':
             shellRef.current?.reset();
             break;
         }
       }),
-    [entryOpacity, entryY, flowBus],
+    [contentScale, entryOpacity, entryY, flowBus, glassSpawn],
   );
 
+  // The cluster root carries ONLY the keyboard ride + picker lift; the entry/
+  // exit choreography is split (Stage 57): the gradient FADES (plain view),
+  // the glass content moves by TRANSFORM only — its alpha never changes.
   const clusterStyle = useAnimatedStyle(() => {
     // When open, lift the cluster so the picker's top lands at pickerTopTarget
     // (symmetric gap to the header). Only lifts UP (never pushes below the
@@ -116,41 +145,49 @@ export function BraindumpBottomBar({
     const lift =
       openH.value > 0 ? openP.value * Math.max(0, pickerTopNow - pickerTopTarget) : 0;
     return {
-      opacity: entryOpacity.value,
-      transform: [{translateY: -kbH.value + entryY.value - lift}],
+      transform: [{translateY: -kbH.value - lift}],
     };
   });
+  const gradientStyle = useAnimatedStyle(() => ({opacity: entryOpacity.value}));
+  const contentStyle = useAnimatedStyle(() => ({
+    transform: [{translateY: entryY.value}, {scale: contentScale.value}],
+  }));
 
   return (
     <Animated.View
       pointerEvents="box-none"
       style={[{position: 'absolute', left: 0, right: 0, bottom: 0}, clusterStyle]}>
       {/* White backdrop ramp behind the cluster (RedesignedScreen's gradient). */}
-      <LinearGradient
-        pointerEvents="none"
-        colors={[
-          'rgba(255,255,255,0)',
-          'rgba(255,255,255,0.12)',
-          'rgba(255,255,255,0.5)',
-          'rgba(255,255,255,0.85)',
-          color.white,
-          color.white,
-        ]}
-        locations={[0, 0.095, 0.15, 0.21, bar.gradientSolidStop, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, gradientStyle]}>
+        <LinearGradient
+          pointerEvents="none"
+          colors={[
+            'rgba(255,255,255,0)',
+            'rgba(255,255,255,0.12)',
+            'rgba(255,255,255,0.5)',
+            'rgba(255,255,255,0.85)',
+            color.white,
+            color.white,
+          ]}
+          locations={[0, 0.095, 0.15, 0.21, bar.gradientSolidStop, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
       {/* Tap-outside scrim over the gradient padding — closes the open picker;
           the shell renders on top and consumes its own touches. */}
       {whenOpen && (
         <Pressable style={StyleSheet.absoluteFill} onPress={() => onWhenOpenChange(false)} />
       )}
-      <View
+      <Animated.View
         pointerEvents="box-none"
-        style={{
-          paddingHorizontal: bar.padH,
-          paddingTop: bar.padTop,
-          paddingBottom: bar.padBottom,
-        }}>
+        style={[
+          {
+            paddingHorizontal: bar.padH,
+            paddingTop: bar.padTop,
+            paddingBottom: bar.padBottom,
+          },
+          contentStyle,
+        ]}>
         <MorphingShell
           whenOpen={whenOpen}
           onWhenOpenChange={onWhenOpenChange}
@@ -161,7 +198,7 @@ export function BraindumpBottomBar({
           }}
           shellRef={shellRef}
         />
-      </View>
+      </Animated.View>
     </Animated.View>
   );
 }

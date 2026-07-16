@@ -31,7 +31,10 @@ const INPUT_LINE_HEIGHT = 46; // ObviouslyNarrow-Bold 40
 const BACKDROP_DIM = 0.55;
 const BACKDROP_BLUR_INTENSITY = 8; // ≈ native backdropBlur 4pt radius
 
-const NEW_HEADER_DROP = -28; // MorphChoreo.newHeaderDrop
+const NEW_HEADER_DROP = -28; // MorphChoreo.newHeaderDrop (the 'pop' drop)
+/** 'clip' spawn park: fully above the sheet's overflow-hidden top edge
+ *  (chrome 88 + glass shadow bleed) — hidden with alpha untouched. */
+const CHROME_PARK = 120;
 
 const NEW_PLACEHOLDER = 'Type naturally: e.g.\n"meds 9am daily"';
 
@@ -54,6 +57,10 @@ type Props = {
   /** The sheet's close translate — the chrome counter-translates by −closeY
    *  so it stays screen-pinned and the descending sheet edge CROPS it. */
   closeY: SharedValue<number>;
+  /** Stage 57: transform-only chrome spawn (alpha over UIGlassEffect renders
+   *  broken/black on device — the old opacity fade caused the black blobs at
+   *  the canvas top + the dirty dark shadow during the entrance). */
+  glassSpawn: 'clip' | 'pop';
   /** Morph (viaMorph) reconstruction (Stage 54): the ghost Stage-1 header
    *  flies up (0→1 on the rise spring) and the placeholder cross-fades
    *  old→new with tracking 0.2→0.8 (0→1 on placeholderSwap). */
@@ -70,6 +77,7 @@ export function RedesignedCanvas({
   shadow,
   chromeIn,
   closeY,
+  glassSpawn,
   morph,
   inputRef,
 }: Props) {
@@ -104,13 +112,29 @@ export function RedesignedCanvas({
     }, 2000);
   }, []);
 
-  // Entrance drop (−28 → 0 + fade, newHeaderSpring drives chromeIn) and the
-  // close CROP: the chrome counter-translates by −closeY so it stays
-  // screen-pinned while the sheet's descending top edge eats it top-down.
-  const chromeStyle = useAnimatedStyle(() => ({
-    opacity: chromeIn.value,
-    transform: [{translateY: (1 - chromeIn.value) * NEW_HEADER_DROP - closeY.value}],
-  }));
+  // Entrance (chromeIn 0→1 on newHeaderSpring) — TRANSFORM-ONLY, the glass
+  // never leaves alpha 1 (Stage 57): 'clip' slides down from above the
+  // sheet's clip edge; 'pop' scale-pops 0.9→1 with the native −28 drop
+  // (hidden pre-beat via scale 0, not alpha). The close CROP counter-translate
+  // (−closeY, chrome screen-pinned while the sheet edge eats it) is unchanged.
+  const chromeStyle = useAnimatedStyle(() => {
+    const p = chromeIn.value;
+    if (glassSpawn === 'pop' && p > 0) {
+      // Scale NEVER reaches 0 — a degenerate transform matrix permanently
+      // broke the hosted SwiftUI image rendering (the ✕ glyph vanished).
+      return {
+        transform: [
+          {translateY: (1 - p) * NEW_HEADER_DROP - closeY.value},
+          {scale: 0.9 + 0.1 * p},
+        ],
+      };
+    }
+    // Pre-beat (both modes) + the whole 'clip' entrance: parked above the
+    // sheet's overflow-hidden top edge, alpha untouched.
+    return {
+      transform: [{translateY: (1 - p) * -CHROME_PARK - closeY.value}],
+    };
+  });
 
   // Morph reconstruction (fallback shared value keeps the hooks unconditional;
   // the morph prop is stable for the life of the mount).

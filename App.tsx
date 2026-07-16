@@ -327,6 +327,7 @@ function AppContent() {
           onboarding={!seenOnboarding}
           onOnboardingComplete={() => setSeenOnboarding(true)}
           autoMorphAfterMs={DEV_FLOW_AUTOPLAY ? 2500 : undefined}
+          glassSpawn={config.glassSpawn}
           whenOpen={whenOpen}
           onWhenOpenChange={setWhenOpen}
           closeSeq={closeSeq}
@@ -386,6 +387,7 @@ function AppContent() {
           onWhenOpenChange={setWhenOpen}
           flowBus={flowBus}
           voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
+          glassSpawn={config.glassSpawn}
         />
       )}
 

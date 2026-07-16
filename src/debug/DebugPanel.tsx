@@ -78,6 +78,17 @@ export default function DebugPanel({config, dark = false, onChange, onClose, onF
             <Text style={[s.hint, {color: pal.sub}]}>
               Імплементація флоу для «+» — порівняння side-by-side (Stage 49)
             </Text>
+            <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
+              values={['Clip reveal', 'Scale pop']}
+              selectedIndex={config.glassSpawn === 'pop' ? 1 : 0}
+              onChange={e =>
+                onChange({glassSpawn: e.nativeEvent.selectedSegmentIndex === 1 ? 'pop' : 'clip'})
+              }
+            />
+            <Text style={[s.hint, {color: pal.sub}]}>
+              Спавн глас-груп без opacity (alpha ламає матеріал) — Stage 57
+            </Text>
             <ActionRow
               pal={pal}
               label={didReset ? 'Onboarding reset ✓' : 'Reset onboarding'}
