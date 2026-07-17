@@ -49,6 +49,11 @@ const CONSOLE_TOP = 128 - 64 + 3 + MorphChoreo.consolePull; // 97
  *  pulled it back (the canvas never touched the physical top). */
 const COVER_OVERSHOOT = 12;
 
+/** Stage 59: the close's up-stretch now travels to the PHYSICAL top (safeTop
+ *  + overshoot ≈ 70pt, vs the native 24) — same anticipation feel, slightly
+ *  longer perceptual duration for the longer travel. */
+const CLOSE_TO_TOP_SPRING = {duration: 160, dampingRatio: 0.8};
+
 interface Props {
   /** The flow finished closing — the overlay is hidden/reset (persistent
    *  direct path) or should unmount (onboarding path). */
@@ -123,6 +128,8 @@ export function BraindumpFlow({
   // Stage 58: UI-thread beat channel into the bottom cluster (JS timers
   // drifted → the bar arrived late and the open read jerky).
   const barBeat = useSharedValue<number>(BAR_BEAT.idle);
+  // Stage 59: gates the cover flip's direction (1 while closing).
+  const closeIntent = useSharedValue(0);
 
   // Park every animated value at the pre-open pose (used at mount and after
   // every close — the persistent flow re-arms instead of remounting). Keep
@@ -135,8 +142,12 @@ export function BraindumpFlow({
     chromeIn.value = 0;
     canvasOpacity.value = 1;
     barBeat.value = BAR_BEAT.reset;
+    closeIntent.value = 0;
     closing.current = false;
-  }, [barBeat, bgOpacity, canvasOpacity, chromeIn, closeY, radius, sheetTop, windowH]);
+    // Release the first responder so the NEXT open's focus() re-presents the
+    // keyboard (a stale responder on the hidden input swallowed it).
+    inputRef.current?.blur();
+  }, [barBeat, bgOpacity, canvasOpacity, chromeIn, closeIntent, closeY, radius, sheetTop, windowH]);
 
   // OPEN — runSlideUpTimeline: keyboard rises with the canvas; the white
   // canvas rises to touch the top (bg unseen), the artwork is set under full
@@ -149,7 +160,11 @@ export function BraindumpFlow({
     }
     setActive(true);
     park();
-    inputRef.current?.focus();
+    // Focus on the NEXT frame, after the activation commit — focusing the
+    // hidden pre-mounted input in the same tick failed to present the
+    // keyboard (the native flow defers focus one runloop for the same
+    // reason). The keyboard still rises together with the canvas.
+    requestAnimationFrame(() => inputRef.current?.focus());
     const downDelay = Slide.riseDur + Slide.coverHold;
     // Rise past the top edge (COVER_OVERSHOOT) so the cover is real; the bg
     // flips via the sheetTop reaction below the moment coverage happens.
@@ -192,11 +207,15 @@ export function BraindumpFlow({
       return;
     }
     closing.current = true;
+    closeIntent.value = 1;
     barBeat.value = BAR_BEAT.closing; // bottom cluster hides fast (UI thread)
     Keyboard.dismiss();
-    bgOpacity.value = withTiming(0, Slide.closeBgFade);
+    // Stage 59 (user-requested): the canvas first rides UP to the physical
+    // top edge — visually "taking the picture with it" — the artwork is
+    // flipped out UNDER the cover (reaction below), then the canvas drops,
+    // revealing Home. (Replaces the native −24 anticipation + parallel fade.)
     closeY.value = withSequence(
-      withSpring(-Slide.closeStretch, Slide.closeStretchSpring),
+      withSpring(-(insets.top + COVER_OVERSHOOT), CLOSE_TO_TOP_SPRING),
       withSpring(windowH, Slide.closeDropSpring, finished => {
         'worklet';
 
@@ -205,7 +224,7 @@ export function BraindumpFlow({
         }
       }),
     );
-  }, [barBeat, bgOpacity, closeY, onCloseSettled, windowH]);
+  }, [barBeat, closeIntent, closeY, insets.top, onCloseSettled, windowH]);
 
   // Dev hook: glassbar://closeflow bumps closeSeq → run the close timeline.
   // Fire only on a VALUE CHANGE — `close`'s identity shifts across renders,
@@ -275,7 +294,7 @@ export function BraindumpFlow({
     );
     // Non-visual side effects (keyboard focus, persistence) stay on a timer.
     setTimeout(() => {
-      inputRef.current?.focus();
+      requestAnimationFrame(() => inputRef.current?.focus());
       setSeenOnboarding();
       onOnboardingComplete?.();
     }, T + buttonsDelay + MorphChoreo.textAfterButtons);
@@ -302,15 +321,20 @@ export function BraindumpFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // The bg flips to the artwork the FIRST moment the sheet actually covers
-  // the screen (top edge at/past y=0) — never on a blind timer, which used to
-  // pop the artwork in while the rise was still a few px short (Stage 57).
-  // One-way: the retract/rest never brings sheetTop back to ≤0.
+  // Cover flips, both directions gated on ACTUAL coverage (top edge at/past
+  // y=0) — never on blind timers (Stage 57/59):
+  //  - OPEN: artwork appears the moment the rising sheet covers the screen.
+  //  - CLOSE: artwork disappears the moment the up-stretch covers the screen
+  //    (closeIntent gates it so the open's cover doesn't flip it back off).
   useAnimatedReaction(
-    () => sheetTop.value,
-    v => {
-      if (v <= 0 && bgOpacity.value < 1) {
-        bgOpacity.value = 1;
+    () => sheetTop.value + closeY.value,
+    top => {
+      if (top <= 0) {
+        if (closeIntent.value === 1 && bgOpacity.value > 0) {
+          bgOpacity.value = 0;
+        } else if (closeIntent.value === 0 && bgOpacity.value < 1) {
+          bgOpacity.value = 1;
+        }
       }
     },
   );

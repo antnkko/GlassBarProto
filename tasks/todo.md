@@ -241,3 +241,14 @@ home) plays end-to-end in one run with zero JS-thread work during timelines.
       Stage-55 anti-pattern) — belongs to the picker session, pass along.
 - [ ] Device eval: Release build on the phone (needs the user's go — the
       phone is assigned to the picker session).
+
+### Stage 59 — device feedback round 2 ✅
+- [x] Dark top stripe: removed ALL clipping ancestors over glass (curtain
+      reveal for the chrome; bar returns to the parked rise over the light
+      keyboard backdrop).
+- [x] Keyboard-on-open regression: blur() in park(), focus on the next frame.
+- [x] Close touches the physical top (user-requested deviation from native):
+      up-stretch to −(safeTop+12) on {160ms, 0.8}, artwork flipped out UNDER
+      the cover (closeIntent-gated reaction), home revealed by the drop.
+- [ ] Device check (Release): stripe gone? keyboard rises with the canvas?
+      close feel correct?

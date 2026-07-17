@@ -67,3 +67,12 @@
 - **Sim app → custom Metro port**: SIMCTL_CHILD_RCT_METRO_PORT doesn't reach
   RN 0.86; write defaults instead: `simctl spawn <sim> defaults write
   <bundleid> RCT_jsLocation "localhost:8082"`.
+
+## 2026-07-17 — Stage 59
+- **Third way to break Liquid Glass: masksToBounds over it.** overflow:hidden
+  on an ancestor of UIGlassEffect produced a permanent dark stroke on the
+  buttons' top edge. Full list now: ancestor alpha<1, scale 0, ancestor
+  clipping. Hide/reveal glass ONLY with opaque occluders (curtain views) or
+  by real motion over a similar-luminance backdrop.
+- **focus() on a hidden pre-mounted TextInput fails silently** — blur() in
+  the reset path + focus on the next frame after the activation commit.

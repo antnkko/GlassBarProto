@@ -134,28 +134,24 @@ export function RedesignedCanvas({
     }, 500);
   }, []);
 
-  // Entrance (chromeIn 0→1 on newHeaderSpring) — the glass never fades AND,
-  // in 'clip' mode, never MOVES (Stage 58): iOS 26 Liquid Glass adapts to the
-  // luminance it samples, so a chrome that slides in from over the dark
-  // artwork arrives dark-adapted and visibly "normalizes" in place. The
-  // stationary-glass unveil: the WINDOW (overflow hidden) translates −u while
-  // the leaf counters +u — the pair cancels, the glass layer is screen-
-  // stationary over its real white backdrop the whole rise, and the moving
-  // clip edge reveals it top-down. u: 88→0 on newHeaderSpring.
-  // The close CROP counter-translate (−closeY) rides the window.
-  const chromeWindowStyle = useAnimatedStyle(() => {
-    const u = glassSpawn === 'clip' ? (1 - chromeIn.value) * CHROME_HEIGHT : 0;
-    return {transform: [{translateY: -u - closeY.value}]};
-  });
+  // Entrance (chromeIn 0→1 on newHeaderSpring) — Stage 59: the glass leaf is
+  // fully STATIC, unclipped and alpha-1 for its whole life (masksToBounds
+  // over UIGlassEffect degraded the material — the dark top stripe — the
+  // same class of bug as alpha<1 and scale-0). 'clip' reveals it with an
+  // opaque WHITE CURTAIN that slides up out of the sheet (the sheet's own
+  // clip crops the curtain; the glass is never touched). The close CROP
+  // counter-translate applies only on the DOWNWARD drop (−max(closeY, 0)) —
+  // during the close's up-stretch the chrome rides with the sheet.
   const chromeLeafStyle = useAnimatedStyle(() => {
     const p = chromeIn.value;
+    const crop = -Math.max(closeY.value, 0);
     if (glassSpawn === 'pop') {
       if (p > 0) {
         // Scale NEVER reaches 0 — a degenerate transform matrix permanently
         // broke the hosted SwiftUI image rendering (the ✕ glyph vanished).
         return {
           transform: [
-            {translateY: (1 - p) * NEW_HEADER_DROP},
+            {translateY: (1 - p) * NEW_HEADER_DROP + crop},
             {scale: 0.9 + 0.1 * p},
           ],
         };
@@ -163,8 +159,13 @@ export function RedesignedCanvas({
       // Pre-beat: parked above the sheet's clip edge, alpha untouched.
       return {transform: [{translateY: -CHROME_PARK}]};
     }
-    return {transform: [{translateY: (1 - p) * CHROME_HEIGHT}]};
+    return {transform: [{translateY: crop}]};
   });
+  // The curtain: covers the chrome slot pre-beat; slides UP out of the sheet
+  // on the beat (the sheet's overflow clip crops it away).
+  const curtainStyle = useAnimatedStyle(() => ({
+    transform: [{translateY: -chromeIn.value * (CHROME_PARK + CHROME_HEIGHT)}],
+  }));
 
   // Morph reconstruction (fallback shared value keeps the hooks unconditional;
   // the morph prop is stable for the life of the mount).
@@ -186,12 +187,7 @@ export function RedesignedCanvas({
     <View style={styles.fill} pointerEvents="box-none">
       {/* Top chrome — the native Fabric leaf; the cluster swap runs on native
           springs, the container animates on the RN timelines (worklets). */}
-      <Animated.View
-        style={[
-          styles.chrome,
-          glassSpawn === 'clip' && styles.chromeClipWindow,
-          chromeWindowStyle,
-        ]}>
+      <View style={styles.chrome}>
         <Animated.View style={[styles.fill, chromeLeafStyle]}>
           <NumoChromeView
             style={styles.fill}
@@ -212,7 +208,12 @@ export function RedesignedCanvas({
           }}
           />
         </Animated.View>
-      </Animated.View>
+        {/* The reveal curtain ('clip'): opaque white over the chrome slot,
+            slides up on the beat; the sheet's clip eats it. */}
+        {glassSpawn === 'clip' && (
+          <Animated.View pointerEvents="none" style={[styles.curtain, curtainStyle]} />
+        )}
+      </View>
 
       {/* Input zone with the custom placeholder (exact 46pt line height). */}
       <View style={styles.inputZone}>
@@ -266,7 +267,14 @@ export function RedesignedCanvas({
 const styles = StyleSheet.create({
   fill: {flex: 1},
   chrome: {height: CHROME_HEIGHT, alignSelf: 'stretch'},
-  chromeClipWindow: {overflow: 'hidden'},
+  curtain: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: CHROME_HEIGHT + 40, // covers the slot + the buttons' shadow bleed
+    backgroundColor: color.white,
+  },
   inputZone: {flex: 1},
   placeholder: {
     position: 'absolute',

@@ -62,15 +62,14 @@ export function BraindumpBottomBar({
   // Keyboard top — the cluster sits right above it (the native bar used the
   // bottom safe-area inset, which the keyboard replaces wholesale).
   const kbH = useSharedValue(0);
-  // Stage 58 stationary-glass unveil ('clip'): the glass content sits at its
-  // FINAL position from mount (the material samples its real backdrop and is
-  // fully adapted at reveal — moving/fading it caused the boosted-shadow
-  // artifact); a clip WINDOW translated by `unveilV` (content counter −v)
-  // hides/reveals it. `entryY` moves the content itself only where native
-  // does (the morph's +280 rise, the 'pop' drop). Scale never hits 0
-  // (degenerate matrices break hosted native rendering).
-  const unveilV = useSharedValue(glassSpawn === 'clip' ? BAR_PARK : 0);
-  const entryY = useSharedValue<number>(glassSpawn === 'pop' ? BAR_PARK : 0);
+  // Stage 59: NO clipping ancestors over the glass (masksToBounds over
+  // UIGlassEffect degrades the material — the dark-stripe class of bugs).
+  // The content hides pre-beat parked at +BAR_PARK behind the keyboard/
+  // bottom edge and springs up on the beat — the backdrop it traverses is
+  // the light keyboard/white gradient, so luminance adaptation is a
+  // non-issue on this path. Scale never hits 0 (degenerate matrices break
+  // hosted native rendering).
+  const entryY = useSharedValue<number>(BAR_PARK);
   const contentScale = useSharedValue(1);
   // The gradient backdrop's fade (plain RN view — alpha is safe here).
   const entryOpacity = useSharedValue(0);
@@ -100,38 +99,31 @@ export function BraindumpBottomBar({
           entryY.value = entry.slideRise;
           contentScale.value = 0.9;
           contentScale.value = withSpring(1, entrySpring);
-          entryY.value = withSpring(0, entrySpring);
         } else {
-          // Stationary-glass unveil: only the clip window moves.
-          unveilV.value = withSpring(0, entrySpring);
+          entryY.value = BAR_PARK; // rise from behind the keyboard edge
         }
+        entryY.value = withSpring(0, entrySpring);
         entryOpacity.value = withSpring(1, entrySpring);
       } else if (b === BAR_BEAT.enterMorph) {
         // +280pt rise, no fade (native-defined; emerges from behind the
-        // keyboard edge — the clip window sits open in 'clip' mode).
+        // keyboard edge).
         entryOpacity.value = 1;
         contentScale.value = 1;
-        unveilV.value = 0;
         entryY.value = entry.morphRise;
         entryY.value = withSpring(0, entrySpring);
       } else if (b === BAR_BEAT.reset) {
         // Instant park (persistent flow re-arm): hidden, no animation.
         entryOpacity.value = 0;
         contentScale.value = 1;
-        unveilV.value = glassSpawn === 'clip' ? BAR_PARK : 0;
-        entryY.value = glassSpawn === 'pop' ? BAR_PARK : 0;
+        entryY.value = BAR_PARK;
       } else if (b === BAR_BEAT.closing) {
-        // Gradient fades (native); the glass hides via the reverse unveil
-        // ('clip') / slide-down ('pop') — alpha never touches the glass.
+        // Gradient fades (native); the glass slides down behind the
+        // keyboard — alpha never touches the glass.
         entryOpacity.value = withTiming(0, fadeOut120);
-        if (glassSpawn === 'pop') {
-          entryY.value = withTiming(BAR_PARK, fadeOut120);
-        } else {
-          unveilV.value = withTiming(BAR_PARK, fadeOut120);
-        }
+        entryY.value = withTiming(BAR_PARK, fadeOut120);
       }
     },
-    [contentScale, entryOpacity, entryY, glassSpawn, unveilV],
+    [contentScale, entryOpacity, entryY, glassSpawn],
   );
 
   // UI-thread beat channel (RN flow).
@@ -175,16 +167,8 @@ export function BraindumpBottomBar({
     transform: [{translateY: -kbH.value}],
   }));
   const gradientStyle = useAnimatedStyle(() => ({opacity: entryOpacity.value}));
-  // The unveil pair: window +v / content −v cancel out, so the glass layer is
-  // screen-stationary while the moving clip edge reveals it.
-  const windowStyle = useAnimatedStyle(() => ({
-    transform: [{translateY: unveilV.value}],
-  }));
   const contentStyle = useAnimatedStyle(() => ({
-    transform: [
-      {translateY: -unveilV.value + entryY.value},
-      {scale: contentScale.value},
-    ],
+    transform: [{translateY: entryY.value}, {scale: contentScale.value}],
   }));
 
   return (
@@ -212,34 +196,24 @@ export function BraindumpBottomBar({
       {pickerShown && (
         <Pressable style={StyleSheet.absoluteFill} onPress={() => onOpenPickerChange('none')} />
       )}
-      {/* Clip window ('clip' spawn): translated by +unveilV while the content
-          counters with −unveilV — the glass never moves during the unveil. */}
       <Animated.View
         pointerEvents="box-none"
-        style={[glassSpawn === 'clip' && styles.unveilWindow, windowStyle]}>
-        <Animated.View
-          pointerEvents="box-none"
-          style={[
-            {
-              paddingHorizontal: bar.padH,
-              paddingTop: bar.padTop,
-              paddingBottom: bar.padBottom,
-            },
-            contentStyle,
-          ]}>
-          <MorphingShell
-            openPicker={openPicker}
-            onOpenPickerChange={onOpenPickerChange}
-            onVoiceTap={onVoiceTap}
-            voiceGlow={voiceGlow}
-            shellRef={shellRef}
-          />
-        </Animated.View>
+        style={[
+          {
+            paddingHorizontal: bar.padH,
+            paddingTop: bar.padTop,
+            paddingBottom: bar.padBottom,
+          },
+          contentStyle,
+        ]}>
+        <MorphingShell
+          openPicker={openPicker}
+          onOpenPickerChange={onOpenPickerChange}
+          onVoiceTap={onVoiceTap}
+          voiceGlow={voiceGlow}
+          shellRef={shellRef}
+        />
       </Animated.View>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  unveilWindow: {overflow: 'hidden'},
-});
