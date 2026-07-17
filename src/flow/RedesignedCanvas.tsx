@@ -42,6 +42,9 @@ const NEW_PLACEHOLDER = 'Type naturally: e.g.\n"meds 9am daily"';
 const SAMPLE_TAGS = ['House 01', 'Work', 'Ideas', 'Groceries', 'Trip'];
 
 type Props = {
+  /** Persistent flow: a bump re-arms the canvas for a fresh open (clears the
+   *  input/tag — what the per-open remount used to do). */
+  resetSeq?: number;
   /** Which picker is open ('none' | 'when' | 'routine') — drives the native
    *  chrome swap; the header title latches on open (native pickerTitle). */
   openPicker: PickerKind;
@@ -72,6 +75,7 @@ type Props = {
 };
 
 export function RedesignedCanvas({
+  resetSeq = 0,
   openPicker,
   onCloseTap,
   onClearTap,
@@ -85,6 +89,15 @@ export function RedesignedCanvas({
   inputRef,
 }: Props) {
   const [text, setText] = useState('');
+  // Persistent flow: each open starts clean (the remount used to do this).
+  useEffect(() => {
+    if (resetSeq > 0) {
+      setText('');
+      setTag('');
+      tagToken.current += 1;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSeq]);
   // Auto-detected tag demo: 0.5s after the last keystroke a random tag appears
   // in the publicity pill (one tag max); clearing the text retires it.
   const [tag, setTag] = useState('');
@@ -121,28 +134,36 @@ export function RedesignedCanvas({
     }, 500);
   }, []);
 
-  // Entrance (chromeIn 0→1 on newHeaderSpring) — TRANSFORM-ONLY, the glass
-  // never leaves alpha 1 (Stage 57): 'clip' slides down from above the
-  // sheet's clip edge; 'pop' scale-pops 0.9→1 with the native −28 drop
-  // (hidden pre-beat via scale 0, not alpha). The close CROP counter-translate
-  // (−closeY, chrome screen-pinned while the sheet edge eats it) is unchanged.
-  const chromeStyle = useAnimatedStyle(() => {
+  // Entrance (chromeIn 0→1 on newHeaderSpring) — the glass never fades AND,
+  // in 'clip' mode, never MOVES (Stage 58): iOS 26 Liquid Glass adapts to the
+  // luminance it samples, so a chrome that slides in from over the dark
+  // artwork arrives dark-adapted and visibly "normalizes" in place. The
+  // stationary-glass unveil: the WINDOW (overflow hidden) translates −u while
+  // the leaf counters +u — the pair cancels, the glass layer is screen-
+  // stationary over its real white backdrop the whole rise, and the moving
+  // clip edge reveals it top-down. u: 88→0 on newHeaderSpring.
+  // The close CROP counter-translate (−closeY) rides the window.
+  const chromeWindowStyle = useAnimatedStyle(() => {
+    const u = glassSpawn === 'clip' ? (1 - chromeIn.value) * CHROME_HEIGHT : 0;
+    return {transform: [{translateY: -u - closeY.value}]};
+  });
+  const chromeLeafStyle = useAnimatedStyle(() => {
     const p = chromeIn.value;
-    if (glassSpawn === 'pop' && p > 0) {
-      // Scale NEVER reaches 0 — a degenerate transform matrix permanently
-      // broke the hosted SwiftUI image rendering (the ✕ glyph vanished).
-      return {
-        transform: [
-          {translateY: (1 - p) * NEW_HEADER_DROP - closeY.value},
-          {scale: 0.9 + 0.1 * p},
-        ],
-      };
+    if (glassSpawn === 'pop') {
+      if (p > 0) {
+        // Scale NEVER reaches 0 — a degenerate transform matrix permanently
+        // broke the hosted SwiftUI image rendering (the ✕ glyph vanished).
+        return {
+          transform: [
+            {translateY: (1 - p) * NEW_HEADER_DROP},
+            {scale: 0.9 + 0.1 * p},
+          ],
+        };
+      }
+      // Pre-beat: parked above the sheet's clip edge, alpha untouched.
+      return {transform: [{translateY: -CHROME_PARK}]};
     }
-    // Pre-beat (both modes) + the whole 'clip' entrance: parked above the
-    // sheet's overflow-hidden top edge, alpha untouched.
-    return {
-      transform: [{translateY: (1 - p) * -CHROME_PARK - closeY.value}],
-    };
+    return {transform: [{translateY: (1 - p) * CHROME_HEIGHT}]};
   });
 
   // Morph reconstruction (fallback shared value keeps the hooks unconditional;
@@ -165,9 +186,15 @@ export function RedesignedCanvas({
     <View style={styles.fill} pointerEvents="box-none">
       {/* Top chrome — the native Fabric leaf; the cluster swap runs on native
           springs, the container animates on the RN timelines (worklets). */}
-      <Animated.View style={[styles.chrome, chromeStyle]}>
-        <NumoChromeView
-          style={styles.fill}
+      <Animated.View
+        style={[
+          styles.chrome,
+          glassSpawn === 'clip' && styles.chromeClipWindow,
+          chromeWindowStyle,
+        ]}>
+        <Animated.View style={[styles.fill, chromeLeafStyle]}>
+          <NumoChromeView
+            style={styles.fill}
           pickerOpen={pickerShown}
           pickerTitle={titleRef.current}
           tag={tag}
@@ -183,7 +210,8 @@ export function RedesignedCanvas({
               onConfirmTap();
             }
           }}
-        />
+          />
+        </Animated.View>
       </Animated.View>
 
       {/* Input zone with the custom placeholder (exact 46pt line height). */}
@@ -238,6 +266,7 @@ export function RedesignedCanvas({
 const styles = StyleSheet.create({
   fill: {flex: 1},
   chrome: {height: CHROME_HEIGHT, alignSelf: 'stretch'},
+  chromeClipWindow: {overflow: 'hidden'},
   inputZone: {flex: 1},
   placeholder: {
     position: 'absolute',

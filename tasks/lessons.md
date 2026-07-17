@@ -49,3 +49,21 @@
 
 2. **«Перенеси компонент 1:1» включає його анімацію — це acceptance, не «на потім».**
    SegmentedSwitch було портовано зі статичним thumb і заглушкою «withSpring пізніше», хоча користувач від початку просив компонент з його анімаціями. Правило: якщо у джерела (SwiftUI) є анімований стан — RN-порт має відразу їхати на сконвертованому спрінгу; статичний порт вважати незавершеним.
+
+## 2026-07-16 — Stage 58
+- **Liquid Glass adapts to sampled luminance over ~300ms.** A glass element
+  that slides in from over dark content arrives dark-adapted and visibly
+  normalizes. Spawning glass = stationary-glass unveil (clip-window +
+  counter-translate; the pair cancels so the layer never moves) — never park
+  glass over content that differs from its destination backdrop.
+- **JS timers are not a beat scheduler.** setTimeout→bus→spring drifts
+  (badly in Debug) and reads as jerky choreography; schedule every VISUAL
+  beat with withDelay/withSequence on the UI thread; keep timers only for
+  non-visual side effects (focus, persistence).
+- **Effects keyed on a seq must fire on VALUE CHANGE, not deps identity** —
+  an unstable callback dep re-ran the closeSeq effect after park() reset the
+  guard and a stray close fired mid-open (only the double-open test caught
+  it). Always test the SECOND cycle of any persistent/reset lifecycle.
+- **Sim app → custom Metro port**: SIMCTL_CHILD_RCT_METRO_PORT doesn't reach
+  RN 0.86; write defaults instead: `simctl spawn <sim> defaults write
+  <bundleid> RCT_jsLocation "localhost:8082"`.

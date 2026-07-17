@@ -27,7 +27,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import {BraindumpBottomBar} from '../braindump/BraindumpBottomBar';
+import {BAR_BEAT, BraindumpBottomBar} from '../braindump/BraindumpBottomBar';
 import type {PickerKind} from '../braindump/MorphingShell';
 import {createFlowBus} from '../braindump/flowEvents';
 import {color} from '../braindump/tokens';
@@ -50,8 +50,13 @@ const CONSOLE_TOP = 128 - 64 + 3 + MorphChoreo.consolePull; // 97
 const COVER_OVERSHOOT = 12;
 
 interface Props {
-  /** The flow finished closing — unmount the overlay. */
+  /** The flow finished closing — the overlay is hidden/reset (persistent
+   *  direct path) or should unmount (onboarding path). */
   onClosed: () => void;
+  /** Stage 58 persistent direct path: the flow stays MOUNTED and parked;
+   *  each bump of openSeq re-arms and plays the open timeline the same frame
+   *  (no per-open mount cost — the tap-latency fix). 0 = stay parked. */
+  openSeq?: number;
   /** First run (onboarding unseen): mount the Stage-1 brain dump with the
    *  entrance cascade instead of the direct slide-up, then the overlay and
    *  the 3-act "See how" morph (AppFlowCoordinator's openFromPlus path). */
@@ -78,6 +83,7 @@ interface Props {
 
 export function BraindumpFlow({
   onClosed,
+  openSeq = 0,
   onboarding = false,
   onOnboardingComplete,
   autoMorphAfterMs,
@@ -96,6 +102,9 @@ export function BraindumpFlow({
   const morphStarted = useRef(false);
   // ONE React commit at Act I start (disables Stage-1 scroll, guards taps).
   const [stretching, setStretching] = useState(false);
+  // Persistent path: gates hit-testing while parked (tiny commit per open —
+  // the full-subtree mount this replaces was the tap delay).
+  const [active, setActive] = useState(onboarding);
 
   // The animated surfaces. Initial values: direct open = the parked slide-up
   // state (sheet below the screen, Home showing through); onboarding = the
@@ -111,15 +120,35 @@ export function BraindumpFlow({
   const overlayOpacity = useSharedValue(0);
   const ghost = useSharedValue(0);
   const placeholderP = useSharedValue(0);
+  // Stage 58: UI-thread beat channel into the bottom cluster (JS timers
+  // drifted → the bar arrived late and the open read jerky).
+  const barBeat = useSharedValue<number>(BAR_BEAT.idle);
+
+  // Park every animated value at the pre-open pose (used at mount and after
+  // every close — the persistent flow re-arms instead of remounting). Keep
+  // EVERY value the timelines touch in here.
+  const park = useCallback(() => {
+    sheetTop.value = windowH;
+    closeY.value = 0;
+    radius.value = CARD_RADIUS;
+    bgOpacity.value = 0;
+    chromeIn.value = 0;
+    canvasOpacity.value = 1;
+    barBeat.value = BAR_BEAT.reset;
+    closing.current = false;
+  }, [barBeat, bgOpacity, canvasOpacity, chromeIn, closeY, radius, sheetTop, windowH]);
 
   // OPEN — runSlideUpTimeline: keyboard rises with the canvas; the white
   // canvas rises to touch the top (bg unseen), the artwork is set under full
-  // cover, then the canvas drops to rest with a bounce — revealing it.
+  // cover, then the canvas drops to rest with a bounce — revealing it. Every
+  // VISUAL beat is scheduled on the UI thread (withDelay), zero JS timers.
   // The onboarding path never runs it (Stage-1 mounts with its own entrance).
   useEffect(() => {
-    if (onboarding) {
+    if (onboarding || openSeq === 0) {
       return;
     }
+    setActive(true);
+    park();
     inputRef.current?.focus();
     const downDelay = Slide.riseDur + Slide.coverHold;
     // Rise past the top edge (COVER_OVERSHOOT) so the cover is real; the bg
@@ -136,11 +165,23 @@ export function BraindumpFlow({
       downDelay + Slide.buttonsLead,
       withSpring(1, MorphChoreo.newHeaderSpring),
     );
-    const barBeat = setTimeout(() => flowBus.emit('barEnterSlide'), Slide.bottomBarDelay);
-    return () => clearTimeout(barBeat);
-    // Mount-only: the timeline runs once per open (fresh mount per open).
+    barBeat.value = withDelay(
+      Slide.bottomBarDelay,
+      withTiming(BAR_BEAT.enterSlide, {duration: 1}),
+    );
+    // Per-open trigger (persistent mount).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [openSeq]);
+
+  // After the drop lands: persistent path parks + deactivates (stays
+  // mounted); the onboarding path unmounts via onClosed as before.
+  const onCloseSettled = useCallback(() => {
+    if (!onboarding) {
+      park();
+      setActive(false);
+    }
+    onClosed();
+  }, [onClosed, onboarding, park]);
 
   // CLOSE — runSlideDownTimeline: anticipation stretch up, then the canvas
   // drops straight off the bottom; keyboard dismisses simultaneously; the bg
@@ -151,7 +192,7 @@ export function BraindumpFlow({
       return;
     }
     closing.current = true;
-    flowBus.emit('closing'); // bottom cluster fades out fast
+    barBeat.value = BAR_BEAT.closing; // bottom cluster hides fast (UI thread)
     Keyboard.dismiss();
     bgOpacity.value = withTiming(0, Slide.closeBgFade);
     closeY.value = withSequence(
@@ -160,15 +201,20 @@ export function BraindumpFlow({
         'worklet';
 
         if (finished) {
-          runOnJS(onClosed)();
+          runOnJS(onCloseSettled)();
         }
       }),
     );
-  }, [bgOpacity, closeY, flowBus, onClosed, windowH]);
+  }, [barBeat, bgOpacity, closeY, onCloseSettled, windowH]);
 
   // Dev hook: glassbar://closeflow bumps closeSeq → run the close timeline.
+  // Fire only on a VALUE CHANGE — `close`'s identity shifts across renders,
+  // and re-running the effect after park() reset the closing guard used to
+  // re-trigger a stray close mid-open (the second-open bug).
+  const lastCloseSeq = useRef(0);
   useEffect(() => {
-    if (closeSeq > 0) {
+    if (closeSeq > 0 && closeSeq !== lastCloseSeq.current) {
+      lastCloseSeq.current = closeSeq;
       close();
     }
   }, [closeSeq, close]);
@@ -182,51 +228,61 @@ export function BraindumpFlow({
     morphStarted.current = true;
     setStretching(true); // one commit: scroll off (Act I disables scroll)
 
+    // Every VISUAL beat below is scheduled on the UI thread from t0
+    // (withDelay) — JS timers drifted and made the morph read stretched.
+    const T = MorphChoreo.stretchDuration;
+    const retractDelay = MorphChoreo.riseDur + MorphChoreo.coverHold;
+    const buttonsDelay = retractDelay + MorphChoreo.buttonsLead;
+
     // Act I — the drawn bow: overlay out fast, banner+console pull down,
     // console swells 700 pushing the sections off as one block. Held 1500ms.
     overlayOpacity.value = withTiming(0, MorphChoreo.overlayFadeOut);
     stretchP.value = withSpring(1, MorphChoreo.drawDown);
 
-    const release = setTimeout(() => {
-      // Invisible swap: the canvas was pre-mounted at the reconstructed frame
-      // (sheet top at the stretched console's top, radius 36, ghost header,
-      // old placeholder) — flipping its opacity commits NOTHING.
-      canvasOpacity.value = 1;
+    // Invisible swap at T: the canvas is pre-mounted at the reconstructed
+    // frame — the flip is a shared-value write, zero React commits.
+    canvasOpacity.value = withDelay(T, withTiming(1, {duration: 1}));
 
-      // Act II — fly up to full cover (past the top edge, see COVER_OVERSHOOT);
-      // ghost header out on the same spring; the bg swaps to the artwork the
-      // moment coverage is REAL (sheetTop reaction); hold; retract to rest.
-      const retractDelay = MorphChoreo.riseDur + MorphChoreo.coverHold;
-      sheetTop.value = withSequence(
+    // Act II — fly up to full cover (past the top edge, see COVER_OVERSHOOT);
+    // ghost header out on the same spring; the bg swaps to the artwork the
+    // moment coverage is REAL (sheetTop reaction); hold; retract to rest.
+    sheetTop.value = withDelay(
+      T,
+      withSequence(
         withSpring(-COVER_OVERSHOOT, MorphChoreo.riseSpring),
         withDelay(MorphChoreo.coverHold, withSpring(insets.top, MorphChoreo.retractSpring)),
-      );
-      ghost.value = withSpring(1, MorphChoreo.riseSpring);
-      radius.value = withDelay(
-        retractDelay,
-        withSpring(SHEET_TOP_RADIUS, MorphChoreo.retractSpring),
-      );
+      ),
+    );
+    ghost.value = withDelay(T, withSpring(1, MorphChoreo.riseSpring));
+    radius.value = withDelay(
+      T + retractDelay,
+      withSpring(SHEET_TOP_RADIUS, MorphChoreo.retractSpring),
+    );
 
-      // Act III — chrome drops in during the retract's settle; the bottom
-      // cluster rises +60ms later; then the placeholder swap + keyboard.
-      const buttonsDelay = retractDelay + MorphChoreo.buttonsLead;
-      chromeIn.value = withDelay(buttonsDelay, withSpring(1, MorphChoreo.newHeaderSpring));
-      setTimeout(() => {
-        flowBus.emit('barEnterMorph');
-      }, buttonsDelay + MorphChoreo.buttonsStagger);
-      setTimeout(() => {
-        placeholderP.value = withSpring(1, MorphChoreo.placeholderSwap);
-        inputRef.current?.focus();
-        setSeenOnboarding();
-        onOnboardingComplete?.();
-      }, buttonsDelay + MorphChoreo.textAfterButtons);
-    }, MorphChoreo.stretchDuration);
-
-    return release;
+    // Act III — chrome drops in during the retract's settle; the bottom
+    // cluster rises +60ms later; then the placeholder swap + keyboard.
+    chromeIn.value = withDelay(
+      T + buttonsDelay,
+      withSpring(1, MorphChoreo.newHeaderSpring),
+    );
+    barBeat.value = withDelay(
+      T + buttonsDelay + MorphChoreo.buttonsStagger,
+      withTiming(BAR_BEAT.enterMorph, {duration: 1}),
+    );
+    placeholderP.value = withDelay(
+      T + buttonsDelay + MorphChoreo.textAfterButtons,
+      withSpring(1, MorphChoreo.placeholderSwap),
+    );
+    // Non-visual side effects (keyboard focus, persistence) stay on a timer.
+    setTimeout(() => {
+      inputRef.current?.focus();
+      setSeenOnboarding();
+      onOnboardingComplete?.();
+    }, T + buttonsDelay + MorphChoreo.textAfterButtons);
   }, [
+    barBeat,
     canvasOpacity,
     chromeIn,
-    flowBus,
     ghost,
     insets.top,
     onOnboardingComplete,
@@ -269,7 +325,7 @@ export function BraindumpFlow({
   const canvasStyle = useAnimatedStyle(() => ({opacity: canvasOpacity.value}));
 
   return (
-    <View style={styles.root}>
+    <View style={styles.root} pointerEvents={active ? 'box-none' : 'none'}>
       {/* First run: Stage-1 brain dump + onboarding overlay UNDER everything —
           the morph's rising sheet covers it, the artwork then hides it. */}
       {onboarding && (
@@ -305,6 +361,7 @@ export function BraindumpFlow({
           the release flips only shared values. */}
       <Animated.View style={[styles.sheet, {height: windowH}, sheetStyle, canvasStyle]}>
         <RedesignedCanvas
+          resetSeq={openSeq}
           openPicker={openPicker}
           shadow={shadow}
           inputRef={inputRef}
@@ -330,6 +387,7 @@ export function BraindumpFlow({
         flowBus={flowBus}
         voiceGlow={voiceGlow}
         glassSpawn={glassSpawn}
+        beat={barBeat}
       />
     </View>
   );
@@ -347,6 +405,7 @@ const styles = StyleSheet.create({
     backgroundColor: color.white,
     borderTopLeftRadius: SHEET_TOP_RADIUS,
     borderTopRightRadius: SHEET_TOP_RADIUS,
+    borderCurve: 'continuous', // Apple squircle — matches the SwiftUI .continuous style
     overflow: 'hidden',
   },
 });

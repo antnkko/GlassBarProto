@@ -7,6 +7,7 @@
  */
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {LinearGradient} from 'expo-linear-gradient';
 import Animated, {useAnimatedStyle, type SharedValue} from 'react-native-reanimated';
 
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export function OnboardingOverlay({opacity, onSeeHow}: Props) {
+  const insets = useSafeAreaInsets();
   const style = useAnimatedStyle(() => ({opacity: opacity.value}));
   return (
     <Animated.View style={[StyleSheet.absoluteFill, style]}>
@@ -29,7 +31,9 @@ export function OnboardingOverlay({opacity, onSeeHow}: Props) {
         locations={[OverlayScrim.transparentStop, OverlayScrim.solidStop]}
         style={StyleSheet.absoluteFill}
       />
-      <View style={styles.content} pointerEvents="box-none">
+      <View
+        style={[styles.content, {paddingBottom: insets.bottom + 20}]}
+        pointerEvents="box-none">
         <Text style={styles.title}>{'Dumping tasks\njust got better!'}</Text>
         <PressFade onPress={onSeeHow}>
           <View style={styles.cta}>
@@ -49,7 +53,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     justifyContent: 'flex-end',
-    paddingBottom: 20,
   },
   title: {
     textAlign: 'center',
@@ -63,12 +66,13 @@ const styles = StyleSheet.create({
   cta: {
     marginTop: 36,
     marginHorizontal: 48,
-    borderRadius: 999,
+    // Exact capsule: label ~22 line + pads 18/22 = 62pt tall.
+    borderRadius: 31,
     backgroundColor: color.vibrant,
     alignItems: 'center',
-    // Native: vpad 18 + 4 bottom optical lift (Obviously sits high).
-    paddingTop: 22,
-    paddingBottom: 18,
+    // Native lifts the Obviously label UP: text bottom pad 4+18, top 18.
+    paddingTop: 18,
+    paddingBottom: 22,
   },
   ctaLabel: {
     fontFamily: font.semibold,

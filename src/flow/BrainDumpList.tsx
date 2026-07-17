@@ -440,6 +440,7 @@ const styles = StyleSheet.create({
     height: M.bannerHeight,
     borderTopLeftRadius: M.cardRadius,
     borderTopRightRadius: M.cardRadius,
+    borderCurve: 'continuous',
     overflow: 'hidden',
   },
   bannerBg: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0},
@@ -526,7 +527,7 @@ const styles = StyleSheet.create({
     paddingLeft: M.pillPadLeading,
     paddingRight: M.pillPadTrailing,
     paddingVertical: M.pillPadV,
-    borderRadius: 999,
+    borderRadius: (M.pillIcon + M.pillPadV * 2) / 2, // exact capsule (48pt tall)
     backgroundColor: color.skinLight,
   },
   pillTextRow: {

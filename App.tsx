@@ -86,8 +86,12 @@ function AppContent() {
   }, []);
 
   // Stage 52: the RN flow's onboarding flag (native keeps its own in
-  // UserDefaults). Loaded once; reset/completion update it in place.
+  // UserDefaults). Loaded once; reset/completion update it in place. The
+  // completion flip is DEFERRED to the flow's close (Stage 58: flipping it
+  // mid-flow would swap the one-shot onboarding mount for the persistent
+  // mount and unmount the visible screen).
   const [seenOnboarding, setSeenOnboarding] = useState(true);
+  const pendingSeen = useRef(false);
   useEffect(() => {
     hasSeenOnboarding().then(setSeenOnboarding);
   }, []);
@@ -101,6 +105,20 @@ function AppContent() {
       saveConfigDebounced(next);
       return next;
     });
+  }, []);
+
+  // Stable flow callbacks (inline arrows re-rendered BraindumpFlow's
+  // effects every commit — Stage 58).
+  const closeRnFlow = useCallback(() => {
+    setFlowMode('none');
+    setOpenPicker('none');
+    if (pendingSeen.current) {
+      pendingSeen.current = false;
+      setSeenOnboarding(true);
+    }
+  }, []);
+  const markOnboardingDone = useCallback(() => {
+    pendingSeen.current = true;
   }, []);
 
   // Opens the braindump overlay (or one of its demo modes). Each open
@@ -320,14 +338,29 @@ function AppContent() {
         />
       )}
 
-      {/* Stage 49: the RN Reanimated flow (debug toggle) — replaces the native
-          overlay for the "+" braindump only; the dev-panel demo modes
-          (dumped/switch/reset) always run native. */}
-      {flowMode === 'braindump' && config.rnFlow && (
+      {/* Stage 49/58: the RN Reanimated flow (debug toggle) — replaces the
+          native overlay for the "+" braindump only; dev-panel demo modes
+          (dumped/switch/reset) always run native.
+          Direct path: PERSISTENT pre-mounted flow (parked hidden; each open
+          only bumps openSeq → the timeline starts the same frame — the
+          tap-latency fix). Onboarding path: one-shot mount per open. */}
+      {config.rnFlow && seenOnboarding && (
+        <BraindumpFlow
+          openSeq={flowMode === 'braindump' ? flowSeq : 0}
+          glassSpawn={config.glassSpawn}
+          openPicker={openPicker}
+          onOpenPickerChange={setOpenPicker}
+          closeSeq={closeSeq}
+          shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
+          voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
+          onClosed={closeRnFlow}
+        />
+      )}
+      {config.rnFlow && !seenOnboarding && flowMode === 'braindump' && (
         <BraindumpFlow
           key={`rnflow:${flowSeq}`}
-          onboarding={!seenOnboarding}
-          onOnboardingComplete={() => setSeenOnboarding(true)}
+          onboarding
+          onOnboardingComplete={markOnboardingDone}
           autoMorphAfterMs={DEV_FLOW_AUTOPLAY ? 2500 : undefined}
           glassSpawn={config.glassSpawn}
           openPicker={openPicker}
@@ -335,10 +368,7 @@ function AppContent() {
           closeSeq={closeSeq}
           shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
           voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
-          onClosed={() => {
-            setFlowMode('none');
-            setOpenPicker('none');
-          }}
+          onClosed={closeRnFlow}
         />
       )}
 

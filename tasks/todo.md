@@ -216,3 +216,28 @@ home) plays end-to-end in one run with zero JS-thread work during timelines.
       hit 0 (degenerate matrix permanently broke the hosted ✕ glyph).
 - [ ] Device check: both spawn modes vs native; confirm the black/dirty-shadow
       artifacts are gone (sim renders a glass fallback — device is the proof).
+
+### Stage 58 — sync with the picker session + smoothness pass ✅
+- [x] Merge main (Routine picker 5903520): their feature set + our Stage 49-57
+      perf architecture both preserved; NumoChrome got `pickerTitle`
+      ("When"/"Routine" latch); tag debounce 0.5s.
+- [x] Session coordination: Metro 8082 for this worktree; iPhone + 16 Pro sim
+      belong to the picker session; main-tree files theirs.
+- [x] Squircle corners (`borderCurve: 'continuous'` on sheet/banner), exact
+      capsule radii (Public pill, See-how CTA), overlay CTA optical lift +
+      safe-area bottom.
+- [x] UI-thread beats: bar entries/exits via a shared-value beat channel
+      (withDelay), morph fully scheduled from t0 — zero JS timers on visual
+      beats (the drift made the open read jerky/stretched).
+- [x] Stationary-glass unveil: chrome + bottom cluster never move/fade on
+      spawn (Liquid Glass luminance adaptation caused the boosted-shadow
+      "late load" look); clip-window + counter-translate pairs.
+- [x] Persistent pre-mounted flow (tap latency): openSeq re-arm, park() reset,
+      active gate; onboarding path still mounts per open. Fixed the closeSeq
+      re-fire (unstable callback identity) found by the double-open test.
+- [ ] Follow-ups: onboarding-path close should FADE (native goHome), not
+      slide-down (Stage-1 shows through the bg fade); dark-stripe device
+      check; RoutinePickerCard's veil animates blur intensity per frame (the
+      Stage-55 anti-pattern) — belongs to the picker session, pass along.
+- [ ] Device eval: Release build on the phone (needs the user's go — the
+      phone is assigned to the picker session).
