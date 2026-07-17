@@ -12,6 +12,7 @@
 @interface NumoChromeHostView : UIView
 @property (nonatomic, copy, nullable) void (^onChromePress)(NSString *_Nonnull);
 - (void)updateWithPickerOpen:(BOOL)pickerOpen
+                 pickerTitle:(NSString *_Nonnull)pickerTitle
                          tag:(NSString *_Nonnull)tag
                shadowOpacity:(double)shadowOpacity
                 shadowRadius:(double)shadowRadius;
@@ -66,6 +67,7 @@ using namespace facebook::react;
   const auto &newProps = *std::static_pointer_cast<const NumoChromeProps>(props);
 
   [_hostView updateWithPickerOpen:newProps.pickerOpen
+                      pickerTitle:RCTNSStringFromString(newProps.pickerTitle)
                               tag:RCTNSStringFromString(newProps.tag)
                     shadowOpacity:newProps.shadowOpacity
                      shadowRadius:newProps.shadowRadius];

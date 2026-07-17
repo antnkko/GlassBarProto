@@ -28,6 +28,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {BraindumpBottomBar} from '../braindump/BraindumpBottomBar';
+import type {PickerKind} from '../braindump/MorphingShell';
 import {createFlowBus} from '../braindump/flowEvents';
 import {color} from '../braindump/tokens';
 import {BrainDumpList} from './BrainDumpList';
@@ -62,10 +63,10 @@ interface Props {
   /** Stage 57: transform-only spawn mechanic for the Liquid Glass groups
    *  (alpha over UIGlassEffect renders broken/black on device). */
   glassSpawn?: 'clip' | 'pop';
-  /** When-picker state — owned by App (single source for native + RN paths,
-   *  and drivable by the dev autoplay). */
-  whenOpen: boolean;
-  onWhenOpenChange: (open: boolean) => void;
+  /** Picker state ('none' | 'when' | 'routine') — owned by App (single
+   *  source for native + RN paths, and drivable by the dev autoplay). */
+  openPicker: PickerKind;
+  onOpenPickerChange: (picker: PickerKind) => void;
   /** Dev hook (glassbar://closeflow): a bump runs the close timeline —
    *  headless capture of the slide-down, mirroring the native NUMO_WHEN=anim. */
   closeSeq?: number;
@@ -81,8 +82,8 @@ export function BraindumpFlow({
   onOnboardingComplete,
   autoMorphAfterMs,
   glassSpawn = 'clip',
-  whenOpen,
-  onWhenOpenChange,
+  openPicker,
+  onOpenPickerChange,
   closeSeq = 0,
   shadow,
   voiceGlow,
@@ -304,7 +305,7 @@ export function BraindumpFlow({
           the release flips only shared values. */}
       <Animated.View style={[styles.sheet, {height: windowH}, sheetStyle, canvasStyle]}>
         <RedesignedCanvas
-          whenOpen={whenOpen}
+          openPicker={openPicker}
           shadow={shadow}
           inputRef={inputRef}
           chromeIn={chromeIn}
@@ -314,18 +315,18 @@ export function BraindumpFlow({
           onCloseTap={close}
           onClearTap={() => {
             flowBus.emit('clearWhen');
-            onWhenOpenChange(false);
+            onOpenPickerChange('none');
           }}
-          onConfirmTap={() => onWhenOpenChange(false)}
-          onBackdropTap={() => onWhenOpenChange(false)}
+          onConfirmTap={() => onOpenPickerChange('none')}
+          onBackdropTap={() => onOpenPickerChange('none')}
         />
       </Animated.View>
 
       {/* The RN-owned bottom-bar cluster (chip ⇄ When-picker morph), riding
           the keyboard — enters on the 'barEnterSlide' beat. */}
       <BraindumpBottomBar
-        whenOpen={whenOpen}
-        onWhenOpenChange={onWhenOpenChange}
+        openPicker={openPicker}
+        onOpenPickerChange={onOpenPickerChange}
         flowBus={flowBus}
         voiceGlow={voiceGlow}
         glassSpawn={glassSpawn}

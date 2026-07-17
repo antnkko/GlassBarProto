@@ -99,8 +99,9 @@ export const defaultConfig: AppConfig = {
   // Stage 42: bigger, softer inner glow than the first RN port (was 10/0.5).
   voiceGlowRadius: 16,
   voiceGlowOpacity: 0.5,
-  // Native stays the default until the RN port is accepted (tasks/todo.md).
-  rnFlow: false,
+  // Stage 57: RN is the default for the device evaluation (the panel switch
+  // still flips back to native for side-by-side).
+  rnFlow: true,
   glassSpawn: 'clip',
 };
 

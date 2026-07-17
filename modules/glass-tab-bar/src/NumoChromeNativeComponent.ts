@@ -22,8 +22,11 @@ export type ChromePressEvent = {
  * the choreography lives in Reanimated.
  */
 export interface NativeProps extends ViewProps {
-  /** Swaps ✕+publicity ⇄ Clear+✓ (+ shows the "When" title) natively. */
+  /** Swaps ✕+publicity ⇄ Clear+✓ (+ shows the picker title) natively. */
   pickerOpen?: WithDefault<boolean, false>;
+  /** Centered header title while a picker is open — "When" | "Routine".
+   *  RN latches it on open (mirrors the native pickerTitle latch). */
+  pickerTitle?: WithDefault<string, 'When'>;
   /** Auto-detected tag shown in the publicity pill ('' = none). */
   tag?: WithDefault<string, ''>;
   /** Glass shadow knobs (GlassTabBarConfig.frozen), same as NumoFlow. */

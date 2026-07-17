@@ -14,6 +14,7 @@ private typealias R = Metrics.Redesign
 /// this leaf's container transforms (entrance drop / close crop).
 final class NumoChromeModel: ObservableObject {
     @Published var pickerOpen = false
+    @Published var pickerTitle = "When"
     @Published var tag: String? = nil
     @Published var glass = GlassTabBarConfig.frozen()
 }
@@ -28,7 +29,7 @@ private struct NumoChromeRootView: View {
     var body: some View {
         ZStack {
             // Centered "When" title — eases in with the picker, leaves FAST.
-            Text("When")
+            Text(model.pickerTitle)
                 .font(NumoFont.obviouslyNarrowBold(R.WhenPicker.titleSize))
                 .tracking(R.WhenPicker.titleTracking)
                 .foregroundStyle(NumoColor.black)
@@ -149,8 +150,9 @@ public final class NumoChromeHostView: UIView {
         host?.view.frame = bounds
     }
 
-    @objc public func update(pickerOpen: Bool, tag: String,
+    @objc public func update(pickerOpen: Bool, pickerTitle: String, tag: String,
                              shadowOpacity: Double, shadowRadius: Double) {
+        if model.pickerTitle != pickerTitle { model.pickerTitle = pickerTitle }
         let glass = GlassTabBarConfig.frozen(shadowOpacity: shadowOpacity,
                                              shadowRadius: shadowRadius)
         if model.glass != glass { model.glass = glass }

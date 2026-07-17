@@ -40,6 +40,11 @@ export interface NativeProps extends ViewProps {
    * the tap-to-close catcher. Only meaningful with `rnBottomBar`.
    */
   whenPickerOpen?: WithDefault<boolean, false>;
+  /**
+   * Mirrors the RN-owned Routine-picker state, same mechanics as
+   * `whenPickerOpen` — the native header swaps to Clear/"Routine"/✓.
+   */
+  routinePickerOpen?: WithDefault<boolean, false>;
   onFlowEvent?: DirectEventHandler<FlowEvent>;
 }
 

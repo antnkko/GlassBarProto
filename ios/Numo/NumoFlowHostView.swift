@@ -9,6 +9,7 @@ import UIKit
 final class NumoFlowPropsBridge: ObservableObject {
     @Published var rnBottomBar = false
     @Published var whenPickerOpen = false
+    @Published var routinePickerOpen = false
 }
 
 // Fabric host for the braindump overlay. Differences from the glass hosts:
@@ -38,11 +39,12 @@ public final class NumoFlowHostView: UIView {
     private let bridge = NumoFlowPropsBridge()
 
     @objc public func update(mode: String, seq: Int, shadowOpacity: Double, shadowRadius: Double,
-                             rnBottomBar: Bool, whenPickerOpen: Bool) {
+                             rnBottomBar: Bool, whenPickerOpen: Bool, routinePickerOpen: Bool) {
         self.shadowOpacity = shadowOpacity
         self.shadowRadius = shadowRadius
         if bridge.rnBottomBar != rnBottomBar { bridge.rnBottomBar = rnBottomBar }
         if bridge.whenPickerOpen != whenPickerOpen { bridge.whenPickerOpen = whenPickerOpen }
+        if bridge.routinePickerOpen != routinePickerOpen { bridge.routinePickerOpen = routinePickerOpen }
         guard !mounted || mode != self.mode else { return }
         self.mode = mode
         remount()

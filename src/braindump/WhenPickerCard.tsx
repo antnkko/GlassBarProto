@@ -43,9 +43,10 @@ export const DATE_BLOCK_H = row.sepThickness + strip.pad * 2 + strip.cellHeight;
 export const TIME_BLOCK_H = row.sepThickness + wheel.padV * 2 + wheelHeight; // 204
 
 /** Covered-days blur: native 9pt ≈ BlurView intensity ~25. */
-const COVER_BLUR_INTENSITY = 25;
+export const COVER_BLUR_INTENSITY = 25;
 
-function Separator() {
+/** Shared with RoutinePickerCard (the Routine card reuses the row divider). */
+export function Separator() {
   return (
     <View
       style={{

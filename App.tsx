@@ -7,6 +7,7 @@ LogBox.ignoreAllLogs(true);
 
 import {GlassEdgeBlurView, GlassTabBarView, GlassToolbarView, NumoFlowView} from './modules/glass-tab-bar';
 import {BraindumpBottomBar} from './src/braindump/BraindumpBottomBar';
+import type {PickerKind} from './src/braindump/MorphingShell';
 import {createFlowBus} from './src/braindump/flowEvents';
 import EdgeScrim from './src/components/EdgeScrim';
 import DebugPanel from './src/debug/DebugPanel';
@@ -52,10 +53,11 @@ function AppContent() {
   const [flowSeq, setFlowSeq] = useState(0);
   // Dev hook (glassbar://closeflow): bumping this runs the RN close timeline.
   const [closeSeq, setCloseSeq] = useState(0);
-  // Stage 41: RN owns the braindump bottom-bar cluster. `whenOpen` is the
-  // picker state (mirrored into the native header via the whenPickerOpen
-  // prop); the bus relays native beats (entry/exit, Clear/✓/backdrop).
-  const [whenOpen, setWhenOpen] = useState(false);
+  // Stage 41/48: RN owns the braindump bottom-bar cluster. `openPicker` is
+  // which picker is open ('none' | 'when' | 'routine'), mirrored into the
+  // native header via the whenPickerOpen/routinePickerOpen props; the bus
+  // relays native beats (entry/exit, Clear/✓/backdrop).
+  const [openPicker, setOpenPicker] = useState<PickerKind>('none');
   const flowBus = useRef(createFlowBus()).current;
   const [barCollapsed, setBarCollapsed] = useState(false);
   const [scrolledTop, setScrolledTop] = useState(false);
@@ -107,7 +109,7 @@ function AppContent() {
   const openFlow = useCallback((mode: FlowMode) => {
     lastOpenAt.current = Date.now();
     setPanelOpen(false);
-    setWhenOpen(false);
+    setOpenPicker('none');
     setFlowSeq(prev => prev + 1);
     setFlowMode(mode);
     // Stage 49: the RN flow keeps its own onboarding flag — the debug reset
@@ -165,8 +167,8 @@ function AppContent() {
     setSeenOnboarding(false);
     const timers = [
       setTimeout(() => openFlow('braindump'), 2000),
-      setTimeout(() => setWhenOpen(true), 12000), // picker morph open
-      setTimeout(() => setWhenOpen(false), 13800), // picker morph close
+      setTimeout(() => setOpenPicker('when'), 12000), // picker morph open
+      setTimeout(() => setOpenPicker('none'), 13800), // picker morph close
       setTimeout(() => setCloseSeq(prev => prev + 1), 15000),
     ];
     return () => timers.forEach(clearTimeout);
@@ -328,14 +330,14 @@ function AppContent() {
           onOnboardingComplete={() => setSeenOnboarding(true)}
           autoMorphAfterMs={DEV_FLOW_AUTOPLAY ? 2500 : undefined}
           glassSpawn={config.glassSpawn}
-          whenOpen={whenOpen}
-          onWhenOpenChange={setWhenOpen}
+          openPicker={openPicker}
+          onOpenPickerChange={setOpenPicker}
           closeSeq={closeSeq}
           shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
           voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
           onClosed={() => {
             setFlowMode('none');
-            setWhenOpen(false);
+            setOpenPicker('none');
           }}
         />
       )}
@@ -352,7 +354,8 @@ function AppContent() {
           shadowOpacity={config.whiteShadowOpacity}
           shadowRadius={config.whiteShadowRadius}
           rnBottomBar={flowMode === 'braindump'}
-          whenPickerOpen={whenOpen}
+          whenPickerOpen={openPicker === 'when'}
+          routinePickerOpen={openPicker === 'routine'}
           onFlowEvent={e => {
             const type = e.nativeEvent.type;
             if (type === 'closed') {
@@ -363,13 +366,13 @@ function AppContent() {
                 return;
               }
               setFlowMode('none');
-              setWhenOpen(false);
+              setOpenPicker('none');
               return;
             }
-            // Picker intents from the native header/backdrop close the
-            // RN-owned picker (Clear also resets it — handled in the cluster).
+            // Picker intents from the native header/backdrop close whichever
+            // picker is open (Clear also resets it — handled in the cluster).
             if (type === 'clearWhen' || type === 'confirmWhen' || type === 'backdropTap') {
-              setWhenOpen(false);
+              setOpenPicker('none');
             }
             flowBus.emit(type);
           }}
@@ -383,8 +386,8 @@ function AppContent() {
       {flowMode === 'braindump' && !config.rnFlow && (
         <BraindumpBottomBar
           key={`bar:${flowSeq}`}
-          whenOpen={whenOpen}
-          onWhenOpenChange={setWhenOpen}
+          openPicker={openPicker}
+          onOpenPickerChange={setOpenPicker}
           flowBus={flowBus}
           voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
           glassSpawn={config.glassSpawn}

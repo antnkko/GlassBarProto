@@ -16,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {NumoChromeView} from '../../modules/glass-tab-bar';
+import type {PickerKind} from '../braindump/MorphingShell';
 import {openSpring, closeSpring} from '../braindump/motion';
 import {color, font} from '../braindump/tokens';
 import {OLD_PLACEHOLDER, Stage1Header} from './BrainDumpList';
@@ -41,7 +42,9 @@ const NEW_PLACEHOLDER = 'Type naturally: e.g.\n"meds 9am daily"';
 const SAMPLE_TAGS = ['House 01', 'Work', 'Ideas', 'Groceries', 'Trip'];
 
 type Props = {
-  whenOpen: boolean;
+  /** Which picker is open ('none' | 'when' | 'routine') — drives the native
+   *  chrome swap; the header title latches on open (native pickerTitle). */
+  openPicker: PickerKind;
   /** ✕ tapped — the parent runs the close timeline. */
   onCloseTap: () => void;
   /** Clear tapped — reset the picker selection and close it. */
@@ -69,7 +72,7 @@ type Props = {
 };
 
 export function RedesignedCanvas({
-  whenOpen,
+  openPicker,
   onCloseTap,
   onClearTap,
   onConfirmTap,
@@ -82,7 +85,7 @@ export function RedesignedCanvas({
   inputRef,
 }: Props) {
   const [text, setText] = useState('');
-  // Auto-detected tag demo: 2s after the last keystroke a random tag appears
+  // Auto-detected tag demo: 0.5s after the last keystroke a random tag appears
   // in the publicity pill (one tag max); clearing the text retires it.
   const [tag, setTag] = useState('');
   const tagToken = useRef(0);
@@ -90,10 +93,16 @@ export function RedesignedCanvas({
   // Frosted backdrop over the input while the picker is open — a FIXED
   // intensity blur cross-faded via opacity (never animate blur intensity
   // per frame — the previous port's biggest jank source).
+  const pickerShown = openPicker !== 'none';
+  // Header title latches on open and survives the close (native pickerTitle).
+  const titleRef = useRef('When');
+  if (pickerShown) {
+    titleRef.current = openPicker === 'routine' ? 'Routine' : 'When';
+  }
   const backdrop = useSharedValue(0);
   useEffect(() => {
-    backdrop.value = withSpring(whenOpen ? 1 : 0, whenOpen ? openSpring : closeSpring);
-  }, [whenOpen, backdrop]);
+    backdrop.value = withSpring(pickerShown ? 1 : 0, pickerShown ? openSpring : closeSpring);
+  }, [pickerShown, backdrop]);
   const backdropStyle = useAnimatedStyle(() => ({opacity: backdrop.value}));
 
   const onTextChange = useCallback((next: string) => {
@@ -109,7 +118,7 @@ export function RedesignedCanvas({
         return;
       }
       setTag(prev => (prev === '' ? SAMPLE_TAGS[Math.floor(Math.random() * SAMPLE_TAGS.length)] : prev));
-    }, 2000);
+    }, 500);
   }, []);
 
   // Entrance (chromeIn 0→1 on newHeaderSpring) — TRANSFORM-ONLY, the glass
@@ -159,7 +168,8 @@ export function RedesignedCanvas({
       <Animated.View style={[styles.chrome, chromeStyle]}>
         <NumoChromeView
           style={styles.fill}
-          pickerOpen={whenOpen}
+          pickerOpen={pickerShown}
+          pickerTitle={titleRef.current}
           tag={tag}
           shadowOpacity={shadow.opacity}
           shadowRadius={shadow.radius}
@@ -206,7 +216,7 @@ export function RedesignedCanvas({
             over the input only; fades on the picker springs. */}
         <Animated.View
           style={[StyleSheet.absoluteFill, backdropStyle]}
-          pointerEvents={whenOpen ? 'auto' : 'none'}>
+          pointerEvents={pickerShown ? 'auto' : 'none'}>
           <BlurView intensity={BACKDROP_BLUR_INTENSITY} tint="light" style={styles.fill} />
           <View style={[StyleSheet.absoluteFill, styles.backdropDim]} />
           <Pressable style={StyleSheet.absoluteFill} onPress={onBackdropTap} />
