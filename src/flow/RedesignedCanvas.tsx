@@ -33,6 +33,12 @@ const BACKDROP_DIM = 0.55;
 const BACKDROP_BLUR_INTENSITY = 8; // ≈ native backdropBlur 4pt radius
 
 const NEW_HEADER_DROP = -28; // MorphChoreo.newHeaderDrop (the 'pop' drop)
+/** Stage 61: the glass host extends this far ABOVE the chrome slot so the
+ *  implicit Liquid Glass container's top bound sits far from the buttons
+ *  (an 88pt strip put the bound 20pt away → the material's edge falloff
+ *  rendered as a dark band on the buttons' top arc; native hosts span the
+ *  screen). Visually clipped by the sheet; nothing interactive up there. */
+const CHROME_HOST_EXT = 120;
 /** 'clip' spawn park: fully above the sheet's overflow-hidden top edge
  *  (chrome 88 + glass shadow bleed) — hidden with alpha untouched. */
 const CHROME_PARK = 120;
@@ -167,6 +173,12 @@ export function RedesignedCanvas({
   const curtainStyle = useAnimatedStyle(() => ({
     transform: [{translateY: -chromeIn.value * (CHROME_PARK + CHROME_HEIGHT)}],
   }));
+  // Stage 61: the input zone (placeholder/input/backdrop) is PINNED while the
+  // canvas stretches UP to the top (counter −min(closeY, 0) — the sheet edge
+  // slides behind it, like the chrome) and rides down with the drop.
+  const inputZoneStyle = useAnimatedStyle(() => ({
+    transform: [{translateY: -Math.min(closeY.value, 0)}],
+  }));
 
   // Morph reconstruction (fallback shared value keeps the hooks unconditional;
   // the morph prop is stable for the life of the mount).
@@ -191,7 +203,7 @@ export function RedesignedCanvas({
       <View style={styles.chrome}>
         <Animated.View style={[styles.fill, chromeLeafStyle]}>
           <NumoChromeView
-            style={styles.fill}
+            style={styles.chromeHost}
           pickerOpen={pickerShown}
           pickerTitle={titleRef.current}
           tag={tag}
@@ -217,7 +229,7 @@ export function RedesignedCanvas({
       </View>
 
       {/* Input zone with the custom placeholder (exact 46pt line height). */}
-      <View style={styles.inputZone}>
+      <Animated.View style={[styles.inputZone, inputZoneStyle]}>
         {text === '' && morph && (
           <Animated.Text
             style={[styles.placeholder, styles.oldTracking, oldPlaceholderStyle]}
@@ -251,7 +263,7 @@ export function RedesignedCanvas({
           <View style={[StyleSheet.absoluteFill, styles.backdropDim]} />
           <Pressable style={StyleSheet.absoluteFill} onPress={onBackdropTap} />
         </Animated.View>
-      </View>
+      </Animated.View>
 
       {/* Ghost Stage-1 header (viaMorph): reconstructs the stretched console's
           back + Public pill so nothing vanishes at the swap; flies up + fades
@@ -268,6 +280,13 @@ export function RedesignedCanvas({
 const styles = StyleSheet.create({
   fill: {flex: 1},
   chrome: {height: CHROME_HEIGHT, alignSelf: 'stretch'},
+  chromeHost: {
+    position: 'absolute',
+    top: -CHROME_HOST_EXT,
+    left: 0,
+    right: 0,
+    height: CHROME_HEIGHT + CHROME_HOST_EXT,
+  },
   curtain: {
     position: 'absolute',
     top: 0,

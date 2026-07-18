@@ -66,7 +66,12 @@ private struct NumoChromeRootView: View {
             .padding(.horizontal, R.WhenPicker.headerPadH)
             .padding(.vertical, R.WhenPicker.headerPadV)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Stage 61: the host view is taller than the chrome slot (the glass
+        // container's top bound must sit far above the buttons — a nearby
+        // bound rendered the material's edge falloff as a dark top stripe).
+        // The header itself stays bottom-aligned in the 88pt slot.
+        .frame(height: 88)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
     }
 
     private var closeButton: some View {
