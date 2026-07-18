@@ -87,6 +87,9 @@ interface Props {
   shadow: {opacity: number; radius: number};
   /** Voice button inner glow (dev-panel). */
   voiceGlow: {radius: number; opacity: number};
+  /** Stage 62 DEBUG (dark-stripe bisect): sheet clip + chrome safe area. */
+  dbgSheetClip?: boolean;
+  dbgChromeSafeArea?: boolean;
 }
 
 export function BraindumpFlow({
@@ -101,6 +104,8 @@ export function BraindumpFlow({
   closeSeq = 0,
   shadow,
   voiceGlow,
+  dbgSheetClip = true,
+  dbgChromeSafeArea = false,
 }: Props) {
   const insets = useSafeAreaInsets();
   const {height: windowH, width: windowW} = useWindowDimensions();
@@ -389,9 +394,17 @@ export function BraindumpFlow({
           In onboarding it pre-mounts HIDDEN at the reconstructed swap frame —
           the release flips only shared values. */}
       <Animated.View
-        style={[styles.sheet, {top: insets.top, height: windowH}, sheetStyle, canvasStyle]}>
+        style={[
+          styles.sheet,
+          {top: insets.top, height: windowH},
+          // Stage 62 DEBUG: bisect the sheet's masksToBounds over the glass.
+          !dbgSheetClip && styles.sheetNoClip,
+          sheetStyle,
+          canvasStyle,
+        ]}>
         <RedesignedCanvas
           resetSeq={openSeq}
+          chromeSafeArea={dbgChromeSafeArea}
           openPicker={openPicker}
           shadow={shadow}
           inputRef={inputRef}
@@ -438,4 +451,5 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous', // Apple squircle — matches the SwiftUI .continuous style
     overflow: 'hidden',
   },
+  sheetNoClip: {overflow: 'visible'},
 });

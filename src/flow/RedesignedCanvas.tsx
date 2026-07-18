@@ -64,6 +64,8 @@ type Props = {
   onBackdropTap: () => void;
   /** Glass shadow knobs (dev-panel). */
   shadow: {opacity: number; radius: number};
+  /** Stage 62 DEBUG: chrome host safe-area regions bisect. */
+  chromeSafeArea?: boolean;
   /** Chrome entrance progress (0 = out at −28/transparent, 1 = landed). */
   chromeIn: SharedValue<number>;
   /** The sheet's close translate — the chrome counter-translates by −closeY
@@ -88,6 +90,7 @@ export function RedesignedCanvas({
   onConfirmTap,
   onBackdropTap,
   shadow,
+  chromeSafeArea = false,
   chromeIn,
   closeY,
   glassSpawn,

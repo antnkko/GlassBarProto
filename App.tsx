@@ -353,6 +353,8 @@ function AppContent() {
           closeSeq={closeSeq}
           shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
           voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
+          dbgSheetClip={config.dbgSheetClip}
+          dbgChromeSafeArea={config.dbgChromeSafeArea}
           onClosed={closeRnFlow}
         />
       )}

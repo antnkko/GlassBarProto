@@ -89,6 +89,23 @@ export default function DebugPanel({config, dark = false, onChange, onClose, onF
             <Text style={[s.hint, {color: pal.sub}]}>
               Спавн глас-груп без opacity (alpha ламає матеріал) — Stage 57
             </Text>
+            <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
+              values={['Clip ON', 'Clip OFF']}
+              selectedIndex={config.dbgSheetClip ? 0 : 1}
+              onChange={e => onChange({dbgSheetClip: e.nativeEvent.selectedSegmentIndex === 0})}
+            />
+            <SegmentedControl
+              appearance={dark ? 'dark' : 'light'}
+              values={['SafeArea []', 'SafeArea def']}
+              selectedIndex={config.dbgChromeSafeArea ? 1 : 0}
+              onChange={e =>
+                onChange({dbgChromeSafeArea: e.nativeEvent.selectedSegmentIndex === 1})
+              }
+            />
+            <Text style={[s.hint, {color: pal.sub}]}>
+              Stage 62 DEBUG: бісекція темної смуги (перемкни → закрий/відкрий «+»)
+            </Text>
             <ActionRow
               pal={pal}
               label={didReset ? 'Onboarding reset ✓' : 'Reset onboarding'}

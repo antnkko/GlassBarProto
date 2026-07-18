@@ -70,6 +70,10 @@ export interface AppConfig {
    *  both variants are transform-only: 'clip' slides in through the sheet's
    *  clip edges; 'pop' scales 0.9→1 with the native drop distances. */
   glassSpawn: 'clip' | 'pop';
+  /** Stage 62 DEBUG (dark-stripe bisect, remove after): sheet overflow clip
+   *  on/off and the chrome host's safe-area regions. */
+  dbgSheetClip: boolean;
+  dbgChromeSafeArea: boolean;
 }
 
 export const defaultConfig: AppConfig = {
@@ -103,6 +107,8 @@ export const defaultConfig: AppConfig = {
   // still flips back to native for side-by-side).
   rnFlow: true,
   glassSpawn: 'clip',
+  dbgSheetClip: true,
+  dbgChromeSafeArea: false,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */

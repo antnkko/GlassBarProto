@@ -156,7 +156,10 @@ public final class NumoChromeHostView: UIView {
     }
 
     @objc public func update(pickerOpen: Bool, pickerTitle: String, tag: String,
-                             shadowOpacity: Double, shadowRadius: Double) {
+                             useSafeArea: Bool, shadowOpacity: Double, shadowRadius: Double) {
+        // Stage 62 DEBUG: runtime bisect of the dark-stripe suspects.
+        let regions: SwiftUI.SafeAreaRegions = useSafeArea ? .all : []
+        if host?.safeAreaRegions != regions { host?.safeAreaRegions = regions }
         if model.pickerTitle != pickerTitle { model.pickerTitle = pickerTitle }
         let glass = GlassTabBarConfig.frozen(shadowOpacity: shadowOpacity,
                                              shadowRadius: shadowRadius)
