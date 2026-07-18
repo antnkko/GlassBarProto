@@ -140,11 +140,12 @@ export function RedesignedCanvas({
   // same class of bug as alpha<1 and scale-0). 'clip' reveals it with an
   // opaque WHITE CURTAIN that slides up out of the sheet (the sheet's own
   // clip crops the curtain; the glass is never touched). The close CROP
-  // counter-translate applies only on the DOWNWARD drop (−max(closeY, 0)) —
-  // during the close's up-stretch the chrome rides with the sheet.
+  // counter-translate (−closeY) pins the chrome for the WHOLE close
+  // (Stage 60): the sheet edge slides up behind the buttons on the stretch
+  // and crops them on the way down.
   const chromeLeafStyle = useAnimatedStyle(() => {
     const p = chromeIn.value;
-    const crop = -Math.max(closeY.value, 0);
+    const crop = -closeY.value;
     if (glassSpawn === 'pop') {
       if (p > 0) {
         // Scale NEVER reaches 0 — a degenerate transform matrix permanently

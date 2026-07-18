@@ -6,10 +6,13 @@
  * ported from RedesignedScreen.swift — every beat on the UI thread, zero
  * setState mid-animation). Stages 52–54 add the onboarding path.
  *
- * Geometry: the sheet is laid out full-window (top 0, height windowH) and
- * positioned purely by translateY = sheetTop + closeY:
- *   OPEN  sheetTop: windowH → 0 (rise, flat) → safeTop (drop, bounce)
- *   CLOSE closeY:   0 → −24 (anticipation) → windowH (drop off the bottom)
+ * Geometry (Stage 60): the sheet is laid out at top = safeTop (height
+ * windowH) so the RESTING pose has an IDENTITY transform — UIGlassEffect
+ * sampling misaligns under transformed ancestors (the buttons sampled the
+ * region shifted up by safeTop = the dark artwork → the dark top stripe).
+ * translateY = sheetTop + closeY, all values relative to safeTop:
+ *   OPEN  sheetTop: windowH−safeTop → −(safeTop+12) (rise) → 0 (rest)
+ *   CLOSE closeY:   0 → −(safeTop+12) (touch the top) → windowH (drop)
  * The chrome counter-translates by −closeY inside the clipped sheet, so the
  * descending top edge CROPS it in place (the native header-crop mechanism).
  */
@@ -114,7 +117,7 @@ export function BraindumpFlow({
   // The animated surfaces. Initial values: direct open = the parked slide-up
   // state (sheet below the screen, Home showing through); onboarding = the
   // reconstructed swap state (sheet hidden at the stretched console's top).
-  const sheetTop = useSharedValue(onboarding ? insets.top + CONSOLE_TOP : windowH);
+  const sheetTop = useSharedValue(onboarding ? CONSOLE_TOP : windowH - insets.top);
   const closeY = useSharedValue(0);
   const radius = useSharedValue(CARD_RADIUS);
   const bgOpacity = useSharedValue(0);
@@ -135,7 +138,7 @@ export function BraindumpFlow({
   // every close — the persistent flow re-arms instead of remounting). Keep
   // EVERY value the timelines touch in here.
   const park = useCallback(() => {
-    sheetTop.value = windowH;
+    sheetTop.value = windowH - insets.top;
     closeY.value = 0;
     radius.value = CARD_RADIUS;
     bgOpacity.value = 0;
@@ -147,7 +150,7 @@ export function BraindumpFlow({
     // Release the first responder so the NEXT open's focus() re-presents the
     // keyboard (a stale responder on the hidden input swallowed it).
     inputRef.current?.blur();
-  }, [barBeat, bgOpacity, canvasOpacity, chromeIn, closeIntent, closeY, radius, sheetTop, windowH]);
+  }, [barBeat, bgOpacity, canvasOpacity, chromeIn, closeIntent, closeY, insets.top, radius, sheetTop, windowH]);
 
   // OPEN — runSlideUpTimeline: keyboard rises with the canvas; the white
   // canvas rises to touch the top (bg unseen), the artwork is set under full
@@ -169,8 +172,8 @@ export function BraindumpFlow({
     // Rise past the top edge (COVER_OVERSHOOT) so the cover is real; the bg
     // flips via the sheetTop reaction below the moment coverage happens.
     sheetTop.value = withSequence(
-      withSpring(-COVER_OVERSHOOT, Slide.riseSpring),
-      withSpring(insets.top, Slide.retractSpring),
+      withSpring(-(insets.top + COVER_OVERSHOOT), Slide.riseSpring),
+      withSpring(0, Slide.retractSpring),
     );
     // Corner radius stays 36 through the flight; only the resting sheet is 48.
     radius.value = withDelay(downDelay, withSpring(SHEET_TOP_RADIUS, Slide.retractSpring));
@@ -268,8 +271,8 @@ export function BraindumpFlow({
     sheetTop.value = withDelay(
       T,
       withSequence(
-        withSpring(-COVER_OVERSHOOT, MorphChoreo.riseSpring),
-        withDelay(MorphChoreo.coverHold, withSpring(insets.top, MorphChoreo.retractSpring)),
+        withSpring(-(insets.top + COVER_OVERSHOOT), MorphChoreo.riseSpring),
+        withDelay(MorphChoreo.coverHold, withSpring(0, MorphChoreo.retractSpring)),
       ),
     );
     ghost.value = withDelay(T, withSpring(1, MorphChoreo.riseSpring));
@@ -329,7 +332,9 @@ export function BraindumpFlow({
   useAnimatedReaction(
     () => sheetTop.value + closeY.value,
     top => {
-      if (top <= 0) {
+      // Physical top of the screen sits at −insets.top in sheet coordinates
+      // (the sheet's layout top is safeTop — identity transform at rest).
+      if (top <= -insets.top) {
         if (closeIntent.value === 1 && bgOpacity.value > 0) {
           bgOpacity.value = 0;
         } else if (closeIntent.value === 0 && bgOpacity.value < 1) {
@@ -383,7 +388,8 @@ export function BraindumpFlow({
           clips its content (the close crop mechanism relies on this clip).
           In onboarding it pre-mounts HIDDEN at the reconstructed swap frame —
           the release flips only shared values. */}
-      <Animated.View style={[styles.sheet, {height: windowH}, sheetStyle, canvasStyle]}>
+      <Animated.View
+        style={[styles.sheet, {top: insets.top, height: windowH}, sheetStyle, canvasStyle]}>
         <RedesignedCanvas
           resetSeq={openSeq}
           openPicker={openPicker}

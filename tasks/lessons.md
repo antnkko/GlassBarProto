@@ -76,3 +76,11 @@
   by real motion over a similar-luminance backdrop.
 - **focus() on a hidden pre-mounted TextInput fails silently** — blur() in
   the reset path + focus on the next frame after the activation commit.
+
+## 2026-07-17 — Stage 60
+- **Fourth Liquid Glass hazard: transformed ancestors.** UIGlassEffect
+  backdrop sampling misaligns under an ancestor with a non-identity
+  CATransform3D — a sheet positioned by translateY sampled the region
+  shifted by exactly that offset (the dark artwork above) → persistent dark
+  top stripe on the buttons. Position glass-hosting containers by LAYOUT at
+  rest; transforms only mid-animation.
