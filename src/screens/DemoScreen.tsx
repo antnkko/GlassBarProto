@@ -75,11 +75,20 @@ export default function DemoScreen({
             onScrolledChange?.(isScrolled);
           }
         }}>
-        {/* Clean white canvas: the demo blocks are gone — the screen is a
-            neutral home behind the glass chrome and the braindump overlay.
-            A tall spacer keeps the scroll alive so the bar minimize and the
-            top scrim still have something to react to. */}
-        <View style={styles.blank} />
+        {/* Stage 70: placeholder cards are back — the braindump close reveals
+            Home, and an all-white canvas read as "nothing behind". Purely
+            decorative palette blocks (the pre-blank demo look); they also keep
+            the scroll alive for the bar minimize + top scrim. */}
+        <Text style={[styles.title, dark && styles.titleDark]}>{title}</Text>
+        {palette.map((color, i) => (
+          <View
+            key={`${tab}-${i}`}
+            style={[styles.card, i % 3 === 1 && styles.cardTall, {backgroundColor: color}]}>
+            <Text style={[styles.cardLabel, dark && styles.cardLabelDark]}>
+              {`${title} · ${i + 1}`}
+            </Text>
+          </View>
+        ))}
       </ScrollView>
     </View>
   );
@@ -102,5 +111,4 @@ const styles = StyleSheet.create({
   },
   cardTall: {height: 180},
   cardLabel: {color: 'rgba(0,0,0,0.45)', fontWeight: '600'},
-  blank: {height: 1200},
 });

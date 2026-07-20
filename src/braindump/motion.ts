@@ -23,6 +23,13 @@ export const pressSpring: WithSpringConfig = {mass: 1, stiffness: 438.65, dampin
 /** MorphChoreo.bottomBarSpring — .spring(duration 0.55, bounce 0.22). */
 export const entrySpring: WithSpringConfig = {duration: 550, dampingRatio: 0.78};
 
+/** Stage 72d: the bar SHOOTS OUT from under the keyboard the way the header
+ *  shoots out from under the canvas edge — the FULL park distance (~180pt) on
+ *  the header's own spring (MorphChoreo.newHeaderSpring, .spring(duration 0.5,
+ *  bounce 0.4)). Same spring + same kind of full-reveal travel = the two bars
+ *  read identical. (The 72a-c micro-rise experiments crawled — killed.) */
+export const headerEntrySpring: WithSpringConfig = {duration: 500, dampingRatio: 0.6};
+
 /** PickerMorph.chromeFadeOut / contentFadeOut — easeOut 0.12. */
 export const fadeOut120: WithTimingConfig = {duration: 120, easing: Easing.out(Easing.quad)};
 

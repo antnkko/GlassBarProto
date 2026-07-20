@@ -46,6 +46,10 @@ type Props = {
    *  entries/exits with withDelay on the UI thread (JS timers drifted and the
    *  bar arrived late). Absent on the native path (flowBus events drive it). */
   beat?: SharedValue<number>;
+  /** Stage 72k: per-open entry-spring duration (ms) — the flow computes it so
+   *  the bar SETTLES at the exact same instant as the header (whose start is
+   *  timeline-fixed while the bar's is keyboard-anchored). Default 500. */
+  entryDur?: SharedValue<number>;
   onVoiceTap?: () => void;
 };
 
@@ -56,12 +60,20 @@ export function BraindumpBottomBar({
   voiceGlow,
   glassSpawn = 'clip',
   beat,
+  entryDur,
   onVoiceTap,
 }: Props) {
   const pickerShown = openPicker !== 'none';
+  // Stage 72k: entry duration fallback when the flow doesn't drive it.
+  const entryDurFallback = useSharedValue(500);
+  const entryDurSV = entryDur ?? entryDurFallback;
   // Keyboard top — the cluster sits right above it (the native bar used the
   // bottom safe-area inset, which the keyboard replaces wholesale).
   const kbH = useSharedValue(0);
+  // Stage 72i: the keyboard's TARGET height (set the moment willChangeFrame
+  // fires; survives across opens) — the entry beat launches from below the
+  // keyboard's FINAL edge, not its current one, so the shot can start at t0.
+  const kbTarget = useSharedValue(0);
   // Stage 59: NO clipping ancestors over the glass (masksToBounds over
   // UIGlassEffect degrades the material — the dark-stripe class of bugs).
   // The content hides pre-beat parked at +BAR_PARK behind the keyboard/
@@ -81,10 +93,13 @@ export function BraindumpBottomBar({
       // Visible keyboard height = window bottom − keyboard top (0 when the
       // keyboard parks below the screen on hide).
       const h = Math.max(0, Dimensions.get('window').height - e.endCoordinates.screenY);
+      if (h > 0) {
+        kbTarget.value = h; // remember the landing height (Stage 72i)
+      }
       kbH.value = withTiming(h, {duration: e.duration || 250, easing: keyboardEasing});
     });
     return () => sub.remove();
-  }, [kbH]);
+  }, [kbH, kbTarget]);
 
   // ONE beat implementation, worklet-callable: the RN flow drives it on the
   // UI thread (beat channel, zero JS latency); the native path reaches it
@@ -94,16 +109,36 @@ export function BraindumpBottomBar({
       'worklet';
 
       if (b === BAR_BEAT.enterSlide) {
-        if (glassSpawn === 'pop') {
-          // Native +40 rise with a 0.9→1 scale pop (content really moves).
-          entryY.value = entry.slideRise;
-          contentScale.value = 0.9;
-          contentScale.value = withSpring(1, entrySpring);
-        } else {
-          entryY.value = BAR_PARK; // rise from behind the keyboard edge
+        // Stage 72d/72i: the bar SHOOTS OUT from under the keyboard on the
+        // header's spring, and the shot starts AT THE TAP: the launch point
+        // compensates for however much the keyboard still has to travel
+        // (BAR_PARK below its FINAL edge, i.e. below the screen bottom at
+        // t0), so the bar flies ONE decisive arc from the bottom, overtakes
+        // the rising keyboard edge and bursts out — no waiting for the
+        // keyboard to land, no two-easings crawl. No fade: the keyboard edge
+        // IS the reveal.
+        // Stage 72m (user design): fly STRAIGHT to the KNOWN final seat at
+        // t0. The keyboard's landing height is remembered across opens
+        // (kbTarget), so the cluster base SNAPS to the final seat instantly
+        // and the bar makes one short, sharp, fully VISIBLE hop (BAR_PARK
+        // below the seat → 0) — no waiting for the keyboard, which rises
+        // underneath in parallel (a brief canvas gap below the bar is the
+        // accepted tradeoff). Fade rides the hop so the mid-air start doesn't
+        // pop out of nowhere. First-ever open (kbTarget unknown = 0) falls
+        // back to riding the keyboard.
+        if (kbTarget.value > 0) {
+          kbH.value = kbTarget.value; // snap the base to the final seat
         }
-        entryY.value = withSpring(0, entrySpring);
-        entryOpacity.value = withSpring(1, entrySpring);
+        const spring = {duration: entryDurSV.value, dampingRatio: 0.78};
+        entryOpacity.value = 0;
+        entryOpacity.value = withSpring(1, spring);
+        entryY.value = BAR_PARK;
+        if (glassSpawn === 'pop') {
+          // 0.9→1 scale pop on top (the header's pop-mode counterpart).
+          contentScale.value = 0.9;
+          contentScale.value = withSpring(1, spring);
+        }
+        entryY.value = withSpring(0, spring);
       } else if (b === BAR_BEAT.enterMorph) {
         // +280pt rise, no fade (native-defined; emerges from behind the
         // keyboard edge).
@@ -123,7 +158,7 @@ export function BraindumpBottomBar({
         entryY.value = withTiming(BAR_PARK, fadeOut120);
       }
     },
-    [contentScale, entryOpacity, entryY, glassSpawn],
+    [contentScale, entryDurSV, entryOpacity, entryY, glassSpawn, kbH, kbTarget],
   );
 
   // UI-thread beat channel (RN flow).

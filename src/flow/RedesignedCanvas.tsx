@@ -37,7 +37,12 @@ const NEW_HEADER_DROP = -28; // MorphChoreo.newHeaderDrop (the 'pop' drop)
  *  implicit Liquid Glass container's top bound sits far from the buttons
  *  (an 88pt strip put the bound 20pt away → the material's edge falloff
  *  rendered as a dark band on the buttons' top arc; native hosts span the
- *  screen). Visually clipped by the sheet; nothing interactive up there. */
+ *  screen). Visually clipped by the sheet; nothing interactive up there.
+ *  Stage 68a: BACK to 120 — the 360 probe made the glass host 448pt tall and
+ *  the material's per-frame backdrop sampling over that area tanked FPS on
+ *  device. 120 kept full frame rate through Stages 61-67. The falloff bound
+ *  at the host top stays a known (skipped) artifact — fixing it must not go
+ *  through host size. */
 const CHROME_HOST_EXT = 120;
 /** 'clip' spawn park: fully above the sheet's overflow-hidden top edge
  *  (chrome 88 + glass shadow bleed) — hidden with alpha untouched. */
@@ -256,6 +261,10 @@ export function RedesignedCanvas({
           cursorColor={color.highlight}
           selectionColor={color.highlight}
           keyboardAppearance="light"
+          // Stage 71: no QuickType predictions bar above the keyboard (and no
+          // red spell underlines) — the braindump input is free-form.
+          autoCorrect={false}
+          spellCheck={false}
         />
         {/* Frosted backdrop (Figma panel: backdrop-blur + white@55%) — sits
             over the input only; fades on the picker springs. */}

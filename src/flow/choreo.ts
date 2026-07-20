@@ -84,6 +84,8 @@ export const MorphChoreo = {
 } as const;
 
 // ── Direct "+" open/close (bottom-sheet slide-up / canvas-led slide-down) ───
+// Stage 69: EXACT donor timings (the Stage-68 ~15% trim reverted on the
+// user's ask — SwiftUI parity beats snappiness).
 export const Slide = {
   // OPEN: rise to full cover (quick, no overshoot), then drop to rest with a bounce.
   /** .spring(duration: 0.18, bounce: 0). */
@@ -103,6 +105,13 @@ export const Slide = {
   /** .spring(duration: 0.10, bounce: 0.2). */
   closeStretchSpring: {duration: 100, dampingRatio: 0.8} as WithSpringConfig,
   closeStretchDur: 100,
+  /** Stage 70: the stretch as a TIMING so the sequence hands off to the drop
+   *  at EXACTLY 100ms — native retargets the stretch spring mid-flight at
+   *  100ms, while a Reanimated duration-spring with bounce 0.2 oscillates and
+   *  settles late, delaying the drop (the visible pause before the canvas
+   *  falls). easeOut ≈ the spring's first 100ms; the bounce tail is never
+   *  visible in native anyway (the retarget cuts it). */
+  closeStretchTiming: easeOut(100),
   /** .spring(duration: 0.32, bounce: 0). */
   closeDropSpring: {duration: 320, dampingRatio: 1} as WithSpringConfig,
   closeDropDur: 320,

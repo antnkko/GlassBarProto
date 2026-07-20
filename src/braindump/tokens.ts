@@ -172,6 +172,8 @@ export const wheelPadCenter = (wheel.rowHeight * (wheel.visibleRows - 1)) / 2; /
 export const entry = {
   /** Morph entry: cluster rises from +280pt (no fade). */
   morphRise: 280,
-  /** Slide-up entry: +40pt rise + fade-in. */
-  slideRise: 40,
+  /** Slide-up entry: +28pt rise + fade-in — the exact mirror of the header's
+   *  28pt landing drop (Stage 72b; was 40, which compounded with the still-
+   *  rising keyboard into a visibly longer flight). */
+  slideRise: 28,
 } as const;

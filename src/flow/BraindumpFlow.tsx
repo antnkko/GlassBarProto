@@ -52,10 +52,10 @@ const CONSOLE_TOP = 128 - 64 + 3 + MorphChoreo.consolePull; // 97
  *  pulled it back (the canvas never touched the physical top). */
 const COVER_OVERSHOOT = 12;
 
-/** Stage 59: the close's up-stretch now travels to the PHYSICAL top (safeTop
- *  + overshoot ≈ 70pt, vs the native 24) — same anticipation feel, slightly
- *  longer perceptual duration for the longer travel. */
-const CLOSE_TO_TOP_SPRING = {duration: 160, dampingRatio: 0.8};
+/* Stage 59/69/70: the close's up-stretch travels to the PHYSICAL top (safeTop
+ * + overshoot ≈ 70pt vs the native 24pt — the user's standing requirement) on
+ * the donor tempo: Slide.closeStretchTiming (100ms) hands off to the drop
+ * exactly like the native mid-flight retarget (see close()). */
 
 interface Props {
   /** The flow finished closing — the overlay is hidden/reset (persistent
@@ -136,6 +136,9 @@ export function BraindumpFlow({
   // Stage 58: UI-thread beat channel into the bottom cluster (JS timers
   // drifted → the bar arrived late and the open read jerky).
   const barBeat = useSharedValue<number>(BAR_BEAT.idle);
+  // Stage 72k: per-open bar entry duration — set right before the beat fires
+  // so bar and header settle in the same instant.
+  const barEntryDur = useSharedValue(500);
   // Stage 59: gates the cover flip's direction (1 while closing).
   const closeIntent = useSharedValue(0);
 
@@ -182,16 +185,17 @@ export function BraindumpFlow({
     );
     // Corner radius stays 36 through the flight; only the resting sheet is 48.
     radius.value = withDelay(downDelay, withSpring(SHEET_TOP_RADIUS, Slide.retractSpring));
-    // Chrome lands after the bg is revealed; the bottom group launches early
-    // so it rides up with the keyboard's inertia.
     chromeIn.value = withDelay(
       downDelay + Slide.buttonsLead,
       withSpring(1, MorphChoreo.newHeaderSpring),
     );
-    barBeat.value = withDelay(
-      Slide.bottomBarDelay,
-      withTiming(BAR_BEAT.enterSlide, {duration: 1}),
-    );
+    // Stage 72m (user design): the bar launches straight to its KNOWN final
+    // seat — the beat snaps the cluster base to the remembered keyboard
+    // height and hops the last BAR_PARK sharply (see enterSlide); the
+    // keyboard catches up underneath. 72n: +100ms beat delay (user tune) so
+    // the keyboard has a head start before the bar bursts in.
+    barEntryDur.value = 380;
+    barBeat.value = withDelay(100, withTiming(BAR_BEAT.enterSlide, {duration: 1}));
     // Per-open trigger (persistent mount).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSeq]);
@@ -218,12 +222,20 @@ export function BraindumpFlow({
     closeIntent.value = 1;
     barBeat.value = BAR_BEAT.closing; // bottom cluster hides fast (UI thread)
     Keyboard.dismiss();
+    // Stage 69 (donor structure): the artwork fades out over closeBgFade
+    // (easeOut 180ms) IN PARALLEL with the stretch — exactly the native
+    // `withAnimation(slideCloseBgFade) { bgHidden = true }` — replacing the
+    // old instant flip at coverage (the reaction's close branch is gone).
+    bgOpacity.value = withTiming(0, Slide.closeBgFade);
     // Stage 59 (user-requested): the canvas first rides UP to the physical
-    // top edge — visually "taking the picture with it" — the artwork is
-    // flipped out UNDER the cover (reaction below), then the canvas drops,
-    // revealing Home. (Replaces the native −24 anticipation + parallel fade.)
+    // top edge — visually "taking the picture with it" — then drops,
+    // revealing Home. Stage 70: the stretch is a 100ms TIMING (not a
+    // duration-spring) so the drop starts at EXACTLY closeStretchDur, like
+    // the native mid-flight retarget — the settle-wait of the bouncy spring
+    // was the visible pause between the bottom bar leaving and the canvas
+    // falling.
     closeY.value = withSequence(
-      withSpring(-(insets.top + COVER_OVERSHOOT), CLOSE_TO_TOP_SPRING),
+      withTiming(-(insets.top + COVER_OVERSHOOT), Slide.closeStretchTiming),
       withSpring(windowH, Slide.closeDropSpring, finished => {
         'worklet';
 
@@ -329,20 +341,20 @@ export function BraindumpFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Cover flips, both directions gated on ACTUAL coverage (top edge at/past
-  // y=0) — never on blind timers (Stage 57/59):
+  // Cover flip, gated on ACTUAL coverage (top edge at/past y=0) — never on
+  // blind timers (Stage 57/59):
   //  - OPEN: artwork appears the moment the rising sheet covers the screen.
-  //  - CLOSE: artwork disappears the moment the up-stretch covers the screen
-  //    (closeIntent gates it so the open's cover doesn't flip it back off).
+  //  - CLOSE (Stage 69): no longer flipped here — close() fades the artwork
+  //    on the donor's parallel closeBgFade; a flip from this reaction would
+  //    stomp that running animation. closeIntent still gates the open branch
+  //    so the close's up-stretch coverage can't flip the artwork back ON.
   useAnimatedReaction(
     () => sheetTop.value + closeY.value,
     top => {
       // Physical top of the screen sits at −insets.top in sheet coordinates
       // (the sheet's layout top is safeTop — identity transform at rest).
       if (top <= -insets.top) {
-        if (closeIntent.value === 1 && bgOpacity.value > 0) {
-          bgOpacity.value = 0;
-        } else if (closeIntent.value === 0 && bgOpacity.value < 1) {
+        if (closeIntent.value === 0 && bgOpacity.value < 1) {
           bgOpacity.value = 1;
         }
       }
@@ -431,6 +443,7 @@ export function BraindumpFlow({
         voiceGlow={voiceGlow}
         glassSpawn={glassSpawn}
         beat={barBeat}
+        entryDur={barEntryDur}
       />
     </View>
   );
