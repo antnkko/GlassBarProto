@@ -252,3 +252,23 @@ home) plays end-to-end in one run with zero JS-thread work during timelines.
       the cover (closeIntent-gated reaction), home revealed by the drop.
 - [ ] Device check (Release): stripe gone? keyboard rises with the canvas?
       close feel correct?
+
+### Stages 62-77 — stripe saga closed, SwiftUI-parity timings, perf, squircle ✅
+- [x] Dark-stripe bisect closed UNSOLVED by user decision (see lessons):
+      every environmental hypothesis killed; artifact = material edge falloff
+      at the host bound; dbg toggles (Clip/SafeArea) still in the panel.
+- [x] Stage 69-70: donor-exact slide timings restored; close = 100ms timing
+      handoff (no settle-wait pause) + parallel 180ms artwork fade; Home
+      placeholder cards back; QuickType bar off.
+- [x] Stage 72a-n: bottom-bar entrance redesigned with the user — launches
+      100ms post-tap to the remembered keyboard seat (kbTarget), 380ms/0.78,
+      keyboard catches up; first-ever open falls back to riding the keyboard.
+- [x] Stage 73-74: picker blur mounts only while visible; static sheet radius;
+      home layer culled at full cover (UI-thread homeHidden).
+- [x] Stage 75/76 probed and reverted: dynamic clip, flight rasterization —
+      zero perceived gain.
+- [x] Stage 77: true squircle — uniform sheet radius (fast path) + borderCurve
+      sweep (CTA; the rest already had it).
+- [ ] If open-flight smoothness comes up again: measure FIRST — FPS HUD
+      (useFrameCallback → animated-props TextInput), keyboard-after-land
+      diagnostic toggle, then act on numbers.

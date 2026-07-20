@@ -84,3 +84,31 @@
   shifted by exactly that offset (the dark artwork above) → persistent dark
   top stripe on the buttons. Position glass-hosting containers by LAYOUT at
   rest; transforms only mid-animation.
+
+## 2026-07-21 — Stages 62-77 (the stripe saga + perf pass + squircle)
+- **Per-corner radii silently kill borderCurve.** RN's continuous "squircle"
+  curve only applies on the CALayer fast path, which needs a UNIFORM
+  borderRadius; borderTopLeft/RightRadius fall back to path drawing with
+  plain circular arcs. If an edge is always off-screen (the sheet's bottom
+  sits past the display), make the radius uniform and get the real curve.
+- **The dark-stripe saga closed unsolved-but-bounded.** Killed hypotheses:
+  design-shadow gradient (RED probe: shadow renders red, stripe stays dark),
+  shadow=0 build, mask antialiasing inset, white backdrops (top stripe went
+  away but side lines appeared), interface-style pin, GlassEffectContainer
+  wrapping, hidden-cluster removal (matched-morph build), safe-area regions,
+  host height 120→360 (tanked FPS — glass area is a per-frame GPU cost).
+  Clip-OFF inspection showed the same stripe on the HOST's top bound (the
+  material's edge falloff). User decision: ship with it, stop hunting.
+- **Perf pass verdict (open flight):** blur unmount + static radius + home
+  culling landed (each individually sane); dynamic clip and flight
+  rasterization measured ZERO perceived gain → the bottleneck is not the
+  sheet's compositing. 120Hz plist key was already set. Remaining suspects
+  if it resurfaces: actual Reanimated frame rate vs native 120, keyboard
+  process contention, t0 JS commit.
+- **User-driven motion design converged after ~10 tuning builds:** the bar
+  now launches 100ms after the tap straight to its REMEMBERED final seat
+  (kbTarget persists across opens; base snaps, 28→0 hop… final: BAR_PARK hop
+  on {380ms, 0.78}), keyboard catches up underneath. Spring physics lesson:
+  a reveal-from-behind-an-edge can only read "sharp" if the spring's fast
+  phase happens in the VISIBLE zone — fired too early, the fast phase burns
+  off-screen and only the slow tail shows (reads as a crawl).
