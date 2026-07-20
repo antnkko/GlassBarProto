@@ -68,6 +68,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 48,
     // Exact capsule: label ~22 line + pads 18/22 = 62pt tall.
     borderRadius: 31,
+    borderCurve: 'continuous',
     backgroundColor: color.vibrant,
     alignItems: 'center',
     // Native lifts the Obviously label UP: text bottom pad 4+18, top 18.

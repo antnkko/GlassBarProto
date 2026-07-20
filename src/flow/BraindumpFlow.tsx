@@ -28,6 +28,7 @@ import Animated, {
   withSequence,
   withSpring,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 
 import {BAR_BEAT, BraindumpBottomBar} from '../braindump/BraindumpBottomBar';
@@ -90,6 +91,9 @@ interface Props {
   /** Stage 62 DEBUG (dark-stripe bisect): sheet clip + chrome safe area. */
   dbgSheetClip?: boolean;
   dbgChromeSafeArea?: boolean;
+  /** Stage 74 (FPS): UI-thread flag the flow flips so the App can stop
+   *  rendering the fully-covered home layer (1 = hidden). */
+  homeHidden?: SharedValue<number>;
 }
 
 export function BraindumpFlow({
@@ -106,6 +110,7 @@ export function BraindumpFlow({
   voiceGlow,
   dbgSheetClip = true,
   dbgChromeSafeArea = false,
+  homeHidden,
 }: Props) {
   const insets = useSafeAreaInsets();
   const {height: windowH, width: windowW} = useWindowDimensions();
@@ -154,11 +159,14 @@ export function BraindumpFlow({
     canvasOpacity.value = 1;
     barBeat.value = BAR_BEAT.reset;
     closeIntent.value = 0;
+    if (homeHidden) {
+      homeHidden.value = 0; // home renders again (parked flow shows nothing)
+    }
     closing.current = false;
     // Release the first responder so the NEXT open's focus() re-presents the
     // keyboard (a stale responder on the hidden input swallowed it).
     inputRef.current?.blur();
-  }, [barBeat, bgOpacity, canvasOpacity, chromeIn, closeIntent, closeY, insets.top, radius, sheetTop, windowH]);
+  }, [barBeat, bgOpacity, canvasOpacity, chromeIn, closeIntent, closeY, homeHidden, insets.top, radius, sheetTop, windowH]);
 
   // OPEN — runSlideUpTimeline: keyboard rises with the canvas; the white
   // canvas rises to touch the top (bg unseen), the artwork is set under full
@@ -183,8 +191,11 @@ export function BraindumpFlow({
       withSpring(-(insets.top + COVER_OVERSHOOT), Slide.riseSpring),
       withSpring(0, Slide.retractSpring),
     );
-    // Corner radius stays 36 through the flight; only the resting sheet is 48.
-    radius.value = withDelay(downDelay, withSpring(SHEET_TOP_RADIUS, Slide.retractSpring));
+    // Stage 73a (user call): NO borderRadius animation on the slide open at
+    // all — the sheet rides with its final 48 from the first frame. (The
+    // 36→48 morph only ever mattered on the onboarding console-morph path,
+    // which keeps its own timeline.)
+    radius.value = SHEET_TOP_RADIUS;
     chromeIn.value = withDelay(
       downDelay + Slide.buttonsLead,
       withSpring(1, MorphChoreo.newHeaderSpring),
@@ -220,6 +231,9 @@ export function BraindumpFlow({
     }
     closing.current = true;
     closeIntent.value = 1;
+    if (homeHidden) {
+      homeHidden.value = 0; // Stage 74: home starts rendering before the reveal
+    }
     barBeat.value = BAR_BEAT.closing; // bottom cluster hides fast (UI thread)
     Keyboard.dismiss();
     // Stage 69 (donor structure): the artwork fades out over closeBgFade
@@ -244,7 +258,7 @@ export function BraindumpFlow({
         }
       }),
     );
-  }, [barBeat, closeIntent, closeY, insets.top, onCloseSettled, windowH]);
+  }, [barBeat, closeIntent, closeY, homeHidden, insets.top, onCloseSettled, windowH]);
 
   // Dev hook: glassbar://closeflow bumps closeSeq → run the close timeline.
   // Fire only on a VALUE CHANGE — `close`'s identity shifts across renders,
@@ -356,6 +370,10 @@ export function BraindumpFlow({
       if (top <= -insets.top) {
         if (closeIntent.value === 0 && bgOpacity.value < 1) {
           bgOpacity.value = 1;
+          // Stage 74: fully covered — stop rendering the home layer (GPU).
+          if (homeHidden) {
+            homeHidden.value = 1;
+          }
         }
       }
     },
@@ -364,8 +382,12 @@ export function BraindumpFlow({
   const bgStyle = useAnimatedStyle(() => ({opacity: bgOpacity.value}));
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{translateY: sheetTop.value + closeY.value}],
-    borderTopLeftRadius: radius.value,
-    borderTopRightRadius: radius.value,
+    // UNIFORM radius (all four corners): RN's continuous "squircle" curve only
+    // works on the CALayer fast path, which requires equal corners — per-corner
+    // radii fall back to path drawing with plain CIRCULAR arcs and ignore
+    // borderCurve. The sheet's bottom edge always sits past the screen bottom
+    // (top=safeTop, height=windowH), so the bottom rounding is never visible.
+    borderRadius: radius.value,
   }));
 
   const canvasStyle = useAnimatedStyle(() => ({opacity: canvasOpacity.value}));
@@ -459,10 +481,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: color.white,
-    borderTopLeftRadius: SHEET_TOP_RADIUS,
-    borderTopRightRadius: SHEET_TOP_RADIUS,
-    borderCurve: 'continuous', // Apple squircle — matches the SwiftUI .continuous style
+    borderRadius: SHEET_TOP_RADIUS, // uniform → CALayer fast path → real squircle
     overflow: 'hidden',
+    borderCurve: 'continuous', // Apple squircle — matches the SwiftUI .continuous style
   },
+  // Stage 62 DEBUG: panel toggle forces the clip off.
   sheetNoClip: {overflow: 'visible'},
 });

@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
 import {Animated, Linking, LogBox, Pressable, StatusBar, StyleSheet, Text, View} from 'react-native';
+import ReAnimated, {useAnimatedStyle, useSharedValue} from 'react-native-reanimated';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 
 // Prototype: silence the dev warning toast so it doesn't cover the bottom bar.
@@ -64,6 +65,14 @@ function AppContent() {
   // The top scrim exists only once content scrolls under it, and it arrives
   // with a fade — a plain RN layer, so animating opacity is safe.
   const topScrimOpacity = useRef(new Animated.Value(0)).current;
+  // Stage 74 (FPS): the WHOLE home layer (cards + scrims + glass bar +
+  // toolbar) stops rendering while the braindump fully covers it — alpha-0
+  // subtrees are skipped by the compositor, and the live glass underneath was
+  // burning GPU for nothing. Driven on the UI thread by the flow (coverage
+  // reaction → 1; close start → 0), zero React commits mid-flight. The flips
+  // are instant 0↔1, so no intermediate alpha ever composites over glass.
+  const homeHidden = useSharedValue(0);
+  const homeLayerStyle = useAnimatedStyle(() => ({opacity: homeHidden.value ? 0 : 1}));
 
   // Switching tabs restores the full-size bar and the resting (no-scrim) top.
   useEffect(() => {
@@ -238,6 +247,8 @@ function AppContent() {
       {/* The braindump overlay owns the vibrant/dark canvas — force light. */}
       <StatusBar barStyle={flowMode !== 'none' ? 'light-content' : dark ? 'light-content' : 'dark-content'} />
 
+      {/* Home layer — everything the braindump covers (see homeHidden). */}
+      <ReAnimated.View style={[styles.homeLayer, homeLayerStyle]} pointerEvents="box-none">
       <DemoScreen
         tab={state.activeTab}
         title={SCREEN_TITLES[state.activeTab] ?? state.activeTab}
@@ -315,6 +326,7 @@ function AppContent() {
           onToolbarPress={e => handleToolbarPress(e.nativeEvent.element)}
         />
       )}
+      </ReAnimated.View>
 
       {/* The dev panel opens only from the toolbar's settings icon (option 5).
           Invisible long-press escape lives in the status-bar zone ABOVE the
@@ -355,6 +367,7 @@ function AppContent() {
           voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
           dbgSheetClip={config.dbgSheetClip}
           dbgChromeSafeArea={config.dbgChromeSafeArea}
+          homeHidden={homeHidden}
           onClosed={closeRnFlow}
         />
       )}
@@ -370,6 +383,7 @@ function AppContent() {
           closeSeq={closeSeq}
           shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
           voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
+          homeHidden={homeHidden}
           onClosed={closeRnFlow}
         />
       )}
@@ -445,6 +459,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: '#FFFFFF'},
+  homeLayer: {position: 'absolute', top: 0, left: 0, right: 0, bottom: 0},
   rootDark: {backgroundColor: '#121316'},
   topBlur: {position: 'absolute', top: 0, left: 0, right: 0},
   bottomBlur: {position: 'absolute', bottom: 0, left: 0, right: 0},

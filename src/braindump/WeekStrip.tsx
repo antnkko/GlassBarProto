@@ -60,7 +60,7 @@ export function SelectedDayTile({radius, style}: {radius: number; style: ViewSty
           {
             borderRadius: radius - routine.tileBorder,
             borderCurve: 'continuous',
-            borderWidth: 2,
+                        borderWidth: 2,
             borderColor: 'rgba(255,255,255,0.5)',
           },
         ]}

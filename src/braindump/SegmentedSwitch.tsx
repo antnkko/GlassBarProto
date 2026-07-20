@@ -79,6 +79,7 @@ export function SegmentedSwitch({labels, selectedIndex, onSelect}: Props) {
       style={{
         height: seg.thumbHeight + seg.pad * 2,
         borderRadius: seg.radius,
+        borderCurve: 'continuous',
         backgroundColor: color.grayAlmost,
         flexDirection: 'row',
         padding: seg.pad,
@@ -90,6 +91,7 @@ export function SegmentedSwitch({labels, selectedIndex, onSelect}: Props) {
             top: seg.pad,
             height: seg.thumbHeight,
             borderRadius: seg.radius,
+            borderCurve: 'continuous',
             backgroundColor: color.white,
             shadowColor: '#000',
             shadowOpacity: seg.thumbShadowOpacity,

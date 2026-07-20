@@ -9,6 +9,8 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 import {BlurView} from 'expo-blur';
 import Animated, {
+  runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -127,6 +129,25 @@ export function RedesignedCanvas({
     titleRef.current = openPicker === 'routine' ? 'Routine' : 'When';
   }
   const backdrop = useSharedValue(0);
+  // Stage 73 (FPS): the BlurView mounts ONLY while the backdrop is actually
+  // visible — a UIVisualEffectView parked at opacity 0 still costs GPU while
+  // the sheet is in flight. Mount on picker open; unmount once the close
+  // fade fully settles (reaction below).
+  const [backdropMounted, setBackdropMounted] = useState(false);
+  useEffect(() => {
+    if (pickerShown) {
+      setBackdropMounted(true);
+    }
+  }, [pickerShown]);
+  useAnimatedReaction(
+    () => backdrop.value,
+    v => {
+      if (v < 0.01 && !pickerShown) {
+        runOnJS(setBackdropMounted)(false);
+      }
+    },
+    [pickerShown],
+  );
   useEffect(() => {
     backdrop.value = withSpring(pickerShown ? 1 : 0, pickerShown ? openSpring : closeSpring);
   }, [pickerShown, backdrop]);
@@ -267,14 +288,17 @@ export function RedesignedCanvas({
           spellCheck={false}
         />
         {/* Frosted backdrop (Figma panel: backdrop-blur + white@55%) — sits
-            over the input only; fades on the picker springs. */}
-        <Animated.View
-          style={[StyleSheet.absoluteFill, backdropStyle]}
-          pointerEvents={pickerShown ? 'auto' : 'none'}>
-          <BlurView intensity={BACKDROP_BLUR_INTENSITY} tint="light" style={styles.fill} />
-          <View style={[StyleSheet.absoluteFill, styles.backdropDim]} />
-          <Pressable style={StyleSheet.absoluteFill} onPress={onBackdropTap} />
-        </Animated.View>
+            over the input only; fades on the picker springs. Mounted only
+            while visible (Stage 73 — see backdropMounted). */}
+        {backdropMounted && (
+          <Animated.View
+            style={[StyleSheet.absoluteFill, backdropStyle]}
+            pointerEvents={pickerShown ? 'auto' : 'none'}>
+            <BlurView intensity={BACKDROP_BLUR_INTENSITY} tint="light" style={styles.fill} />
+            <View style={[StyleSheet.absoluteFill, styles.backdropDim]} />
+            <Pressable style={StyleSheet.absoluteFill} onPress={onBackdropTap} />
+          </Animated.View>
+        )}
       </Animated.View>
 
       {/* Ghost Stage-1 header (viaMorph): reconstructs the stretched console's

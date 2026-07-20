@@ -131,6 +131,7 @@ export function WheelTimePicker({initial, onChange}: Props) {
           top: (wheelHeight - wheel.rowHeight) / 2,
           height: wheel.rowHeight,
           borderRadius: wheel.rowHeight / 2,
+          borderCurve: 'continuous',
           backgroundColor: color.vibrantLight,
           opacity: wheel.bandOpacity,
         }}
