@@ -14,7 +14,6 @@
 - (void)updateWithPickerOpen:(BOOL)pickerOpen
                  pickerTitle:(NSString *_Nonnull)pickerTitle
                          tag:(NSString *_Nonnull)tag
-                 useSafeArea:(BOOL)useSafeArea
                shadowOpacity:(double)shadowOpacity
                 shadowRadius:(double)shadowRadius;
 @end
@@ -70,7 +69,6 @@ using namespace facebook::react;
   [_hostView updateWithPickerOpen:newProps.pickerOpen
                       pickerTitle:RCTNSStringFromString(newProps.pickerTitle)
                               tag:RCTNSStringFromString(newProps.tag)
-                      useSafeArea:newProps.useSafeArea
                     shadowOpacity:newProps.shadowOpacity
                      shadowRadius:newProps.shadowRadius];
 

@@ -74,9 +74,6 @@ interface Props {
   onOnboardingComplete?: () => void;
   /** Dev-only (autoplay): trigger "See how" this long after mount. */
   autoMorphAfterMs?: number;
-  /** Stage 57: transform-only spawn mechanic for the Liquid Glass groups
-   *  (alpha over UIGlassEffect renders broken/black on device). */
-  glassSpawn?: 'clip' | 'pop';
   /** Picker state ('none' | 'when' | 'routine') — owned by App (single
    *  source for native + RN paths, and drivable by the dev autoplay). */
   openPicker: PickerKind;
@@ -88,9 +85,6 @@ interface Props {
   shadow: {opacity: number; radius: number};
   /** Voice button inner glow (dev-panel). */
   voiceGlow: {radius: number; opacity: number};
-  /** Stage 62 DEBUG (dark-stripe bisect): sheet clip + chrome safe area. */
-  dbgSheetClip?: boolean;
-  dbgChromeSafeArea?: boolean;
   /** Stage 74 (FPS): UI-thread flag the flow flips so the App can stop
    *  rendering the fully-covered home layer (1 = hidden). */
   homeHidden?: SharedValue<number>;
@@ -102,14 +96,11 @@ export function BraindumpFlow({
   onboarding = false,
   onOnboardingComplete,
   autoMorphAfterMs,
-  glassSpawn = 'clip',
   openPicker,
   onOpenPickerChange,
   closeSeq = 0,
   shadow,
   voiceGlow,
-  dbgSheetClip = true,
-  dbgChromeSafeArea = false,
   homeHidden,
 }: Props) {
   const insets = useSafeAreaInsets();
@@ -431,20 +422,16 @@ export function BraindumpFlow({
         style={[
           styles.sheet,
           {top: insets.top, height: windowH},
-          // Stage 62 DEBUG: bisect the sheet's masksToBounds over the glass.
-          !dbgSheetClip && styles.sheetNoClip,
           sheetStyle,
           canvasStyle,
         ]}>
         <RedesignedCanvas
           resetSeq={openSeq}
-          chromeSafeArea={dbgChromeSafeArea}
           openPicker={openPicker}
           shadow={shadow}
           inputRef={inputRef}
           chromeIn={chromeIn}
           closeY={closeY}
-          glassSpawn={glassSpawn}
           morph={onboarding ? {ghost, placeholderP} : undefined}
           onCloseTap={close}
           onClearTap={() => {
@@ -463,7 +450,6 @@ export function BraindumpFlow({
         onOpenPickerChange={onOpenPickerChange}
         flowBus={flowBus}
         voiceGlow={voiceGlow}
-        glassSpawn={glassSpawn}
         beat={barBeat}
         entryDur={barEntryDur}
       />
@@ -485,6 +471,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderCurve: 'continuous', // Apple squircle — matches the SwiftUI .continuous style
   },
-  // Stage 62 DEBUG: panel toggle forces the clip off.
-  sheetNoClip: {overflow: 'visible'},
 });

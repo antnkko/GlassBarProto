@@ -52,29 +52,12 @@ export interface AppConfig {
   /** Max radius (pt) of the top progressive blur stack; 0 = gradient only. */
   edgeBlurMax: number;
   glassInteractive: boolean;
-  /** Design shadow on the white elements (tabs + white buttons): alpha 0–1.
-   *  Fresh keys (were shadowOpacity/shadowRadius) so the 0.2 defaults land
-   *  over stored configs. */
-  whiteShadowOpacity: number;
-  /** Design shadow radius 0–1 → 0–40pt. */
-  whiteShadowRadius: number;
-  /** Braindump voice button inner white glow: blur radius pt (fresh key). */
-  voiceGlowRadius: number;
-  /** Braindump voice button inner white glow: alpha 0–1 (fresh key). */
-  voiceGlowOpacity: number;
-  /** Stage 49: braindump flow implementation — native SwiftUI (NumoFlowView)
-   *  vs the RN Reanimated port. Debug toggle for side-by-side comparison. */
-  rnFlow: boolean;
-  /** Stage 57: how the Liquid Glass groups (top chrome + bottom cluster)
-   *  spawn. Opacity over UIGlassEffect renders broken/black on device, so
-   *  both variants are transform-only: 'clip' slides in through the sheet's
-   *  clip edges; 'pop' scales 0.9→1 with the native drop distances. */
-  glassSpawn: 'clip' | 'pop';
-  /** Stage 62 DEBUG (dark-stripe bisect, remove after): sheet overflow clip
-   *  on/off and the chrome host's safe-area regions. */
-  dbgSheetClip: boolean;
-  dbgChromeSafeArea: boolean;
 }
+
+/** Stage 78 — frozen braindump look (the panel controls are gone):
+ *  design shadow on the white glass elements and the voice button glow. */
+export const WHITE_SHADOW = {opacity: 0.2, radius: 0.2} as const;
+export const VOICE_GLOW = {radius: 16, opacity: 0.5} as const;
 
 export const defaultConfig: AppConfig = {
   milkOpacity: 0.95,
@@ -98,17 +81,6 @@ export const defaultConfig: AppConfig = {
   scrimSmoothness: 3,
   edgeBlurMax: 0,
   glassInteractive: true,
-  whiteShadowOpacity: 0.2,
-  whiteShadowRadius: 0.2,
-  // Stage 42: bigger, softer inner glow than the first RN port (was 10/0.5).
-  voiceGlowRadius: 16,
-  voiceGlowOpacity: 0.5,
-  // Stage 57: RN is the default for the device evaluation (the panel switch
-  // still flips back to native for side-by-side).
-  rnFlow: true,
-  glassSpawn: 'clip',
-  dbgSheetClip: true,
-  dbgChromeSafeArea: false,
 };
 
 /** Frozen Figma layout values — no UI controls, live only here. */
@@ -150,8 +122,8 @@ export function toNativeConfig(config: AppConfig): GlassConfig {
     strokeOpacity: 0.13,
     shadowMode: 'design',
     // Historical bridge names — the native side reads absolute 0–1 knobs.
-    shadowOpacityScale: config.whiteShadowOpacity,
-    shadowRadiusScale: config.whiteShadowRadius,
+    shadowOpacityScale: WHITE_SHADOW.opacity,
+    shadowRadiusScale: WHITE_SHADOW.radius,
     // Frost, the accent ring and the inner glow are part of the final look —
     // frozen (controls removed; hardcoding also overrides stored values).
     frost: 0.9,

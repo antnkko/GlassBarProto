@@ -15,7 +15,7 @@ interface Props {
   onChange: (patch: Partial<AppConfig>) => void;
   onClose: () => void;
   /** Opens a native braindump-flow mode (NumoPrototype merge). */
-  onFlowAction?: (mode: 'braindump' | 'dumped' | 'switch' | 'reset') => void;
+  onFlowAction?: (mode: 'braindump' | 'dumped' | 'reset') => void;
 }
 
 // Figma dev-spec toolbar rows; index === ToolbarOption, 0 = off.
@@ -69,43 +69,6 @@ export default function DebugPanel({config, dark = false, onChange, onClose, onF
           </Section>
 
           <Section pal={pal} title="Braindump">
-            <SegmentedControl
-              appearance={dark ? 'dark' : 'light'}
-              values={['Native (SwiftUI)', 'RN (Reanimated)']}
-              selectedIndex={config.rnFlow ? 1 : 0}
-              onChange={e => onChange({rnFlow: e.nativeEvent.selectedSegmentIndex === 1})}
-            />
-            <Text style={[s.hint, {color: pal.sub}]}>
-              Імплементація флоу для «+» — порівняння side-by-side (Stage 49)
-            </Text>
-            <SegmentedControl
-              appearance={dark ? 'dark' : 'light'}
-              values={['Clip reveal', 'Scale pop']}
-              selectedIndex={config.glassSpawn === 'pop' ? 1 : 0}
-              onChange={e =>
-                onChange({glassSpawn: e.nativeEvent.selectedSegmentIndex === 1 ? 'pop' : 'clip'})
-              }
-            />
-            <Text style={[s.hint, {color: pal.sub}]}>
-              Спавн глас-груп без opacity (alpha ламає матеріал) — Stage 57
-            </Text>
-            <SegmentedControl
-              appearance={dark ? 'dark' : 'light'}
-              values={['Clip ON', 'Clip OFF']}
-              selectedIndex={config.dbgSheetClip ? 0 : 1}
-              onChange={e => onChange({dbgSheetClip: e.nativeEvent.selectedSegmentIndex === 0})}
-            />
-            <SegmentedControl
-              appearance={dark ? 'dark' : 'light'}
-              values={['SafeArea []', 'SafeArea def']}
-              selectedIndex={config.dbgChromeSafeArea ? 1 : 0}
-              onChange={e =>
-                onChange({dbgChromeSafeArea: e.nativeEvent.selectedSegmentIndex === 1})
-              }
-            />
-            <Text style={[s.hint, {color: pal.sub}]}>
-              Stage 62 DEBUG: бісекція темної смуги (перемкни → закрий/відкрий «+»)
-            </Text>
             <ActionRow
               pal={pal}
               label={didReset ? 'Onboarding reset ✓' : 'Reset onboarding'}
@@ -121,58 +84,10 @@ export default function DebugPanel({config, dark = false, onChange, onClose, onF
               hint="Екран підтвердження голосового дампу (letter bounce)"
               onPress={() => onFlowAction?.('dumped')}
             />
-            <ActionRow
-              pal={pal}
-              label="Switch demo"
-              hint="Анімація сегментованого світчера"
-              onPress={() => onFlowAction?.('switch')}
-            />
           </Section>
 
-          <Section pal={pal} title="Shadow">
-            <SliderRow
-              label="Opacity"
-              value={config.whiteShadowOpacity}
-              min={0}
-              max={1}
-              step={0.01}
-              pal={pal}
-              onChange={v => onChange({whiteShadowOpacity: v})}
-            />
-            <SliderRow
-              label="Radius"
-              value={config.whiteShadowRadius}
-              min={0}
-              max={1}
-              step={0.01}
-              pal={pal}
-              onChange={v => onChange({whiteShadowRadius: v})}
-            />
-          </Section>
-
-          <Section pal={pal} title="Voice glow">
-            <SliderRow
-              label="Glow radius"
-              value={config.voiceGlowRadius}
-              min={0}
-              max={40}
-              step={1}
-              pal={pal}
-              onChange={v => onChange({voiceGlowRadius: v})}
-            />
-            <SliderRow
-              label="Glow opacity"
-              value={config.voiceGlowOpacity}
-              min={0}
-              max={1}
-              step={0.01}
-              pal={pal}
-              onChange={v => onChange({voiceGlowOpacity: v})}
-            />
-          </Section>
-
-          {/* Material, motion, scrim and stroke are frozen at the design look;
-              the shadow on tabs + white buttons is tunable above. */}
+          {/* Material, motion, scrim, stroke, shadow and voice glow are all
+              frozen at the design look (Stage 78). */}
         </ScrollView>
       </View>
     </>
@@ -222,47 +137,6 @@ function Section({title, pal, children}: {title: string; pal: Palette; children:
     <View style={s.section}>
       <Text style={[s.sectionTitle, {color: pal.sub}]}>{title}</Text>
       {children}
-    </View>
-  );
-}
-
-function SliderRow({
-  label,
-  value,
-  min,
-  max,
-  step,
-  pal,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  pal: Palette;
-  onChange: (v: number) => void;
-}) {
-  const clamp = (v: number) => Math.min(max, Math.max(min, Number(v.toFixed(4))));
-  return (
-    <View style={s.row}>
-      <View style={s.rowHead}>
-        <Text style={[s.rowLabel, {color: pal.text}]}>{label}</Text>
-        <View style={s.stepper}>
-          <StepBtn label="−" pal={pal} onPress={() => onChange(clamp(value - step))} />
-          <Text style={[s.rowValue, {color: pal.text}]}>{value.toFixed(2)}</Text>
-          <StepBtn label="+" pal={pal} onPress={() => onChange(clamp(value + step))} />
-        </View>
-      </View>
-      <Slider
-        style={s.slider}
-        value={value}
-        minimumValue={min}
-        maximumValue={max}
-        step={step}
-        minimumTrackTintColor={ACCENT}
-        onValueChange={v => onChange(clamp(v))}
-      />
     </View>
   );
 }

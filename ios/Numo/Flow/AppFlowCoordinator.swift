@@ -108,7 +108,7 @@ final class AppFlowCoordinator: ObservableObject {
     /// already onboarding/redesigned).
     func showOnboardingAfterEntrance() {
         guard route == .brainDump, stage == .current else { return }
-        withAnimation(.easeOut(duration: BrainDumpEntrance.overlayFade)) { stage = .onboarding }
+        withAnimation(.easeOut(duration: 0.3)) { stage = .onboarding } // was BrainDumpEntrance.overlayFade (Stage-78 native braindump removal)
     }
 
     func showOnboarding() { withAnimation(.smooth(duration: 0.4)) { stage = .onboarding } }

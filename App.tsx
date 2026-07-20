@@ -12,7 +12,7 @@ import type {PickerKind} from './src/braindump/MorphingShell';
 import {createFlowBus} from './src/braindump/flowEvents';
 import EdgeScrim from './src/components/EdgeScrim';
 import DebugPanel from './src/debug/DebugPanel';
-import {defaultConfig, toNativeConfig, type AppConfig} from './src/debug/configSchema';
+import {defaultConfig, toNativeConfig, VOICE_GLOW, WHITE_SHADOW, type AppConfig} from './src/debug/configSchema';
 import {loadConfig, saveConfigDebounced} from './src/debug/persist';
 import {BraindumpFlow} from './src/flow/BraindumpFlow';
 import {hasSeenOnboarding, resetOnboarding} from './src/flow/flowState';
@@ -28,7 +28,7 @@ const SCREEN_TITLES: Record<string, string> = {
 };
 
 /** Native braindump overlay modes (NumoFlow Fabric component). */
-export type FlowMode = 'none' | 'braindump' | 'dumped' | 'switch' | 'reset';
+export type FlowMode = 'none' | 'braindump' | 'dumped' | 'reset';
 
 // Native strip height for the toolbar overlay: tall enough for the CTA pill
 // (60pt) in configuration 8, elements center vertically inside.
@@ -132,9 +132,7 @@ function AppContent() {
 
   // Opens the braindump overlay (or one of its demo modes). Each open
   // remounts the component (key below), so the flow always starts fresh.
-  const lastOpenAt = useRef(0);
   const openFlow = useCallback((mode: FlowMode) => {
-    lastOpenAt.current = Date.now();
     setPanelOpen(false);
     setOpenPicker('none');
     setFlowSeq(prev => prev + 1);
@@ -159,10 +157,6 @@ function AppContent() {
         openFlow('braindump');
       } else if (url.includes('closeflow')) {
         setCloseSeq(prev => prev + 1);
-      } else if (url.includes('flow/rn')) {
-        patchConfig({rnFlow: true});
-      } else if (url.includes('flow/native')) {
-        patchConfig({rnFlow: false});
       } else if (url.includes('expand')) {
         dispatch({type: 'forceExpand'});
       } else if (url.includes('collapse')) {
@@ -187,7 +181,6 @@ function AppContent() {
     if (!DEV_FLOW_AUTOPLAY || !config) {
       return;
     }
-    patchConfig({rnFlow: true});
     // Always replay the full onboarding (reset the seen flag), then exercise
     // the picker + close. Timings leave room for the morph (~4.8s).
     resetOnboarding();
@@ -356,33 +349,29 @@ function AppContent() {
           Direct path: PERSISTENT pre-mounted flow (parked hidden; each open
           only bumps openSeq → the timeline starts the same frame — the
           tap-latency fix). Onboarding path: one-shot mount per open. */}
-      {config.rnFlow && seenOnboarding && (
+      {seenOnboarding && (
         <BraindumpFlow
           openSeq={flowMode === 'braindump' ? flowSeq : 0}
-          glassSpawn={config.glassSpawn}
           openPicker={openPicker}
           onOpenPickerChange={setOpenPicker}
           closeSeq={closeSeq}
-          shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
-          voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
-          dbgSheetClip={config.dbgSheetClip}
-          dbgChromeSafeArea={config.dbgChromeSafeArea}
+          shadow={{opacity: WHITE_SHADOW.opacity, radius: WHITE_SHADOW.radius}}
+          voiceGlow={{radius: VOICE_GLOW.radius, opacity: VOICE_GLOW.opacity}}
           homeHidden={homeHidden}
           onClosed={closeRnFlow}
         />
       )}
-      {config.rnFlow && !seenOnboarding && flowMode === 'braindump' && (
+      {!seenOnboarding && flowMode === 'braindump' && (
         <BraindumpFlow
           key={`rnflow:${flowSeq}`}
           onboarding
           onOnboardingComplete={markOnboardingDone}
           autoMorphAfterMs={DEV_FLOW_AUTOPLAY ? 2500 : undefined}
-          glassSpawn={config.glassSpawn}
           openPicker={openPicker}
           onOpenPickerChange={setOpenPicker}
           closeSeq={closeSeq}
-          shadow={{opacity: config.whiteShadowOpacity, radius: config.whiteShadowRadius}}
-          voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
+          shadow={{opacity: WHITE_SHADOW.opacity, radius: WHITE_SHADOW.radius}}
+          voiceGlow={{radius: VOICE_GLOW.radius, opacity: VOICE_GLOW.opacity}}
           homeHidden={homeHidden}
           onClosed={closeRnFlow}
         />
@@ -391,26 +380,25 @@ function AppContent() {
       {/* Native braindump overlay (NumoPrototype merge): transparent host over
           the whole app — the slide-up rise reveals the RN screen behind it.
           key forces a fresh mount (fresh flow coordinator) per open. */}
-      {flowMode !== 'none' && !(flowMode === 'braindump' && config.rnFlow) && (
+      {(flowMode === 'dumped' || flowMode === 'reset') && (
         <NumoFlowView
           key={`${flowMode}:${flowSeq}`}
           style={StyleSheet.absoluteFill}
           mode={flowMode}
           seq={flowSeq}
-          shadowOpacity={config.whiteShadowOpacity}
-          shadowRadius={config.whiteShadowRadius}
-          rnBottomBar={flowMode === 'braindump'}
+          shadowOpacity={WHITE_SHADOW.opacity}
+          shadowRadius={WHITE_SHADOW.radius}
+          rnBottomBar={false}
           whenPickerOpen={openPicker === 'when'}
           routinePickerOpen={openPicker === 'routine'}
           onFlowEvent={e => {
             const type = e.nativeEvent.type;
             if (type === 'closed') {
-              // Ignore a stale close from the previous instance landing just
-              // after a fast reopen — a legit close can't happen this soon
-              // after opening (the open animation alone is ~0.5s).
-              if (Date.now() - lastOpenAt.current < 500) {
-                return;
-              }
+              // Stage 79: the 500ms stale-close guard is GONE — it existed for
+              // the native braindump's slide-down (removed in Stage 78) and was
+              // swallowing the 'reset' mode's instant close, leaving the
+              // transparent overlay mounted and eating every tap (the dead "+"
+              // after Reset onboarding).
               setFlowMode('none');
               setOpenPicker('none');
               return;
@@ -422,21 +410,6 @@ function AppContent() {
             }
             flowBus.emit(type);
           }}
-        />
-      )}
-
-      {/* Stage 41: the RN-owned bottom-bar cluster — a sibling AFTER the
-          NumoFlow overlay, so it paints above the transparent native canvas
-          and receives its own touches. Fresh mount per open (same key).
-          Native path only — the RN flow mounts its own cluster (Stage 50). */}
-      {flowMode === 'braindump' && !config.rnFlow && (
-        <BraindumpBottomBar
-          key={`bar:${flowSeq}`}
-          openPicker={openPicker}
-          onOpenPickerChange={setOpenPicker}
-          flowBus={flowBus}
-          voiceGlow={{radius: config.voiceGlowRadius, opacity: config.voiceGlowOpacity}}
-          glassSpawn={config.glassSpawn}
         />
       )}
 

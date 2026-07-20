@@ -41,7 +41,6 @@ type Props = {
   /** Stage 57: transform-only spawn for the glass content (alpha over
    *  UIGlassEffect renders broken/black on device); the white gradient
    *  backdrop still fades — it's a plain RN view. */
-  glassSpawn?: 'clip' | 'pop';
   /** Stage 58: UI-thread beat channel (BAR_BEAT values) — the RN flow drives
    *  entries/exits with withDelay on the UI thread (JS timers drifted and the
    *  bar arrived late). Absent on the native path (flowBus events drive it). */
@@ -58,7 +57,6 @@ export function BraindumpBottomBar({
   onOpenPickerChange,
   flowBus,
   voiceGlow,
-  glassSpawn = 'clip',
   beat,
   entryDur,
   onVoiceTap,
@@ -133,11 +131,10 @@ export function BraindumpBottomBar({
         entryOpacity.value = 0;
         entryOpacity.value = withSpring(1, spring);
         entryY.value = BAR_PARK;
-        if (glassSpawn === 'pop') {
-          // 0.9→1 scale pop on top (the header's pop-mode counterpart).
-          contentScale.value = 0.9;
-          contentScale.value = withSpring(1, spring);
-        }
+        // 0.9→1 scale pop on top (the header's pop counterpart) — Stage 78:
+        // 'pop' is THE spawn, unconditional.
+        contentScale.value = 0.9;
+        contentScale.value = withSpring(1, spring);
         entryY.value = withSpring(0, spring);
       } else if (b === BAR_BEAT.enterMorph) {
         // +280pt rise, no fade (native-defined; emerges from behind the
@@ -158,7 +155,7 @@ export function BraindumpBottomBar({
         entryY.value = withTiming(BAR_PARK, fadeOut120);
       }
     },
-    [contentScale, entryDurSV, entryOpacity, entryY, glassSpawn, kbH, kbTarget],
+    [contentScale, entryDurSV, entryOpacity, entryY, kbH, kbTarget],
   );
 
   // UI-thread beat channel (RN flow).

@@ -32,7 +32,7 @@ export function OnboardingOverlay({opacity, onSeeHow}: Props) {
         style={StyleSheet.absoluteFill}
       />
       <View
-        style={[styles.content, {paddingBottom: insets.bottom + 20}]}
+        style={[styles.content, {paddingBottom: insets.bottom + 40}]}
         pointerEvents="box-none">
         <Text style={styles.title}>{'Dumping tasks\njust got better!'}</Text>
         <PressFade onPress={onSeeHow}>
@@ -66,8 +66,8 @@ const styles = StyleSheet.create({
   cta: {
     marginTop: 36,
     marginHorizontal: 48,
-    // Exact capsule: label ~22 line + pads 18/22 = 62pt tall.
-    borderRadius: 31,
+    // Full pill whatever the actual label height (RN clamps to half-height).
+    borderRadius: 999,
     borderCurve: 'continuous',
     backgroundColor: color.vibrant,
     alignItems: 'center',

@@ -33,11 +33,10 @@ extension EnvironmentValues {
 // the Fabric side can unmount the overlay.
 //
 // Modes (one immutable mode per mounted instance — RN remounts per open):
-//   braindump — the real "+" flow: first run plays Stage1 + onboarding +
-//               morph; afterwards the direct slide-up of the redesign.
 //   dumped    — the voice-dump confirmation animation demo (dev panel).
-//   switch    — the segmented-switch animation demo (dev panel).
 //   reset     — clears the onboarding flag and closes immediately.
+// Stage 78: the braindump/onboarding native path is GONE — the RN Reanimated
+// flow (src/flow) is the only braindump implementation.
 struct NumoFlowRoot: View {
     let mode: String
     let onClosed: () -> Void
@@ -48,10 +47,6 @@ struct NumoFlowRoot: View {
 
     @StateObject private var flow: AppFlowCoordinator
     @Namespace private var morph
-    // The closed-report latch: only report after the flow has actually been
-    // open — the coordinator's INITIAL state already matches the closed
-    // predicate, so an unlatched observer would close the overlay at mount.
-    @State private var wasOpen = false
 
     init(mode: String, shadowOpacity: Double = 0.35, shadowRadius: Double = 0.35,
          bridge: NumoFlowPropsBridge = NumoFlowPropsBridge(),
@@ -66,25 +61,14 @@ struct NumoFlowRoot: View {
         // exists in the closed state and the Stage1 entrance mounts fresh
         // (calling openFromPlus in onAppear would flash an empty frame and
         // trip the closed detector).
-        let coordinator = AppFlowCoordinator()
-        if mode == "braindump" {
-            coordinator.openFromPlus()
-        }
-        _flow = StateObject(wrappedValue: coordinator)
-        // The flow is opened synchronously above, so isOpen never TRANSITIONS
-        // to true — onChange would never latch. Start latched instead.
-        _wasOpen = State(initialValue: mode == "braindump")
+        _flow = StateObject(wrappedValue: AppFlowCoordinator())
     }
 
     var body: some View {
         ZStack {
             switch mode {
-            case "braindump":
-                brainDumpFlow
             case "dumped":
                 DumpedScreen(onClose: onClosed, devMode: true)
-            case "switch":
-                SwitchDemoScreen(onClose: onClosed)
             default:
                 Color.clear.onAppear {
                     if mode == "reset" {
@@ -100,60 +84,4 @@ struct NumoFlowRoot: View {
         .environment(\.numoFlowEmit, onEvent)
     }
 
-    // The donor RootView's braindump portions, verbatim minus HomeScreen:
-    // route == .home with directOpen == false simply renders nothing — the
-    // RN screen behind the transparent host IS home.
-    @ViewBuilder
-    private var brainDumpFlow: some View {
-        ZStack {
-            if flow.route == .brainDump {
-                brainDumpStack
-                    .transition(.opacity)
-            }
-
-            if flow.directOpen {
-                RedesignedScreen(morph: morph, viaMorph: false, viaSlideUp: true)
-                    .transition(.identity)
-                    .zIndex(2)
-            }
-        }
-        .onChange(of: isOpen) { _, open in
-            if open {
-                wasOpen = true
-            } else if wasOpen {
-                // Report closed right after the slide-down finishes (it already
-                // set directOpen=false post-animation) — the old 0.3s linger
-                // kept the overlay mounted, swallowing an immediate re-tap on
-                // the plus. RN also guards against this instance's stale close
-                // landing after a reopen.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { onClosed() }
-            }
-        }
-    }
-
-    private var isOpen: Bool {
-        flow.route == .brainDump || flow.directOpen
-    }
-
-    // The donor RootView's Stage-1 base + morph-stage overlays, verbatim.
-    @ViewBuilder
-    private var brainDumpStack: some View {
-        ZStack {
-            if flow.stage == .redesigned {
-                RedesignedScreen(morph: morph, viaMorph: flow.morphPhase == .released)
-                    .transition(.identity)
-                    .zIndex(1)
-            } else {
-                BrainDumpScreen(morph: morph)
-                    .transition(.identity)
-                    .zIndex(0)
-            }
-
-            if flow.stage == .onboarding {
-                OnboardingOverlay()
-                    .transition(.opacity)
-                    .zIndex(1)
-            }
-        }
-    }
 }

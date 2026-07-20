@@ -71,17 +71,11 @@ type Props = {
   onBackdropTap: () => void;
   /** Glass shadow knobs (dev-panel). */
   shadow: {opacity: number; radius: number};
-  /** Stage 62 DEBUG: chrome host safe-area regions bisect. */
-  chromeSafeArea?: boolean;
   /** Chrome entrance progress (0 = out at −28/transparent, 1 = landed). */
   chromeIn: SharedValue<number>;
   /** The sheet's close translate — the chrome counter-translates by −closeY
    *  so it stays screen-pinned and the descending sheet edge CROPS it. */
   closeY: SharedValue<number>;
-  /** Stage 57: transform-only chrome spawn (alpha over UIGlassEffect renders
-   *  broken/black on device — the old opacity fade caused the black blobs at
-   *  the canvas top + the dirty dark shadow during the entrance). */
-  glassSpawn: 'clip' | 'pop';
   /** Morph (viaMorph) reconstruction (Stage 54): the ghost Stage-1 header
    *  flies up (0→1 on the rise spring) and the placeholder cross-fades
    *  old→new with tracking 0.2→0.8 (0→1 on placeholderSwap). */
@@ -97,10 +91,8 @@ export function RedesignedCanvas({
   onConfirmTap,
   onBackdropTap,
   shadow,
-  chromeSafeArea = false,
   chromeIn,
   closeY,
-  glassSpawn,
   morph,
   inputRef,
 }: Props) {
@@ -169,39 +161,29 @@ export function RedesignedCanvas({
     }, 500);
   }, []);
 
-  // Entrance (chromeIn 0→1 on newHeaderSpring) — Stage 59: the glass leaf is
-  // fully STATIC, unclipped and alpha-1 for its whole life (masksToBounds
-  // over UIGlassEffect degraded the material — the dark top stripe — the
-  // same class of bug as alpha<1 and scale-0). 'clip' reveals it with an
-  // opaque WHITE CURTAIN that slides up out of the sheet (the sheet's own
-  // clip crops the curtain; the glass is never touched). The close CROP
+  // Entrance (chromeIn 0→1 on newHeaderSpring) — Stage 78: the 'pop' spawn is
+  // THE spawn (curtain/'clip' removed): parked above the sheet's clip edge,
+  // then the native drop distance with a 0.9→1 scale, alpha untouched (alpha
+  // over UIGlassEffect renders broken on device). The close CROP
   // counter-translate (−closeY) pins the chrome for the WHOLE close
   // (Stage 60): the sheet edge slides up behind the buttons on the stretch
   // and crops them on the way down.
   const chromeLeafStyle = useAnimatedStyle(() => {
     const p = chromeIn.value;
     const crop = -closeY.value;
-    if (glassSpawn === 'pop') {
-      if (p > 0) {
-        // Scale NEVER reaches 0 — a degenerate transform matrix permanently
-        // broke the hosted SwiftUI image rendering (the ✕ glyph vanished).
-        return {
-          transform: [
-            {translateY: (1 - p) * NEW_HEADER_DROP + crop},
-            {scale: 0.9 + 0.1 * p},
-          ],
-        };
-      }
-      // Pre-beat: parked above the sheet's clip edge, alpha untouched.
-      return {transform: [{translateY: -CHROME_PARK}]};
+    if (p > 0) {
+      // Scale NEVER reaches 0 — a degenerate transform matrix permanently
+      // broke the hosted SwiftUI image rendering (the ✕ glyph vanished).
+      return {
+        transform: [
+          {translateY: (1 - p) * NEW_HEADER_DROP + crop},
+          {scale: 0.9 + 0.1 * p},
+        ],
+      };
     }
-    return {transform: [{translateY: crop}]};
+    // Pre-beat: parked above the sheet's clip edge, alpha untouched.
+    return {transform: [{translateY: -CHROME_PARK}]};
   });
-  // The curtain: covers the chrome slot pre-beat; slides UP out of the sheet
-  // on the beat (the sheet's overflow clip crops it away).
-  const curtainStyle = useAnimatedStyle(() => ({
-    transform: [{translateY: -chromeIn.value * (CHROME_PARK + CHROME_HEIGHT)}],
-  }));
   // Stage 61: the input zone (placeholder/input/backdrop) is PINNED while the
   // canvas stretches UP to the top (counter −min(closeY, 0) — the sheet edge
   // slides behind it, like the chrome) and rides down with the drop.
@@ -250,11 +232,6 @@ export function RedesignedCanvas({
           }}
           />
         </Animated.View>
-        {/* The reveal curtain ('clip'): opaque white over the chrome slot,
-            slides up on the beat; the sheet's clip eats it. */}
-        {glassSpawn === 'clip' && (
-          <Animated.View pointerEvents="none" style={[styles.curtain, curtainStyle]} />
-        )}
       </View>
 
       {/* Input zone with the custom placeholder (exact 46pt line height). */}
@@ -322,14 +299,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: CHROME_HEIGHT + CHROME_HOST_EXT,
-  },
-  curtain: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: CHROME_HEIGHT + 40, // covers the slot + the buttons' shadow bleed
-    backgroundColor: color.white,
   },
   inputZone: {flex: 1},
   placeholder: {

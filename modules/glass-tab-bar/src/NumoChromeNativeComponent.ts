@@ -29,9 +29,6 @@ export interface NativeProps extends ViewProps {
   pickerTitle?: WithDefault<string, 'When'>;
   /** Auto-detected tag shown in the publicity pill ('' = none). */
   tag?: WithDefault<string, ''>;
-  /** Stage 62 DEBUG: hosting controller safe-area regions (default [] —
-   *  the Stage 45-48 keyboard-inset lesson; native hosts keep defaults). */
-  useSafeArea?: WithDefault<boolean, false>;
   /** Glass shadow knobs (GlassTabBarConfig.frozen), same as NumoFlow. */
   shadowOpacity: Double;
   shadowRadius: Double;
